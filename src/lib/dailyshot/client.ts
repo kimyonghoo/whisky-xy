@@ -1,5 +1,6 @@
 import { liveFetch } from '@/lib/shopify/http';
 import type { FetchFn } from '@/lib/shopify/client';
+import { botUserAgent } from '@/lib/bot-ua';
 
 const BASE = 'https://dailyshot.co';
 const MAX_HTML_CHARS = 2_000_000;
@@ -13,8 +14,7 @@ export interface DailyshotPrice { lowPriceKrw: number; highPriceKrw: number | nu
 export const dailyshotUrl = (productId: string) => `${BASE}/m/item/${productId}`;
 
 function headers(): Record<string, string> {
-  const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
-  return { Accept: 'text/html', 'User-Agent': `WhiskyPortalBot/0.1 (+${siteUrl})` };
+  return { Accept: 'text/html', 'User-Agent': botUserAgent() };
 }
 
 async function getHtml(url: string, fetchFn: FetchFn, allow404 = false): Promise<{ status: number; html: string }> {

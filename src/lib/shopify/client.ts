@@ -1,5 +1,6 @@
 import type { Store } from '@/lib/stores';
 import { liveFetch, storeFetch } from '@/lib/shopify/http';
+import { botUserAgent } from '@/lib/bot-ua';
 
 export type FetchFn = typeof fetch;
 
@@ -26,11 +27,10 @@ export class CurrencyMismatchError extends Error {
 }
 
 export function storeHeaders(): Record<string, string> {
-  const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
   return {
     Cookie: 'localization=US; cart_currency=USD',
     Accept: '*/*',
-    'User-Agent': `WhiskyPortalBot/0.1 (+${siteUrl})`,
+    'User-Agent': botUserAgent(),
   };
 }
 
