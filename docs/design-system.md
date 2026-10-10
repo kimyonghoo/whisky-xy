@@ -75,11 +75,12 @@ Five **ordinal** tiers computed by `compareKr()` in `src/lib/compare.ts` (`savin
 | `must` | ≥ 50 % | 무조건 사야됨 | PartyPopper (`must-glow #ffe7a8`) | solid `#0f5130` + white, 2 px honey ring | honey wash `#fff4d9`, 2 px honey border | `#0f5130` | white 9.4, ink on band 8.6, glow icon 7.7 |
 | `big` | 30–49 % | 크게 이득 | ChevronsDown | solid `#1e7a42` + white | `#e8f4ec` / line `#8fc7a3` | `#1e7a42` | white 5.4, ink `#1a6638` 6.2 |
 | `good` | 15–29 % | 이득 | ChevronDown | tint `#f3f9f5` + ink `#1a6638` | `#f3f9f5` / line `#b5dbc2` | `#4a9466` | ink 6.6, bar 3.7 |
-| `small` | 0–14 % | 조금 이득 | Minus | neutral tint `#f5f1eb` + ink `#5f574f` | `#f5f1eb` / line `#dcd3c7` | `#8c8178` | ink 5.6, bar 3.8 |
-| `worse` | < 0 | 한국이 더 쌈 | TrendingUp | solid `#b42318` + white | `#fdecec` / line `#f1b8b8` | `#b42318` | white 6.6, ink `#a11c1c` 6.8 |
+| `small` | 0–14 % (incl. equal price) | 조금 이득 | Minus | neutral tint `#f5f1eb` + ink `#5f574f` | `#f5f1eb` / line `#dcd3c7` | `#8c8178` | ink 5.6, bar 3.8 |
+| `worse` | Korea cheaper (`diffKrw < 0`, decided by sign before rounding) | 한국이 더 쌈 | TrendingUp | solid `#b42318` + white | `#fdecec` / line `#f1b8b8` | `#b42318` | white 6.6, ink `#a11c1c` 6.8 |
 
 - **Intensity tracks the tier**: green gets darker and more solid as the saving grows; `small` is deliberately neutral (a small saving rarely justifies the sister's effort); `worse` is the only red and the only solid non-green. `must` is the only tier with honey (decorative ring/border only, never text).
-- **Never colour alone**: every verdict is icon + word + colour, and the money line ("386,179원(60%) 이득" / "50,000원(8%) 손해") is always visible.
+- **Never colour alone**: every verdict is icon + word + colour, and the money line ("386,179원(60%) 이득" / "한국이 50,000원(8%) 더 싸요" / "한국이 2.7배 싸요 · 1,066,000원 차이") is always visible.
+- **Sign first**: `diffKrw < 0` is always `worse`, even when it rounds to 0 % (shown as "1% 미만"). Gains use `savingsPct` (relative to the Korean price, per spec); losses use `krCheaperPct`, relative to the **US** price, so they never exceed 100 %. At 50 % or more the loss reads as a multiple ("N배").
 - The Korea reference bar on `/compare` is slate `kr-bar #55718f` (5.1:1 on white): a different hue from every verdict, so it can't be mistaken for one.
 - `muted-foreground` and the copper link colour stay ≥ 5.3:1 on every band tint, and the focus ring stays ≥ 4.0:1.
 

@@ -37,7 +37,7 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
   const v = VERDICT_STYLE[compare.verdict];
   const kr = formatKrw(link.lowPriceKrw);
   const us = formatKrw(compare.usKrw);
-  const diff = diffLabel(compare.diffKrw, compare.savingsPct);
+  const diff = diffLabel(compare);
   const store = `${best.store.name} · ${REGION_LABEL[best.store.region]}`;
   const titleId = `cmp-${rank}-t`;
   const usStale = freshness(best.checkedAt, now).stale;

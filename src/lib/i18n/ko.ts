@@ -145,8 +145,13 @@ export const ko = {
     heading: '한국 가격과 비교',
     krLowest: (krw: string) => `한국 최저 ${krw}`,
     usApprox: (krw: string) => `미국 약 ${krw}`,
-    gain: (krw: string, pct: number) => `${krw}(${pct}%) 이득`,
-    loss: (krw: string, pct: number) => `${krw}(${pct}%) 손해`,
+    /** Rounded percent; a non-zero gap that rounds to 0 reads "1% 미만". */
+    pct: (n: number) => (n === 0 ? '1% 미만' : `${n}%`),
+    gain: (krw: string, pct: string) => `${krw}(${pct}) 이득`,
+    /** Korea cheaper: the percent is relative to the US price, so it never exceeds 100 %. */
+    krCheaper: (krw: string, pct: string) => `한국이 ${krw}(${pct}) 더 싸요`,
+    /** Korea cheaper by half or more: say it as a multiple. */
+    krCheaperTimes: (ratio: string, krw: string) => `한국이 ${ratio}배 싸요 · ${krw} 차이`,
     same: '가격이 같아요',
     dailyshot: '데일리샷',
     dailyshotLink: '데일리샷에서 보기',

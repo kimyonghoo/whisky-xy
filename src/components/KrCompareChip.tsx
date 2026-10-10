@@ -4,6 +4,7 @@ import type { BottleGroup } from '@/lib/search';
 import { dailyshotUrl } from '@/lib/dailyshot/client';
 import { KR_STALE_AFTER_MS, formatKrw, fxDateLabel, isFxStale, linkKrHref } from '@/lib/kr-view';
 import { ko } from '@/lib/i18n/ko';
+import { krCheaperRatio, type KrComparison } from '@/lib/compare';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { FreshnessIndicator } from '@/components/FreshnessIndicator';
@@ -12,10 +13,17 @@ import { StatusBadge } from '@/components/StatusBadge';
 
 type Kr = NonNullable<BottleGroup['kr']>;
 
-/** "386,179원(60%) 이득" / "50,000원(8%) 손해" / "가격이 같아요". */
-export function diffLabel(diffKrw: number, savingsPct: number): string {
-  if (diffKrw > 0) return ko.compare.gain(formatKrw(diffKrw), savingsPct);
-  if (diffKrw < 0) return ko.compare.loss(formatKrw(-diffKrw), Math.abs(savingsPct));
+/**
+ * "386,179원(60%) 이득" / "한국이 50,000원(8%) 더 싸요" / "한국이 2.7배 싸요 · 1,066,000원 차이" / "가격이 같아요".
+ * The sign decides the wording; a loss is measured against the US price (never > 100 %).
+ */
+export function diffLabel(c: Pick<KrComparison, 'diffKrw' | 'savingsPct' | 'krCheaperPct' | 'usKrw'>): string {
+  if (c.diffKrw > 0) return ko.compare.gain(formatKrw(c.diffKrw), ko.compare.pct(c.savingsPct));
+  if (c.diffKrw < 0) {
+    const pct = c.krCheaperPct ?? 0;
+    if (pct >= 50) return ko.compare.krCheaperTimes(krCheaperRatio(c), formatKrw(-c.diffKrw));
+    return ko.compare.krCheaper(formatKrw(-c.diffKrw), ko.compare.pct(pct));
+  }
   return ko.compare.same;
 }
 
@@ -83,7 +91,7 @@ function Verdict({ kr, compare }: { kr: Kr; compare: NonNullable<Kr['compare']> 
   const v = VERDICT_STYLE[compare.verdict];
   const kLine = ko.compare.krLowest(formatKrw(kr.link.lowPriceKrw));
   const uLine = ko.compare.usApprox(formatKrw(compare.usKrw));
-  const diff = diffLabel(compare.diffKrw, compare.savingsPct);
+  const diff = diffLabel(compare);
   return (
     <div className="flex flex-col gap-1.5">
       <p className="sr-only">{ko.compare.srSummary(ko.compare.verdict[compare.verdict], kLine, uLine, diff)}</p>
