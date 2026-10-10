@@ -54,5 +54,7 @@ export const ko = {
     history: '가격 이력',
     noHistory: '이력이 없습니다',
     notFoundTitle: '카드를 찾을 수 없어요',
+    notFoundHint: '삭제되었거나 만료된 카드일 수 있어요',
+    backToSearch: '검색으로',
   },
 } as const;
