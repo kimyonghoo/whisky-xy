@@ -41,7 +41,9 @@ export function RecheckButton({ id, className }: { id: number; className?: strin
             ? { tone: 'info', text: ko.card.recheckCached }
             : data.status === 'gone'
               ? { tone: 'caution', text: ko.card.gone }
-              : { tone: 'danger', text: ko.card.recheckFailed },
+              : data.status === 'throttled'
+                ? { tone: 'caution', text: ko.card.recheckThrottled }
+                : { tone: 'danger', text: ko.card.recheckFailed },
       );
       startTransition(() => router.refresh());
     } catch {

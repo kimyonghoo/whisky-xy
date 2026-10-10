@@ -22,11 +22,14 @@ export function telHref(phone: string): string {
   return `tel:${phone.replace(/[^\d+]/g, '')}`;
 }
 
-/** Positive safe integer from a route param, else null. */
+/** Largest listings.id (Postgres serial = int4). */
+export const MAX_DB_ID = 2_147_483_647;
+
+/** Positive int4 from a route param, else null (larger ids would make Postgres throw). */
 export function parseCardId(raw: string): number | null {
-  if (!/^\d+$/.test(raw)) return null;
+  if (!/^\d{1,10}$/.test(raw)) return null;
   const n = Number(raw);
-  return Number.isSafeInteger(n) && n > 0 ? n : null;
+  return n > 0 && n <= MAX_DB_ID ? n : null;
 }
 
 /** M/D in America/New_York. */

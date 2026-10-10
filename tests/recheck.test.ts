@@ -4,6 +4,7 @@ import { createTestDb } from './helpers/db';
 import { seed } from './helpers/seed';
 import { listings, priceHistory } from '@/lib/db/schema';
 import { recheckListing, resetRecheckCooldowns } from '@/lib/recheck';
+import { claimLiveCheck, LIVE_BURST, LIVE_REFILL_MS } from '@/lib/live-budget';
 
 const NOW = new Date('2026-10-10T12:00:00Z');
 const OLD = new Date('2026-10-10T10:00:00Z');
@@ -88,5 +89,46 @@ describe('recheckListing', () => {
     const r3 = await recheckListing(db, row.id, { fetchFn: again, now: new Date(NOW.getTime() + 61_000) });
     expect(r3?.status).toBe('updated');
     expect(again).toHaveBeenCalled();
+  });
+
+  it('per-store budget: walking many card ids stops contacting the store once the bucket is empty (I3)', async () => {
+    const db = await createTestDb();
+    const rows = await db
+      .insert(listings)
+      .values(Array.from({ length: LIVE_BURST + 4 }, (_, i) => ({ ...seed({ storeId: 'dewinespot', title: `Bottle ${i}`, priceCents: 1000 }), variantId: String(600 + i), checkedAt: OLD })))
+      .returning();
+    const other = (await db.insert(listings).values({ ...seed({ storeId: 'flask', title: 'Other', priceCents: 1000 }), variantId: '555', checkedAt: OLD }).returning())[0];
+    const fetchFn = fakeFetch({ variants: [555, ...Array.from({ length: 20 }, (_, i) => 600 + i)].map((id) => ({ id, price: 1000, available: true })) });
+    const statuses = [];
+    for (const r of rows) statuses.push((await recheckListing(db, r.id, { fetchFn, now: NOW }))?.status);
+    expect(statuses.filter((s) => s === 'updated')).toHaveLength(LIVE_BURST);
+    expect(statuses.slice(LIVE_BURST).every((s) => s === 'throttled')).toBe(true);
+    // 2 store requests per live check, and none once throttled
+    expect(fetchFn).toHaveBeenCalledTimes(LIVE_BURST * 2);
+    // throttled returns the stored row unchanged
+    const t = await recheckListing(db, rows[LIVE_BURST].id, { fetchFn, now: NOW });
+    expect(t?.listing.checkedAt.getTime()).toBe(OLD.getTime());
+    // another store has its own budget
+    expect((await recheckListing(db, other.id, { fetchFn, now: NOW }))?.status).toBe('updated');
+    // one token refills after LIVE_REFILL_MS
+    const later = new Date(NOW.getTime() + LIVE_REFILL_MS);
+    expect((await recheckListing(db, rows[LIVE_BURST + 1].id, { fetchFn, now: later }))?.status).toBe('updated');
+    expect((await recheckListing(db, rows[LIVE_BURST + 2].id, { fetchFn, now: later }))?.status).toBe('throttled');
+  });
+});
+
+describe('claimLiveCheck', () => {
+  it('is a token bucket: burst, refill, cap, and no negative refill on clock skew', async () => {
+    const db = await createTestDb();
+    for (let i = 0; i < LIVE_BURST; i++) expect(await claimLiveCheck(db, 's', NOW)).toBe(true);
+    expect(await claimLiveCheck(db, 's', NOW)).toBe(false);
+    expect(await claimLiveCheck(db, 's', new Date(NOW.getTime() - 60_000))).toBe(false); // clock behind
+    expect(await claimLiveCheck(db, 's', new Date(NOW.getTime() + LIVE_REFILL_MS - 100))).toBe(false);
+    expect(await claimLiveCheck(db, 's', new Date(NOW.getTime() + LIVE_REFILL_MS))).toBe(true);
+    // a long idle period refills only up to the burst size
+    const idle = new Date(NOW.getTime() + 24 * 3_600_000);
+    let n = 0;
+    while (await claimLiveCheck(db, 's', idle)) n++;
+    expect(n).toBe(LIVE_BURST);
   });
 });

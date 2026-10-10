@@ -139,6 +139,11 @@ async function CardView({ params }: Props) {
         </Notice>
       )}
       {status === 'gone' && <Notice tone="caution" urgent title={ko.card.gone} />}
+      {status === 'throttled' && (
+        <Notice tone="info" title={ko.card.throttledTitle}>
+          {ko.card.throttledHint}
+        </Notice>
+      )}
       {stale && status !== 'failed' && <Notice tone="stale" title={ko.stale.warning}>{ko.card.staleHint}</Notice>}
 
       {/* Store + primary actions. On phones the actions dock to the bottom edge (thumb reach). */}

@@ -4,6 +4,7 @@ import { getListing } from '@/lib/listings';
 import { getStore } from '@/lib/stores';
 import { fetchLiveProduct, type FetchFn } from '@/lib/shopify/client';
 import { recordLiveCheck } from '@/lib/crawl/ingest';
+import { claimLiveCheck } from '@/lib/live-budget';
 
 export const MIN_RECHECK_INTERVAL_MS = 60_000;
 
@@ -16,7 +17,8 @@ export function resetRecheckCooldowns(): void {
   failedAt.clear();
 }
 
-export type RecheckStatus = 'updated' | 'cached' | 'failed' | 'gone';
+/** 'throttled' = the store's live-check budget is used up; stored data is returned unchanged. */
+export type RecheckStatus = 'updated' | 'cached' | 'failed' | 'gone' | 'throttled';
 
 export async function recheckListing(
   db: Db,
@@ -42,6 +44,11 @@ export async function recheckListing(
     console.warn(`recheck: listing ${id} has unregistered store ${listing.storeId}`);
     failedAt.set(id, now.getTime());
     return { listing, status: 'failed' };
+  }
+
+  // Per-store budget shared by card opens and "다시 확인" across all instances (I3).
+  if (!(await claimLiveCheck(db, store.id, now))) {
+    return { listing, status: 'throttled' };
   }
 
   try {

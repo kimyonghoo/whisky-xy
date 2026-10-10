@@ -75,6 +75,16 @@ export const fxRates = pgTable('fx_rates', {
   fetchedAt: ts('fetched_at').notNull(),
 });
 
+/**
+ * Per-store token bucket for live rechecks (card opens + "다시 확인"). Shared by every server
+ * instance, so visitors can never make us hit a store faster than the bucket allows.
+ */
+export const storeLiveBudget = pgTable('store_live_budget', {
+  storeId: text('store_id').primaryKey(),
+  tokens: real('tokens').notNull(),
+  updatedAt: ts('updated_at').notNull(),
+});
+
 export type KrLink = typeof krLinks.$inferSelect;
 export type FxRate = typeof fxRates.$inferSelect;
 export type Listing = typeof listings.$inferSelect;
