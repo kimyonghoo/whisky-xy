@@ -1,4 +1,5 @@
 import type { Store } from '@/lib/stores';
+import { storeFetch } from '@/lib/shopify/http';
 
 export type FetchFn = typeof fetch;
 
@@ -28,6 +29,7 @@ export function storeHeaders(): Record<string, string> {
   const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
   return {
     Cookie: 'localization=US; cart_currency=USD',
+    Accept: '*/*',
     'User-Agent': `WhiskyPortalBot/0.1 (+${siteUrl})`,
   };
 }
@@ -63,7 +65,7 @@ export async function fetchCatalog(
   store: Store,
   opts: { fetchFn?: FetchFn; delayMs?: number; maxPages?: number; timeoutMs?: number } = {},
 ): Promise<{ products: ShopifyProduct[]; complete: boolean }> {
-  const fetchFn = opts.fetchFn ?? fetch;
+  const fetchFn = opts.fetchFn ?? storeFetch;
   const delayMs = opts.delayMs ?? 1100;
   const maxPages = opts.maxPages ?? 100;
   const timeoutMs = opts.timeoutMs ?? 20000;
@@ -89,7 +91,7 @@ export async function fetchLiveProduct(
   handle: string,
   opts: { fetchFn?: FetchFn; timeoutMs?: number } = {},
 ): Promise<LiveVariant[] | null> {
-  const fetchFn = opts.fetchFn ?? fetch;
+  const fetchFn = opts.fetchFn ?? storeFetch;
   const signal = AbortSignal.timeout(opts.timeoutMs ?? 5000);
   const productPath = `/products/${encodeURIComponent(handle)}.js`;
 
