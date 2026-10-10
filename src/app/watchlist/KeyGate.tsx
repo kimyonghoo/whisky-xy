@@ -11,7 +11,7 @@ import { loginAction, type LoginState } from './actions';
  * Admin key gate. A wrong key (or no key configured on the server) shows the same inline error,
  * so the form never reveals whether ADMIN_KEY is set.
  */
-export function KeyGate() {
+export function KeyGate({ body = ko.watch.gate.body }: { body?: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(loginAction, {});
   const [show, setShow] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,7 +33,7 @@ export function KeyGate() {
         <h2 id="gate-h" className="text-xl font-bold tracking-tight sm:text-2xl">
           {ko.watch.gate.title}
         </h2>
-        <p className="text-[0.9375rem] text-muted-foreground">{ko.watch.gate.body}</p>
+        <p className="text-[0.9375rem] text-muted-foreground">{body}</p>
       </div>
 
       <form action={action} className="flex flex-col gap-3" noValidate>

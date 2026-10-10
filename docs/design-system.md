@@ -61,13 +61,26 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 | Unreliable | `caution-fg #6f4600` / `caution-bg #fff4d6` / `caution-icon #a86c00` | TriangleAlert | 재고 표시 부정확 | the store's stock flag can't be trusted (`stockReliability: 'low'`) |
 | Stale | `stale-fg #8f3110` / `stale-bg #fdede4` | Clock | 오래된 정보 | `checkedAt` > 24 h |
 | Live / verified | `info-fg #1d4f7a` / `info-bg #e9f1f9` | BadgeCheck | 방금 확인 | confirmed by a live check this request |
-| Savings big | solid `instock` + white | TrendingDown | 한국보다 N% 저렴 | US ≥ 20 % cheaper |
-| Savings small | `instock-*` tint | TrendingDown | 한국보다 N% 저렴 | 3–20 % cheaper |
-| Same | `soldout-*` tint | Equal | 한국과 비슷 | within ±3 % |
-| Worse | `danger-fg #a11c1c` / `danger-bg #fdecec` | TrendingUp | 한국이 N% 저렴 | Korea is cheaper |
 
 - **Danger** is reserved for failures (a live check failed) and "worse" comparisons. Don't use red for sold out.
-- The savings thresholds live in `compareTier()` in `src/lib/search-view.ts` and are **provisional product defaults**. Revisit them with real Task 15 data.
+- Korea-vs-US verdicts have their own five-tier palette: see §3a.
+
+### 3a. Korea comparison verdicts (Task 15)
+
+Five **ordinal** tiers computed by `compareKr()` in `src/lib/compare.ts` (`savingsPct` = (Korea lowest − US tax-included in KRW) / Korea lowest, rounded). Labels live in `ko.compare.verdict`. Styles live in `VERDICT_STYLE` (`src/components/PriceCompareChip.tsx`); tokens are `verdict-<tier>` (solid: badge fill and bar), `-bg` (band tint), `-line` (border), `-ink` (text on the tint).
+
+| Tier | Range | Word | Icon | Badge | Band (chip background) | Bar | Contrast |
+|---|---|---|---|---|---|---|---|
+| `must` | ≥ 50 % | 무조건 사야됨 | PartyPopper (`must-glow #ffe7a8`) | solid `#0f5130` + white, 2 px honey ring | honey wash `#fff4d9`, 2 px honey border | `#0f5130` | white 9.4, ink on band 8.6, glow icon 7.7 |
+| `big` | 30–49 % | 크게 이득 | ChevronsDown | solid `#1e7a42` + white | `#e8f4ec` / line `#8fc7a3` | `#1e7a42` | white 5.4, ink `#1a6638` 6.2 |
+| `good` | 15–29 % | 이득 | ChevronDown | tint `#f3f9f5` + ink `#1a6638` | `#f3f9f5` / line `#b5dbc2` | `#4a9466` | ink 6.6, bar 3.7 |
+| `small` | 0–14 % | 조금 이득 | Minus | neutral tint `#f5f1eb` + ink `#5f574f` | `#f5f1eb` / line `#dcd3c7` | `#8c8178` | ink 5.6, bar 3.8 |
+| `worse` | < 0 | 한국이 더 쌈 | TrendingUp | solid `#b42318` + white | `#fdecec` / line `#f1b8b8` | `#b42318` | white 6.6, ink `#a11c1c` 6.8 |
+
+- **Intensity tracks the tier**: green gets darker and more solid as the saving grows; `small` is deliberately neutral (a small saving rarely justifies the sister's effort); `worse` is the only red and the only solid non-green. `must` is the only tier with honey (decorative ring/border only, never text).
+- **Never colour alone**: every verdict is icon + word + colour, and the money line ("386,179원(60%) 이득" / "50,000원(8%) 손해") is always visible.
+- The Korea reference bar on `/compare` is slate `kr-bar #55718f` (5.1:1 on white): a different hue from every verdict, so it can't be mistaken for one.
+- `muted-foreground` and the copper link colour stay ≥ 5.3:1 on every band tint, and the focus ring stays ≥ 4.0:1.
 
 ---
 
@@ -152,7 +165,7 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 | Page header | `PageHeader` | Title block for watchlist/map/compare screens |
 | Callout | `Notice` (`caution stale danger info success`) | Problems that change the decision. `urgent` → `role="alert"` |
 | Empty / error | `EmptyState` | See §7 |
-| KRW-vs-USD chip | `PriceCompareChip` | See §8.9 |
+| Korea comparison | `PriceCompareChip` (verdict badge), `KrCompareChip` (search band), `SavingsChart` (`/compare`) | See §3a, §8.9, §8.12 |
 | Bottle result | `BottleResult` | Search-result card for one bottle group |
 | Site chrome | `SiteHeader`, `SiteFooter`, `SkipLink`, `Wordmark`, `NavLinks` | Layout only |
 | Share | `CopyLinkButton`, `ShareCardButton` | See §8.8 |
@@ -231,11 +244,17 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 - In lists (buyer at a desk): `CopyLinkButton` with the explicit label "카드 링크 복사" and an inline ✓ "복사됨" confirmation.
 - On the card: `ShareCardButton` opens the OS share sheet when one exists (straight to KakaoTalk on phones) and falls back to copy otherwise.
 
-### 8.9 KRW-vs-USD comparison chip: `PriceCompareChip` (Task 15)
-- Input: `savingsRatio = (koreaKrw − usKrw) / koreaKrw`. Tiers come from `compareTier()` (see §3).
-- **Pure price comparison only.** No duty, customs or bottle-limit maths.
-- **Never shown on the buy card.**
-- Place it next to the tax-included price in lists, never in place of it.
+### 8.9 Korea comparison: `PriceCompareChip` + `KrCompareChip` (Task 15)
+- `PriceCompareChip` = the verdict badge alone (`verdict`, sizes `sm md lg`). Use it wherever a verdict is shown (chip, ranking, legend).
+- `KrCompareChip` = the band inside a search-result group (`BottleResult`), between the header and the store list. It reads `group.kr` from `searchListings`, which compares against **that section's** cheapest in-stock tax-included price (main and "LA 갈 때" each use their own).
+  - Line 1: verdict badge + the money line, big and in the tier's ink: `386,179원(60%) 이득`.
+  - Line 2: `한국 최저 649,000원 · 미국 약 262,821원`. KRW is `Intl ko-KR` grouping + "원" (`formatKrw`).
+  - Meta row: `데일리샷에서 보기 ↗` (built only via `dailyshotUrl(productId)`, new tab), Dailyshot freshness (`FreshnessIndicator` with `staleAfterMs` = 7 days and prefix "데일리샷"), and the fx used (`환율 1,380원 · 10/10`; > 3 days old → stale badge).
+  - Screen readers get one sentence (`ko.compare.srSummary`); the visual lines are `aria-hidden` to avoid reading numbers twice.
+  - Fallbacks: no fx → neutral band "환율 정보 없음" + Korea price; no in-stock row → "재고 있는 매장이 없어 지금은 비교할 수 없어요". Unlinked bottles show nothing to the public.
+  - Admins see `한국 가격 연결` (dashed outline) or `연결 변경` (xs outline) → `/link-kr?bottle=…&q=<brand words>&from=<search>`.
+- **Pure price comparison only.** No duty, customs or bottle-limit maths. **Never shown on the buy card.**
+- It sits below the tax-included price, never in place of it.
 
 ### 8.10 Ranked list
 - Use `<ol>` + `RankMarker`. #1 is filled copper and its row gets a `primary-soft` wash plus an sr-only "최저가". Ranks 2+ are outlined, and unranked items (sold out) get a dash.
@@ -250,6 +269,14 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 - `?bottle=`: stores without it in stock are greyed (soldout tokens, never opacity on text), list sorted by tax-included price.
 - Popups render React (`StorePopupContent`), never HTML strings. Leaflet CSS is unlayered; overrides live at the end of `globals.css`.
 - Tiles: `NEXT_PUBLIC_MAP_TILE_URL` (commercial provider before public launch), OSM fallback with attribution.
+
+### 8.12 Savings ranking (`/compare`, `SavingsChart`)
+- Hand-built HTML bars, no chart library. One `<li>` per bottle, ranked by `savingsPct` desc with `RankMarker` (#1 gets the `primary-soft` wash, §8.10).
+- Two horizontal bars per row — `한국` (slate `kr-bar`) and `미국` (verdict colour) — on **one zero-based KRW scale shared by every row** (`barPct`, non-zero values ≥ 1.5 % so they stay visible). No track behind the bars, so length reads as amount, not "% full".
+- **Direct labels**: each bar has its KRW value at the end of the row (grid `label | bar | value`), and the diff line + verdict badge sit under the bars. A legend explains the two bar colours, the shared scale and the five tier thresholds.
+- Accessible text equivalent: each row has an sr-only sentence (rank, verdict, both prices, store, diff); bars and duplicated numbers are `aria-hidden`.
+- Each row shows the US store + region + tax-included USD of the cheapest **in-stock** row (Brooklyn + NJ first; California only when the main region has none, marked "LA 매장 기준"), links to `/?q=<title>`, and to Dailyshot.
+- Footer: the fx rate and its date. States: no fx → "환율 정보 없음" EmptyState; nothing linked / nothing in stock → EmptyState with a search action; fx > 3 days → stale Notice.
 
 ---
 

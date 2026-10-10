@@ -7,9 +7,13 @@ import { Card } from '@/components/ui/card';
 import { BottleHeader } from '@/components/BottleHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RegionChip, StoreLine } from '@/components/StoreLine';
+import { KrCompareChip } from '@/components/KrCompareChip';
 
-/** One bottle in search results: identity + best in-stock price + ranked store list. */
-export function BottleResult({ group, q }: { group: BottleGroup; q: string }) {
+/**
+ * One bottle in search results: identity + best in-stock price + Korea comparison + ranked store list.
+ * `admin` adds the "한국 가격 연결" action; `now` keeps relative times consistent within a render.
+ */
+export function BottleResult({ group, q, admin = false, now }: { group: BottleGroup; q: string; admin?: boolean; now: Date }) {
   const s = summarizeGroup(group);
   const ranks = new Map<number, number>();
   let n = 0;
@@ -46,6 +50,7 @@ export function BottleResult({ group, q }: { group: BottleGroup; q: string }) {
           )}
         </div>
       </div>
+      <KrCompareChip q={q} kr={group.kr} bottleKey={group.bottleKey} displayTitle={group.displayTitle} admin={admin} now={now} />
       <ol className="divide-y border-t" aria-label={group.displayTitle}>
         {head.map(line)}
       </ol>

@@ -8,7 +8,6 @@ import {
   summarizeGroup,
   activeFilterCount,
   searchHref,
-  compareTier,
 } from '@/lib/search-view';
 import type { BottleGroup, ListingRow } from '@/lib/search';
 import { getStore } from '@/lib/stores';
@@ -103,16 +102,5 @@ describe('searchHref', () => {
   });
   it('returns / with no params', () => {
     expect(searchHref({})).toBe('/');
-  });
-});
-
-describe('compareTier', () => {
-  it('classifies US-vs-Korea savings', () => {
-    expect(compareTier(0.35)).toBe('savings-big');
-    expect(compareTier(0.2)).toBe('savings-big');
-    expect(compareTier(0.1)).toBe('savings-small');
-    expect(compareTier(0.01)).toBe('same');
-    expect(compareTier(-0.01)).toBe('same');
-    expect(compareTier(-0.15)).toBe('worse');
   });
 });

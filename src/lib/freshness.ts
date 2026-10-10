@@ -2,9 +2,9 @@ import { ko } from '@/lib/i18n/ko';
 
 export const STALE_AFTER_MS = 86_400_000;
 
-export function freshness(checkedAt: Date, now: Date): { stale: boolean; label: string } {
+export function freshness(checkedAt: Date, now: Date, staleAfterMs = STALE_AFTER_MS): { stale: boolean; label: string } {
   const diff = Math.max(0, now.getTime() - checkedAt.getTime());
-  const stale = diff > STALE_AFTER_MS;
+  const stale = diff > staleAfterMs;
   const minutes = Math.floor(diff / 60_000);
   let label: string;
   if (minutes < 1) label = ko.freshness.justNow;

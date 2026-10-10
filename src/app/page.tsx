@@ -1,8 +1,10 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { connection } from 'next/server';
+import { cookies } from 'next/headers';
 import { ChevronDown, MapPin, Plane, SearchX, Store as StoreIcon, X } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
+import { ADMIN_COOKIE, isAdmin } from '@/lib/admin';
 import { SECTION_ROW_LIMIT, searchListings, type BottleGroup } from '@/lib/search';
 import { parseSearchForm } from '@/lib/search-form';
 import { activeFilterCount, capGroups, nextShowCount, parseShowCount, searchHref } from '@/lib/search-view';
@@ -121,11 +123,11 @@ function FilterChip({ href, label }: { href: string; label: string }) {
   );
 }
 
-function GroupList({ groups, q }: { groups: BottleGroup[]; q: string }) {
+function GroupList({ groups, q, admin, now }: { groups: BottleGroup[]; q: string; admin: boolean; now: Date }) {
   return (
     <div className="flex flex-col gap-4">
       {groups.map((g) => (
-        <BottleResult key={g.bottleKey} group={g} q={q} />
+        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} />
       ))}
     </div>
   );
@@ -149,7 +151,10 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   // Results show relative times ("3시간 전 확인"), so they must render per request.
   await connection();
 
-  const { main, ca } = await searchListings(await getDb(), params);
+  const [{ main, ca }, jar] = await Promise.all([searchListings(await getDb(), params), cookies()]);
+  // Admins see the "한국 가격 연결" action on each group; the cookie is re-checked by every action.
+  const admin = isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY);
+  const now = new Date();
   const none = main.length === 0 && ca.length === 0;
   // A whole-store list can exceed the per-section query limit: say so instead of implying that's everything.
   const truncated = [main, ca].some((sec) => sec.reduce((n, g) => n + g.rows.length, 0) >= SECTION_ROW_LIMIT);
@@ -256,7 +261,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                   {main.length === 0 ? (
                     <p className="rounded-2xl border border-dashed px-4 py-6 text-center text-muted-foreground">{ko.search.sectionEmpty}</p>
                   ) : (
-                    <GroupList groups={mainCap.visible} q={params.q} />
+                    <GroupList groups={mainCap.visible} q={params.q} admin={admin} now={now} />
                   )}
                   {mainCap.hiddenCount > 0 && (
                     <ShowMoreLink
@@ -291,7 +296,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                       <ChevronDown aria-hidden className="transition-transform group-open/ca:rotate-180" />
                     </summary>
                     <div className="flex flex-col gap-4">
-                      <GroupList groups={caCap.visible} q={params.q} />
+                      <GroupList groups={caCap.visible} q={params.q} admin={admin} now={now} />
                       {caCap.hiddenCount > 0 && (
                         <ShowMoreLink
                           href={searchHref(raw, { ca: String(nextShowCount(caShow, ca.length)) })}

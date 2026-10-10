@@ -1,9 +1,12 @@
 import { and, asc, desc, gte, ilike, inArray, lte, eq } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
-import { listings, type Listing } from '@/lib/db/schema';
+import { listings, type FxRate, type KrLink, type Listing } from '@/lib/db/schema';
 import { STORES, getStore, MAIN_REGIONS, type Region, type Store } from '@/lib/stores';
 import { withTaxCents } from '@/lib/money';
 import { normalizeText } from '@/lib/whisky/parse';
+import { getKrLinks } from '@/lib/krlinks';
+import { getLatestFx } from '@/lib/fx';
+import { compareKr } from '@/lib/compare';
 
 export interface SearchParams {
   q: string;
@@ -28,6 +31,12 @@ export interface BottleGroup {
   imageUrl: string | null;
   rows: ListingRow[];
   bestAvailableCents: number | null;
+  /**
+   * Korea (Dailyshot) comparison, present only when the bottle is linked.
+   * `compare` uses this section's cheapest in-stock tax-included price; it is null
+   * when the section has no in-stock row or no fx rate exists. `fx` is the rate used.
+   */
+  kr?: { link: KrLink; compare: ReturnType<typeof compareKr> | null; fx: FxRate | null };
 }
 
 export const SECTION_ROW_LIMIT = 500;
@@ -122,5 +131,19 @@ export async function searchListings(
     section(stores.filter((s) => MAIN_REGIONS.includes(s.region))),
     section(stores.filter((s) => !MAIN_REGIONS.includes(s.region))),
   ]);
+  await attachKr(db, [...main, ...ca]);
   return { main, ca };
+}
+
+/** Fills `group.kr` for linked bottles. Each group compares against its own section's best price. */
+async function attachKr(db: Db, groups: BottleGroup[]): Promise<void> {
+  if (groups.length === 0) return;
+  const [links, fx] = await Promise.all([getKrLinks(db, [...new Set(groups.map((g) => g.bottleKey))]), getLatestFx(db)]);
+  if (links.size === 0) return;
+  for (const g of groups) {
+    const link = links.get(g.bottleKey);
+    if (!link) continue;
+    const compare = g.bestAvailableCents !== null && fx ? compareKr(g.bestAvailableCents, fx.usdKrw, link.lowPriceKrw) : null;
+    g.kr = { link, compare, fx };
+  }
 }

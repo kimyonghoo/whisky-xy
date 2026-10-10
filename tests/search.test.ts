@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createTestDb } from './helpers/db';
-import { listings } from '@/lib/db/schema';
+import { listings, fxRates } from '@/lib/db/schema';
+import { upsertKrLink } from '@/lib/krlinks';
+import { compareKr } from '@/lib/compare';
 import { ilike } from 'drizzle-orm';
 import { searchListings, escapeLike, SECTION_ROW_LIMIT } from '@/lib/search';
 import { seed } from './helpers/seed';
@@ -123,5 +125,52 @@ describe('searchListings', () => {
     expect(await hit('a_b')).toEqual(['Und']);
     expect(await hit('%')).toEqual(['Raw']);
     expect(await hit('_')).toEqual(['Und']);
+  });
+});
+
+describe('searchListings Korea comparison', () => {
+  const now = new Date('2026-10-10T00:00:00Z');
+  const ds = (bottleKey: string, lowPriceKrw: number) => ({
+    bottleKey, productId: '12345', nameKo: '스태그', nameEn: 'Stagg', imageUrl: null,
+    price: { lowPriceKrw, highPriceKrw: null, offerCount: null },
+  });
+
+  it('attaches the Korea link and compares against the cheapest in-stock tax-included row', async () => {
+    const d = await createTestDb();
+    const stagg = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 10000 });
+    const jr = seed({ storeId: 'dewinespot', title: 'Stagg Jr Bourbon', priceCents: 8000, available: false });
+    await d.insert(listings).values([
+      stagg,
+      seed({ storeId: 'liquorcave', title: 'Stagg Bourbon', priceCents: 9000, available: false }),
+      jr,
+      seed({ storeId: 'dewinespot', title: 'Unlinked Rye', priceCents: 5000 }),
+    ]);
+    await upsertKrLink(d, ds(stagg.bottleKey, 649000), now);
+    await upsertKrLink(d, ds(jr.bottleKey, 300000), now);
+    await d.insert(fxRates).values({ date: '2026-10-10', usdKrw: 1380, fetchedAt: now });
+
+    const r = await searchListings(d, { q: 'stagg' });
+    const g = r.main.find((x) => x.bottleKey === stagg.bottleKey)!;
+    expect(g.kr?.link.lowPriceKrw).toBe(649000);
+    // cheapest in-stock = dewinespot $100 + NY tax = 10888 cents (sold-out liquorcave $90 ignored)
+    expect(g.kr?.compare).toEqual(compareKr(10888, 1380, 649000));
+    expect(g.kr?.compare?.verdict).toBe('must');
+    expect(g.kr?.fx?.usdKrw).toBe(1380);
+    const j = r.main.find((x) => x.bottleKey === jr.bottleKey)!;
+    expect(j.kr?.link).toBeDefined();
+    expect(j.kr?.compare).toBeNull();
+    const u = await searchListings(d, { q: 'unlinked' });
+    expect(u.main[0].kr).toBeUndefined();
+  });
+
+  it('compare is null when there is no fx rate', async () => {
+    const d = await createTestDb();
+    const s = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 10000 });
+    await d.insert(listings).values([s]);
+    await upsertKrLink(d, ds(s.bottleKey, 649000), now);
+    const r = await searchListings(d, { q: 'stagg' });
+    expect(r.main[0].kr?.link).toBeDefined();
+    expect(r.main[0].kr?.compare).toBeNull();
+    expect(r.main[0].kr?.fx).toBeNull();
   });
 });

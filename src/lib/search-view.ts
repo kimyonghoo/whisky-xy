@@ -85,17 +85,3 @@ export function searchHref(
   const qs = usp.toString();
   return qs ? `/?${qs}` : '/';
 }
-
-export type CompareTier = 'savings-big' | 'savings-small' | 'same' | 'worse';
-
-/**
- * Korea-vs-US price comparison tier (Task 15 chip).
- * `savingsRatio` = (koreaKrw - usKrw) / koreaKrw; positive means buying in the US is cheaper.
- * Thresholds are provisional product defaults (see docs/design-system.md).
- */
-export function compareTier(savingsRatio: number): CompareTier {
-  if (savingsRatio >= 0.2) return 'savings-big';
-  if (savingsRatio >= 0.03) return 'savings-small';
-  if (savingsRatio > -0.03) return 'same';
-  return 'worse';
-}

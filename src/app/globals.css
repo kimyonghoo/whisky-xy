@@ -60,6 +60,30 @@
   --color-info-bg: var(--info-bg);
   --color-info-line: var(--info-line);
 
+  /* Korea-vs-US verdicts (5 ordinal tiers): solid = badge fill / bar, -bg band tint, -line border, -ink text on tint. */
+  --color-verdict-must: var(--verdict-must);
+  --color-verdict-must-bg: var(--verdict-must-bg);
+  --color-verdict-must-line: var(--verdict-must-line);
+  --color-verdict-must-ink: var(--verdict-must-ink);
+  --color-verdict-big: var(--verdict-big);
+  --color-verdict-big-bg: var(--verdict-big-bg);
+  --color-verdict-big-line: var(--verdict-big-line);
+  --color-verdict-big-ink: var(--verdict-big-ink);
+  --color-verdict-good: var(--verdict-good);
+  --color-verdict-good-bg: var(--verdict-good-bg);
+  --color-verdict-good-line: var(--verdict-good-line);
+  --color-verdict-good-ink: var(--verdict-good-ink);
+  --color-verdict-small: var(--verdict-small);
+  --color-verdict-small-bg: var(--verdict-small-bg);
+  --color-verdict-small-line: var(--verdict-small-line);
+  --color-verdict-small-ink: var(--verdict-small-ink);
+  --color-verdict-worse: var(--verdict-worse);
+  --color-verdict-worse-bg: var(--verdict-worse-bg);
+  --color-verdict-worse-line: var(--verdict-worse-line);
+  --color-verdict-worse-ink: var(--verdict-worse-ink);
+  --color-verdict-must-glow: var(--verdict-must-glow);
+  --color-kr-bar: var(--kr-bar);
+
   --radius-sm: calc(var(--radius) * 0.5);
   --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
@@ -123,6 +147,31 @@
   --info-bg: #e9f1f9;
   --info-line: #bcd3ea;
   --destructive: #b42318;
+
+  /* Korea comparison verdicts (docs/design-system.md §3a). All text pairs ≥ 4.5:1, bars ≥ 3:1 on white. */
+  --verdict-must: #0f5130;
+  --verdict-must-bg: #fff4d9;
+  --verdict-must-line: #d9962b;
+  --verdict-must-ink: #0f5130;
+  --verdict-must-glow: #ffe7a8;
+  --verdict-big: #1e7a42;
+  --verdict-big-bg: #e8f4ec;
+  --verdict-big-line: #8fc7a3;
+  --verdict-big-ink: #1a6638;
+  --verdict-good: #4a9466;
+  --verdict-good-bg: #f3f9f5;
+  --verdict-good-line: #b5dbc2;
+  --verdict-good-ink: #1a6638;
+  --verdict-small: #8c8178;
+  --verdict-small-bg: #f5f1eb;
+  --verdict-small-line: #dcd3c7;
+  --verdict-small-ink: #5f574f;
+  --verdict-worse: #b42318;
+  --verdict-worse-bg: #fdecec;
+  --verdict-worse-line: #f1b8b8;
+  --verdict-worse-ink: #a11c1c;
+  /* Korea reference bar on /compare: slate, a different hue from every verdict. */
+  --kr-bar: #55718f;
 
   --radius: 0.75rem;
 

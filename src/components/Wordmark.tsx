@@ -20,10 +20,10 @@ export function BrandMark({ className }: { className?: string }) {
 
 export function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="flex items-center gap-2.5">
-      <BrandMark />
+    <span className="flex items-center gap-2 sm:gap-2.5">
+      <BrandMark className="max-sm:size-7" />
       <span className="flex flex-col leading-none">
-        <span className="text-[0.9375rem] font-extrabold tracking-tight sm:text-base">{ko.site.title}</span>
+        <span className="text-[0.875rem] font-extrabold tracking-tight whitespace-nowrap sm:text-base">{ko.site.title}</span>
         {!compact && (
           <span className="mt-1 hidden text-[0.6875rem] font-semibold tracking-[0.14em] text-muted-foreground sm:block">
             {ko.site.wordmarkSub}
