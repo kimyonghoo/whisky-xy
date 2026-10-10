@@ -74,7 +74,7 @@ export function StoreLine({ row, rank, bottleKey, q }: { row: ListingRow; rank: 
           taxIncludedCents={row.taxIncludedCents}
           emphasis="tax"
           size="sm"
-          caption={null}
+          caption={ko.row.taxIncludedCaption}
           align="end"
           dimmed={!row.available}
         />

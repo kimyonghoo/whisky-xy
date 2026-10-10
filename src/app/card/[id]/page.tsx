@@ -150,9 +150,9 @@ async function CardView({ params }: Props) {
             <MapPin aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
             <span lang="en">{store.address}</span>
           </p>
-          <p className="flex gap-2 text-base">
-            <Phone aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-            <a href={tel} className="font-medium underline-offset-4 tabular hover:underline">
+          <p className="flex items-center gap-2 text-base">
+            <Phone aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+            <a href={tel} className="inline-flex items-center font-medium underline-offset-4 tabular hover:underline pointer-coarse:min-h-11 pointer-coarse:min-w-11">
               {store.phone}
             </a>
           </p>

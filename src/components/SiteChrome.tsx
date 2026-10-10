@@ -10,7 +10,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" aria-label={ko.nav.home} className="-m-1 rounded-lg p-1">
+        <Link href="/" aria-label={ko.nav.home} className="-m-1 flex items-center rounded-lg p-1 pointer-coarse:min-h-11">
           <Wordmark />
         </Link>
         <nav aria-label={ko.nav.label}>

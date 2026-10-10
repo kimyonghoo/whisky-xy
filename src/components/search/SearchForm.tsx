@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, LoaderCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { searchHref } from '@/lib/search-view';
@@ -25,7 +25,8 @@ const chip =
 
 /**
  * Search form. Works as a plain GET form without JS; with JS it navigates in a
- * transition (results dim while loading) and applies select/checkbox changes instantly.
+ * transition (results dim while loading). The in-stock chip applies instantly; fields inside the
+ * 필터 popover apply only on 적용 so several can be set together. Esc / outside click close the popover.
  */
 export function SearchForm({
   values,
@@ -40,6 +41,33 @@ export function SearchForm({
   const pending = nav?.pending ?? false;
   const formRef = useRef<HTMLFormElement>(null);
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const summaryRef = useRef<HTMLElement>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  function closeFilters(returnFocus: boolean) {
+    if (detailsRef.current) detailsRef.current.open = false;
+    if (returnFocus) summaryRef.current?.focus();
+  }
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeFilters(true);
+      }
+    };
+    const onPointer = (e: PointerEvent) => {
+      // Clicking elsewhere closes without stealing focus from what was clicked.
+      if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) closeFilters(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer);
+    };
+  }, [filtersOpen]);
   const hero = variant === 'hero';
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -55,14 +83,15 @@ export function SearchForm({
       e.currentTarget.querySelector<HTMLInputElement>('input[name="q"]')?.focus();
       return;
     }
-    if (detailsRef.current) detailsRef.current.open = false;
+    if (detailsRef.current?.open) closeFilters(true);
     // A new search always starts from the first page of each section.
     nav.navigate(searchHref({ q, region: get('region'), min: get('min'), max: get('max'), inStock: get('inStock') }));
   }
 
   function onChange(e: React.ChangeEvent<HTMLFormElement>) {
     const t = e.target as unknown as HTMLInputElement | HTMLSelectElement;
-    const instant = t.tagName === 'SELECT' || (t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'checkbox');
+    // Only the in-stock chip (outside the popover) applies instantly.
+    const instant = t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'checkbox' && !t.closest('details');
     const q = formRef.current?.querySelector<HTMLInputElement>('input[name="q"]')?.value.trim();
     if (instant && q) formRef.current?.requestSubmit();
   }
@@ -117,8 +146,8 @@ export function SearchForm({
             {ko.search.inStockOnly}
           </label>
 
-          <details ref={detailsRef} className="group/filters">
-            <summary className={cn(chip, 'list-none group-open/filters:border-foreground/40 group-open/filters:bg-muted')}>
+          <details ref={detailsRef} className="group/filters" onToggle={(e) => setFiltersOpen(e.currentTarget.open)}>
+            <summary ref={summaryRef} className={cn(chip, 'list-none group-open/filters:border-foreground/40 group-open/filters:bg-muted')}>
               <SlidersHorizontal aria-hidden className="size-4" />
               {ko.search.filters}
               {filterCount > 0 && (

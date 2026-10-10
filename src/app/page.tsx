@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { connection } from 'next/server';
-import { MapPin, Plane, SearchX, X } from 'lucide-react';
+import { ChevronDown, MapPin, Plane, SearchX, X } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
 import { searchListings, type BottleGroup } from '@/lib/search';
 import { parseSearchForm } from '@/lib/search-form';
@@ -13,7 +13,6 @@ import { buttonVariants } from '@/components/ui/button';
 import { BottleResult } from '@/components/BottleResult';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHeader } from '@/components/SectionHeader';
-import { SearchSkeleton } from '@/components/Skeletons';
 import { ResultsRegion, SearchShell } from '@/components/search/SearchShell';
 import { SearchForm, type SearchFormValues } from '@/components/search/SearchForm';
 import { ShowMoreLink } from '@/components/search/ShowMoreLink';
@@ -22,11 +21,15 @@ type RawParams = Record<string, string | string[] | undefined>;
 
 export default function Home({ searchParams }: { searchParams: Promise<RawParams> }) {
   return (
-    <Suspense fallback={<SearchSkeleton />}>
+    // Fallback = the landing hero, so `/` (the common cold load) never flashes a results skeleton.
+    // In-app searches navigate in a transition and keep the old results dimmed instead.
+    <Suspense fallback={<Hero values={EMPTY_VALUES} />}>
       <SearchView searchParams={searchParams} />
     </Suspense>
   );
 }
+
+const EMPTY_VALUES: SearchFormValues = { q: '', region: '', min: '', max: '', inStock: false };
 
 function firstString(v: string | string[] | undefined): string {
   return (Array.isArray(v) ? v[0] : v) ?? '';
@@ -181,7 +184,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                 <div className="flex flex-col gap-3">
                   <p>{ko.search.noResultsHint(params.q)}</p>
                   <ul className="flex flex-col gap-1 text-left text-sm">
-                    {ko.search.noResultsTips.map((t) => (
+                    {[...ko.search.noResultsTips, ...(activeFilterCount(params) > 0 ? [ko.search.noResultsFiltered] : [])].map((t) => (
                       <li key={t} className="flex gap-2">
                         <span aria-hidden className="text-primary">
                           •
@@ -245,10 +248,12 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                       className={buttonVariants({
                         variant: 'outline',
                         size: 'lg',
-                        className: 'w-full list-none group-open/ca:hidden',
+                        className: 'w-full list-none group-open/ca:mb-4',
                       })}
                     >
-                      {ko.search.caToggle(ca.length)}
+                      <span className="group-open/ca:hidden">{ko.search.caToggle(ca.length)}</span>
+                      <span className="hidden group-open/ca:inline">{ko.search.caCollapse}</span>
+                      <ChevronDown aria-hidden className="transition-transform group-open/ca:rotate-180" />
                     </summary>
                     <div className="flex flex-col gap-4">
                       <GroupList groups={caCap.visible} q={params.q} />

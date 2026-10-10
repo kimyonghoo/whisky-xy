@@ -41,7 +41,7 @@ All pairs below meet **WCAG AA (≥ 4.5:1)** for body text. Tailwind classes are
 | `primary-hover` | `#7f3c0d` | hover |
 | `primary-soft` | `#f7eadb` | best-row highlight, hero wash, empty-state icon disc |
 | `honey` | `#d9962b` | decorative only, **never text** |
-| `ring` | `#c2741f` | focus outline (≥ 3:1 against bg) |
+| `ring` | `#b0601a` | focus outline: ≥ 3.9:1 on every surface token (white 4.6, paper 4.4, muted 4.0, primary-soft 3.9, all status tints ≥ 3.9) |
 
 **Dark mode is intentionally deferred.**
 - `color-scheme: light` is declared, and no `.dark` tokens ship.
@@ -163,7 +163,7 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 
 | State | Pattern |
 |---|---|
-| **First load** | The route's `<Suspense fallback>` renders a **layout-shaped skeleton** (`SearchSkeleton`, `CardSkeleton`) with an `sr-only role="status"` message. Never a bare "로딩 중" line. |
+| **First load** | The route's `<Suspense fallback>` renders the **most likely final layout**. On search, the fallback *is* the landing hero (a cold load of `/` is the common case, and nothing flashes). On the buy card, it is `CardSkeleton`, a layout-shaped skeleton with an `sr-only role="status"` message. Never a bare "로딩 중" line. |
 | **In-page navigation** (new search, filter change) | Keep the old results visible, dim them (`opacity-50`, `aria-busy`), and show a spinner in the submit button (`SearchShell` + `ResultsRegion`). Content never flashes away. |
 | **Incremental load** ("더 보기") | Link-level spinner via `useLinkStatus`; scroll position is kept. |
 | **Action in progress** (recheck) | Button disabled with a spinning icon and the verb "확인 중…". Result line in `role="status"`. |
@@ -182,6 +182,8 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 - `emphasis="tax"` (lists and rankings): the tax-included price is big, with `세전 $X` below. Lists are sorted by tax-included price, so the big number must be the sort key.
 - `emphasis="shelf"` (buy card, anything used in the store): the pre-tax shelf price is big, captioned `매장 표시 가격 (세전)`, with `세금 포함 약 $Y` below. It matches the tag the sister sees on the shelf.
 - When the item is sold out, the price stays visible but dimmed (`dimmed`). It is never struck through, because it is the last known price, not a wrong one.
+- **Every big price carries a label.** Lists put a small `세금 포함 약` caption above the big number (`ko.row.taxIncludedCaption`); the bottle summary says `최저가 · 세금 포함 약`. The card says `매장 표시 가격 (세전)` above, and `세금 포함 약 $Y` below.
+- **Rule of thumb:** comparing or ranking → tax-included is big. Standing in front of a shelf → pre-tax is big.
 - Format with `formatUsd`. Money is integer cents everywhere.
 
 ### 8.2 Store row: `StoreLine`
@@ -205,7 +207,13 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 ### 8.5 Section headers: `SectionHeader`
 - `primary`: copper icon tile, 20–24 px title, count chip, one-line sub. Used for the main (Brooklyn + NJ) section.
 - `secondary`: neutral icon tile, a smaller title, placed **inside a sunken panel** (`bg-muted/60 rounded-3xl`). Used for "LA 갈 때" and any other out-of-region or optional content.
-- Secondary sections may start collapsed (`<details>`) when the primary section has results.
+- Secondary sections may start collapsed (`<details>`) when the primary section has results. The toggle stays visible while open ("…접기") so they can be collapsed again.
+
+### 8.5a Search filters
+- The in-stock chip sits outside the popover and applies instantly.
+- Fields inside the 필터 popover (region, min, max) apply **only on 적용**, so several can be set together.
+- Esc closes the popover and returns focus to its trigger. An outside click closes it without moving focus.
+- Active filters are shown as removable chips.
 
 ### 8.6 Data-freshness indicator: `FreshnessIndicator`
 - **Fresh** (≤ 24 h): quiet clock icon + "N시간 전 확인" in muted text.
@@ -246,7 +254,9 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 
 ## 10. Accessibility
 - **Contrast:** AA for all text (§2–3). Never put text on `honey`.
-- **Focus:** a global 3 px `ring`-coloured `:focus-visible` outline with 2 px offset. Never remove it without a replacement.
+- **Focus:** a global 3 px `ring`-coloured `:focus-visible` outline with 2 px offset. Because of the offset, the outline is drawn against the surrounding surface, and `#b0601a` is ≥ 3.9:1 on every surface token.
+  - Primitives must **not** add `outline-none` / `outline-hidden` or translucent `ring-ring/xx` focus rings. They fail 3:1.
+  - The only exceptions are a full-contrast replacement (e.g. the ClerkMode close button's 4 px black ring on white) and menu items, which draw an inset `outline-ring`.
 - **Touch targets:** at least 44 × 44 px on coarse pointers (built into `Button`, chips, nav links and summaries).
 - **Landmarks:**
   - skip link → `#main`,
@@ -267,7 +277,7 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 ---
 
 ## 11. Korean copy guidelines
-- Use **해요체**, short and concrete: "재고 있어요", "방금 확인했어요". Avoid stiff 합니다체, except for legacy strings that tests rely on.
+- Use **해요체**, short and concrete: "재고 있어요", "방금 확인했어요". Don't use 합니다체 anywhere in the UI.
 - **Say what to do next:** "가기 전에 전화로 확인하세요", not just "재고 정보 부정확".
 - **Warnings are calm and specific.** No exclamation marks or ALL-CAPS. State the cause, then the action.
 - **Numbers and units:**

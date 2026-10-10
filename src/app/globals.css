@@ -99,7 +99,7 @@
   --primary-foreground: #ffffff;
   --primary-soft: #f7eadb;
   --honey: #d9962b;
-  --ring: #c2741f;
+  --ring: #b0601a;
 
   /* Status */
   --instock: #1e7a42;
@@ -139,7 +139,7 @@
   --sidebar-accent: #f3eee6;
   --sidebar-accent-foreground: #2b241d;
   --sidebar-border: #e7dfd3;
-  --sidebar-ring: #c2741f;
+  --sidebar-ring: #b0601a;
 }
 
 @layer base {
