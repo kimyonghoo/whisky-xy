@@ -29,6 +29,10 @@ jobs:
       - run: npm run db:migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Idempotent; must run before crawl, which rewrites bottle_key and would orphan kr_links.
+      - run: npm run rekey
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - run: npm run crawl
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

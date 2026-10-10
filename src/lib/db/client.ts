@@ -44,7 +44,8 @@ function acquireLock(): void {
     if (Number.isInteger(holder) && holder !== process.pid && pidAlive(holder)) {
       throw new Error(
         `Local DB .data/pglite is already open in another process (pid ${holder}). ` +
-          'Stop that process (Ctrl+C) first; two processes on one PGlite dir corrupt it.',
+          'Stop that process (Ctrl+C) first; two processes on one PGlite dir corrupt it. ' +
+          'If no dev server or crawl is running (the pid was reused), delete .data/pglite.lock.',
       );
     }
     // Stale lock from a process that is gone: take it over.

@@ -47,7 +47,14 @@ export async function recheckListing(
   }
 
   // Per-store budget shared by card opens and "다시 확인" across all instances (I3).
-  if (!(await claimLiveCheck(db, store.id, now))) {
+  // Fail closed (show stored data) if the budget table is unavailable, e.g. deploy before migrate.
+  let claimed = false;
+  try {
+    claimed = await claimLiveCheck(db, store.id, now);
+  } catch (err) {
+    console.warn(`recheck: live budget unavailable: ${(err as Error).message}`);
+  }
+  if (!claimed) {
     return { listing, status: 'throttled' };
   }
 

@@ -48,7 +48,7 @@ npm run dev                  # http://localhost:3000
 
 **로컬 DB(PGlite) 주의:** `.data/pglite`는 한 번에 **한 프로세스만** 열 수 있습니다. 두 프로세스(예: `npm run dev`가 켜진 상태에서 `npm run crawl`, 또는 `next dev`와 `next start` 동시 실행)가 같은 폴더에 쓰면 DB가 깨집니다("could not locate a valid checkpoint record"). 이제는 `.data/pglite.lock`으로 두 번째 프로세스가 열지 못하게 막고 이유를 알려 줍니다. 크롤 전에 dev 서버를 **Ctrl+C**로 끄고, `node.exe`를 작업 관리자로 강제 종료하지 마세요. 그래도 깨졌다면 `.data/pglite`를 다른 이름으로 옮기고(삭제 대신) `npm run crawl`로 새로 채우세요.
 
-**병 묶음 키를 바꾼 뒤(`npm run rekey`):** `bottleKey()` 규칙이 바뀌면 기존 행의 `bottle_key`와 한국 가격 연결이 옛 키에 남습니다. `npm run rekey`는 모든 행의 키를 제목에서 다시 계산하고, `kr_links`를 새 키로 옮깁니다. 두 연결이 같은 새 키로 합쳐지면 **가장 최근에 확인한 연결을 남기고** 나머지는 지운 뒤 로그에 남깁니다(데일리샷 상품 ID 포함). 키가 바뀌면 예전에 공유한 `/map?bottle=` 링크는 열리지 않을 수 있습니다. 배포 DB에서는 `DATABASE_URL`을 셸 환경 변수로 주고 실행하세요.
+**병 묶음 키를 바꾼 뒤(`npm run rekey`):** `bottleKey()` 규칙이 바뀌면 기존 행의 `bottle_key`와 한국 가격 연결이 옛 키에 남습니다. `npm run rekey`는 모든 행의 키를 제목에서 다시 계산하고, `kr_links`를 새 키로 옮깁니다. 두 연결이 같은 새 키로 합쳐지면 **가장 최근에 확인한 연결을 남기고** 나머지는 지운 뒤 로그에 남깁니다(데일리샷 상품 ID 포함). 키가 바뀌면 예전에 공유한 `/map?bottle=` 링크는 열리지 않을 수 있습니다. 배포 DB에서는 crawl 워크플로가 크롤링 직전에 매번 자동으로 실행합니다(크롤링이 먼저 돌면 옛 키가 사라져 연결이 고아가 되므로 순서가 중요합니다).
 
 | 명령 | 설명 |
 |---|---|
