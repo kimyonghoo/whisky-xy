@@ -1,50 +1,81 @@
-# 🥃 US Whiskey Explorer (가칭)
+# 위스키 가격 포털 (Whisky Portal)
 
-## 📌 프로젝트 개요
-미국 내 주요 주류 판매점(Total Wine, BevMo 등)의 웹 데이터를 크롤링하여, **위스키 가격, 재고, 판매처 위치(X/Y 좌표)** 를 인터랙티브 지도 위에 직관적으로 제공하는 Next.js 기반 포털 서비스입니다.
+미국 동부(브루클린·뉴저지)와 LA(CA) 매장의 위스키 **가격과 재고**를 한 화면에서 비교하고, 한국 가격(데일리샷)과 견줘 얼마나 이득인지 보여주는 Next.js 포털입니다. 맨해튼에 사는 누나에게 구매를 부탁하는 흐름을 위해, 위스키를 모르는 사람도 헷갈리지 않는 **구매 카드 링크**와 관심 병 **텔레그램 알림**을 제공합니다. 제품은 상용 웹 앱으로 키울 예정이라 UI는 [`docs/design-system.md`](docs/design-system.md)를 따릅니다.
 
-## 🛠 기술 스택 (Tech Stack)
-- **Frontend/Backend:** Next.js (App Router), React, TypeScript
-- **Styling:** Tailwind CSS, shadcn/ui
-- **Map UI:** Mapbox GL JS 또는 Google Maps API (React-map-gl)
-- **Data Crawling:** Puppeteer, Cheerio (Node.js 기반 크롤러) 또는 Python(BeautifulSoup/Selenium) 마이크로서비스
-- **Database:** Supabase (PostgreSQL + PostGIS 공간 데이터 처리) 또는 MongoDB
+설계 배경은 [`docs/superpowers/specs/2026-10-10-whisky-portal-design.md`](docs/superpowers/specs/2026-10-10-whisky-portal-design.md), 배포 절차는 [`docs/SETUP.md`](docs/SETUP.md)에 있습니다.
 
-## ✨ 핵심 기능 (Core Features)
+## 기술 스택
 
-### 1. 🗺️ 인터랙티브 위스키 맵 (Whiskey Map)
-- 미국 전역의 위스키 판매점 위치를 마커(좌표)로 표시.
-- 지도 확대/축소(Zoom) 및 드래그(Pan) 기능.
-- 지역별(State/City) 클러스터링 기능 (마커가 많을 경우 그룹화).
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui(Base UI)
+- DB: Postgres (Supabase 풀러) + Drizzle ORM. 로컬에서는 PGlite(파일 DB)라서 DB 설치가 필요 없음
+- 크롤러/알림: Node 스크립트(`scripts/crawl.ts`), GitHub Actions로 6시간마다 실행, 텔레그램 Bot API
+- 지도: Leaflet + react-leaflet
+- 테스트: Vitest
 
-### 2. 📊 상세 재고 목록 뷰 (Detail & Inventory List)
-- 지도에서 특정 마커(판매점)를 클릭하면, 화면 측면(Sidebar)이나 하단에 해당 매장의 위스키 정보 노출.
-- **표시 정보:** 위스키 이름, 가격($), 재고 상태(In Stock / Low Stock / Out of Stock), 용량(750ml 등).
-- 가격순, 이름순 정렬 및 검색 필터 기능.
+## 매장
 
-### 3. 🤖 자동화된 크롤링 파이프라인
-- 타겟 웹사이트의 공개된 HTML 데이터를 주기적으로 스크래핑.
-- Vercel Cron Jobs 또는 AWS EventBridge를 활용해 매일/매주 데이터 최신화.
+모두 Shopify 공개 엔드포인트(`/products.json`, `/products/<handle>.js`, `/cart.js`)만 사용합니다. 봇 차단을 우회하지 않습니다.
 
-## 🗄️ 데이터베이스 스키마 설계 (예시)
+| 지역 | 매장 |
+|---|---|
+| 브루클린 | De Wine Spot, The Liquor Store, Grain & Vine, Slope Cellars |
+| 뉴저지 | Liquor Cave, Wine Chateau, CoolVines |
+| CA (LA 갈 때) | Flask Fine Wine & Whisky, Bitters & Bottles (온라인 주문 전용) |
 
-**1. `stores` (판매점 테이블)**
-- `id` (UUID)
-- `name` (String) - 매장명 (예: Total Wine Brooklyn)
-- `lat` (Float) - 위도 (Y 좌표)
-- `lng` (Float) - 경도 (X 좌표)
-- `state` (String) - 주 (예: NY, CA)
+매장 설정(주소, 좌표, 전화, 세율, 재고 신뢰도)은 `src/lib/stores.ts`에 있습니다. 한국 가격은 데일리샷(`/m/search/result`, `/m/item/<id>`만 사용)에서 가져옵니다.
 
-**2. `whiskey_inventory` (재고 테이블)**
-- `id` (UUID)
-- `store_id` (Foreign Key)
-- `brand` (String) - 브랜드 (예: Macallan, Buffalo Trace)
-- `name` (String) - 상세 제품명 (예: Blanton's Single Barrel)
-- `price` (Float) - 가격
-- `in_stock` (Boolean) - 재고 여부
-- `last_updated` (Timestamp) - 크롤링 최신화 시간
+## 화면
 
-## 🚀 향후 확장 계획 (Next Steps)
-1. **유저 알림 기능:** 특정 희귀 위스키(예: Pappy Van Winkle) 입고 시 이메일/푸시 알림.
-2. **가격 추이 차트:** 시간에 따른 위스키 가격 변동 그래프 제공.
-3. **사용자 리뷰/평점:** 판매점 또는 특정 병에 대한 유저 커뮤니티 기능.
+| 경로 | 내용 |
+|---|---|
+| `/` | 병 검색. 같은 병끼리 묶어 가격·재고·확인 시각 표시. 기본은 브루클린+뉴저지, CA는 "LA 갈 때" 섹션으로 분리. 연결된 병에는 한국 가격 비교 칩 |
+| `/card/[id]` | 누나용 구매 카드(영어). 지금 다시 확인, 전화, 길찾기, 점원에게 보여주기 모드, 카톡 미리보기 OG |
+| `/watchlist` | 관심 목록(관리자 키 필요) |
+| `/map` | 매장 지도. `?bottle=<key>`로 그 병이 있는 매장만 표시 |
+| `/link-kr` | 미국 병과 데일리샷 상품 연결(관리자 키 필요) |
+| `/compare` | 한국 대비 이득 순위(막대 비교) |
+
+## 로컬 개발
+
+```bash
+npm install
+cp .env.example .env.local   # 필요한 값만 채우기. 전부 비워도 동작
+npm run crawl                # 매장 크롤링 + 환율 + 한국 가격 갱신
+npm run dev                  # http://localhost:3000
+```
+
+`DATABASE_URL`을 비워 두면 `.data/pglite`에 로컬 DB가 만들어지므로 별도 DB가 필요 없습니다. `CRAWL_ONLY=dewinespot,flask npm run crawl`처럼 특정 매장만 돌릴 수도 있습니다. 텔레그램 값이 없으면 알림은 콘솔에 출력됩니다.
+
+| 명령 | 설명 |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js 개발 / 빌드 / 실행 |
+| `npm run crawl` | 크롤러 1회 실행 |
+| `npm test` | Vitest |
+| `npm run lint` | ESLint |
+| `npm run db:generate` / `db:migrate` | Drizzle 마이그레이션 생성 / 적용 (`DATABASE_URL` 필요) |
+
+## 환경 변수
+
+`.env.example`의 모든 변수입니다. 비밀 값은 커밋하지 말고 `.env.local`, Vercel, GitHub Secrets에만 넣으세요.
+
+| 변수 | 필수 | 설명 |
+|---|---|---|
+| `DATABASE_URL` | 배포 시 필수 | Supabase **Transaction pooler**(포트 6543) 연결 문자열. 비우면 로컬 PGlite 사용 |
+| `TELEGRAM_BOT_TOKEN` | 알림 사용 시 | @BotFather가 발급한 봇 토큰 |
+| `TELEGRAM_CHAT_IDS` | 알림 사용 시 | 알림을 받을 채팅 ID, 쉼표로 구분 |
+| `SITE_URL` | 권장 | 공개 사이트 주소. 알림의 카드 링크와 크롤러 User-Agent에 사용 |
+| `ADMIN_KEY` | 관리 화면 사용 시 | `/watchlist`, `/link-kr` 보호용 비밀 키. 긴 무작위 문자열로 만들 것(아래 참고). 비어 있으면 관리 화면은 열리지 않음 |
+| `NEXT_PUBLIC_MAP_TILE_URL` | 공개 출시 전 필수 | 지도 타일 URL(`https://.../{z}/{x}/{y}...` 형식). 비우면 OpenStreetMap 공개 타일 |
+| `NEXT_PUBLIC_MAP_TILE_ATTRIBUTION` | 타일 URL 설정 시 | 위 타일 제공자가 요구하는 출처 표기(일반 텍스트) |
+
+`ADMIN_KEY` 생성 예:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+**지도 타일 주의:** OpenStreetMap 공개 타일은 개발과 소규모 사용만 허용하며, 상용 서비스나 많은 트래픽에는 쓸 수 없습니다(OSM 타일 사용 정책). 공개 출시 전에 상용 타일 제공자를 정해 `NEXT_PUBLIC_MAP_TILE_URL`과 `NEXT_PUBLIC_MAP_TILE_ATTRIBUTION`을 설정하세요. 두 값은 `NEXT_PUBLIC_` 접두사라 **빌드 시점에 코드에 들어가므로**, 값을 바꾸면 Vercel에서 다시 배포해야 합니다.
+
+## 배포
+
+[`docs/SETUP.md`](docs/SETUP.md)를 따라 Supabase, 텔레그램 봇, GitHub Actions, Vercel을 차례로 설정합니다.
