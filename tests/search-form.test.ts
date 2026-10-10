@@ -22,6 +22,13 @@ describe('parseSearchForm', () => {
       q: 'stagg', region: 'ca', inStockOnly: true, minCents: 1000, maxCents: 9999,
     });
   });
+  it('accepts only known store ids', () => {
+    expect(parseSearchForm({ store: 'flask' })).toEqual({ q: '', storeId: 'flask' });
+    expect(parseSearchForm({ q: 'stagg', store: ['dewinespot', 'flask'] })).toEqual({ q: 'stagg', storeId: 'dewinespot' });
+    expect(parseSearchForm({ store: 'nope' })).toEqual({ q: '' });
+    expect(parseSearchForm({ store: '' })).toEqual({ q: '' });
+    expect(parseSearchForm({ store: "flask' OR 1=1" })).toEqual({ q: '' });
+  });
   it('ignores invalid region and handles arrays', () => {
     expect(parseSearchForm({ q: ['a', 'b'], region: 'zz' })).toEqual({ q: 'a' });
   });

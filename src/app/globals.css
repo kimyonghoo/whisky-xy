@@ -185,6 +185,41 @@
   }
 }
 
+/*
+ * Leaflet (map page). leaflet.css is unlayered, so it outranks Tailwind's layered utilities.
+ * These rules use higher specificity to restyle Leaflet's chrome, and `revert-layer` to hand
+ * link colours inside our React popups back to the utility classes.
+ */
+div.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--muted);
+}
+.leaflet-container .map-popup a {
+  color: revert-layer;
+}
+.leaflet-container .leaflet-popup-content-wrapper {
+  border-radius: 1rem;
+  box-shadow: var(--shadow-raised);
+}
+.leaflet-container .leaflet-popup-content {
+  margin: 1rem;
+  line-height: 1.5;
+}
+/* 44px close target on touch screens. */
+.leaflet-container .leaflet-popup a.leaflet-popup-close-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  font: 1.5rem/2.75rem var(--font-sans);
+  color: var(--muted-foreground);
+}
+.leaflet-container .leaflet-popup a.leaflet-popup-close-button:hover {
+  color: var(--foreground);
+}
+.leaflet-container .leaflet-control-attribution {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

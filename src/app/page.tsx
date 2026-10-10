@@ -1,18 +1,20 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { connection } from 'next/server';
-import { ChevronDown, MapPin, Plane, SearchX, X } from 'lucide-react';
+import { ChevronDown, MapPin, Plane, SearchX, Store as StoreIcon, X } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
-import { searchListings, type BottleGroup } from '@/lib/search';
+import { SECTION_ROW_LIMIT, searchListings, type BottleGroup } from '@/lib/search';
 import { parseSearchForm } from '@/lib/search-form';
 import { activeFilterCount, capGroups, nextShowCount, parseShowCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
-import { REGION_LABEL, STORES, type Region } from '@/lib/stores';
+import { MAIN_REGIONS, REGION_LABEL, STORES, getStore, type Region, type Store } from '@/lib/stores';
 import { buttonVariants } from '@/components/ui/button';
 import { BottleResult } from '@/components/BottleResult';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHeader } from '@/components/SectionHeader';
+import { StatusBadge } from '@/components/StatusBadge';
+import { RegionChip } from '@/components/StoreLine';
 import { ResultsRegion, SearchShell } from '@/components/search/SearchShell';
 import { SearchForm, type SearchFormValues } from '@/components/search/SearchForm';
 import { ShowMoreLink } from '@/components/search/ShowMoreLink';
@@ -138,14 +140,19 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
     min: firstString(raw.min),
     max: firstString(raw.max),
     inStock: Boolean(params.inStockOnly),
+    store: params.storeId,
   };
+  const store = params.storeId ? getStore(params.storeId) : undefined;
 
-  if (!params.q) return <Hero values={values} />;
+  // `?store=` without a query lists that store's whole catalogue (capped per section like any search).
+  if (!params.q && !store) return <Hero values={values} />;
   // Results show relative times ("3시간 전 확인"), so they must render per request.
   await connection();
 
   const { main, ca } = await searchListings(await getDb(), params);
   const none = main.length === 0 && ca.length === 0;
+  // A whole-store list can exceed the per-section query limit: say so instead of implying that's everything.
+  const truncated = [main, ca].some((sec) => sec.reduce((n, g) => n + g.rows.length, 0) >= SECTION_ROW_LIMIT);
   const panelFilters = activeFilterCount(params) - (params.inStockOnly ? 1 : 0);
 
   // Rendering is capped per section; the query itself is unchanged.
@@ -153,8 +160,9 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   const caShow = parseShowCount(raw.ca);
   const mainCap = capGroups(main, mainShow);
   const caCap = capGroups(ca, caShow);
-  const showMain = main.length > 0 || params.region !== 'ca';
-  const caOpen = main.length === 0 || params.region === 'ca' || raw.ca !== undefined;
+  const storeInMain = store ? MAIN_REGIONS.includes(store.region) : null;
+  const showMain = main.length > 0 || (storeInMain ?? params.region !== 'ca');
+  const caOpen = main.length === 0 || params.region === 'ca' || storeInMain === false || raw.ca !== undefined;
 
   const chips: { label: string; href: string }[] = [];
   if (params.region) chips.push({ label: REGION_LABEL[params.region], href: searchHref(raw, { region: undefined, main: undefined, ca: undefined }) });
@@ -163,6 +171,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+      {store && <StoreScopeHeader store={store} clearHref={searchHref(raw, { store: undefined, main: undefined, ca: undefined })} />}
       <SearchShell>
         <SearchForm key={searchHref(raw, { main: undefined, ca: undefined })} values={values} filterCount={panelFilters} />
 
@@ -176,7 +185,28 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
         )}
 
         <ResultsRegion className="mt-2">
-          {none ? (
+          {none && store ? (
+            <EmptyState
+              icon={SearchX}
+              title={ko.store.empty}
+              description={params.q ? ko.store.emptyQuery(params.q) : ko.store.emptyHint}
+            >
+              {activeFilterCount(params) > 0 && (
+                <Link href={searchHref({ q: params.q, store: store.id })} className={buttonVariants({ variant: 'default' })}>
+                  {ko.search.filtersReset}
+                </Link>
+              )}
+              {params.q && (
+                <Link href={searchHref({ q: params.q })} className={buttonVariants({ variant: activeFilterCount(params) > 0 ? 'outline' : 'default' })}>
+                  {ko.store.searchAll}
+                </Link>
+              )}
+              <Link href="/map" className={buttonVariants({ variant: 'outline' })}>
+                <MapPin aria-hidden />
+                {ko.nav.map}
+              </Link>
+            </EmptyState>
+          ) : none ? (
             <EmptyState
               icon={SearchX}
               title={ko.search.noResults}
@@ -206,8 +236,13 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
           ) : (
             <>
               <p className="text-sm font-medium text-muted-foreground" role="status">
-                {ko.search.resultSummary(params.q, main.length + ca.length)}
+                {store
+                  ? params.q
+                    ? ko.store.summaryQuery(params.q, main.length + ca.length)
+                    : ko.store.summary(main.length + ca.length, truncated)
+                  : ko.search.resultSummary(params.q, main.length + ca.length)}
               </p>
+              {store && truncated && <p className="-mt-1 text-sm text-muted-foreground">{ko.store.truncatedHint}</p>}
 
               {showMain && (
                 <section aria-labelledby="main-h" className="flex flex-col gap-4">
@@ -272,5 +307,36 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
         </ResultsRegion>
       </SearchShell>
     </main>
+  );
+}
+
+/** Header for a store-scoped list (`/?store=<id>`), with a way back to all stores. */
+function StoreScopeHeader({ store, clearHref }: { store: Store; clearHref: string }) {
+  return (
+    <header className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+          <StoreIcon aria-hidden className="size-5" />
+        </span>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p className="text-sm font-semibold text-primary">{ko.store.eyebrow}</p>
+          <h1 className="text-xl leading-snug font-bold tracking-tight text-balance sm:text-2xl">
+            <span lang="en">{store.name}</span> {ko.store.headingSuffix}
+          </h1>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <RegionChip region={store.region} />
+            {store.onlineOnly && <span className="text-xs font-medium text-muted-foreground">{ko.row.onlineOnly}</span>}
+            {store.stockReliability === 'low' && <StatusBadge kind="unreliable" />}
+          </div>
+          <p lang="en" className="text-sm text-muted-foreground">
+            {store.address}
+          </p>
+        </div>
+      </div>
+      <Link href={clearHref} aria-label={ko.store.clearLabel(store.name)} className={buttonVariants({ variant: 'outline', size: 'sm', className: 'self-start sm:self-center' })}>
+        <X aria-hidden />
+        {ko.store.clear}
+      </Link>
+    </header>
   );
 }

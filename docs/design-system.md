@@ -243,6 +243,14 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 - Show 3 rows per item, then a `<details>` "매장 N곳 더 보기".
 - Lists of items are capped at **20 per section**, followed by "더 보기 (N종 남음)". The cap is pure logic in `src/lib/search-view.ts` (`parseShowCount`, `capGroups`, `nextShowCount`) and driven by URL params (`?main=40`, `?ca=40`, hard max 500).
 
+### 8.11 Store map (`/map`)
+- List + map, synced by a shared number (marker dot = list row `NumberDot`). Phones: map (`min(55svh, 26rem)`) above the list; ≥ lg: list left, sticky map right.
+- The list is the accessible path: each row's name button flies the map to the store and opens its popup; marker taps highlight the row.
+- Region quick-jumps: 뉴욕·뉴저지 (fit Brooklyn + NJ) and LA 보기.
+- `?bottle=`: stores without it in stock are greyed (soldout tokens, never opacity on text), list sorted by tax-included price.
+- Popups render React (`StorePopupContent`), never HTML strings. Leaflet CSS is unlayered; overrides live at the end of `globals.css`.
+- Tiles: `NEXT_PUBLIC_MAP_TILE_URL` (commercial provider before public launch), OSM fallback with attribution.
+
 ---
 
 ## 9. Motion

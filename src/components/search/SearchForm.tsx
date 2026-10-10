@@ -18,6 +18,8 @@ export interface SearchFormValues {
   min: string;
   max: string;
   inStock: boolean;
+  /** Store-scoped search (`?store=`): kept as a hidden field so a new query stays in that store. */
+  store?: string;
 }
 
 const chip =
@@ -79,13 +81,14 @@ export function SearchForm({
       return typeof v === 'string' ? v.trim() : '';
     };
     const q = get('q');
-    if (!q) {
+    const store = get('store');
+    if (!q && !store) {
       e.currentTarget.querySelector<HTMLInputElement>('input[name="q"]')?.focus();
       return;
     }
     if (detailsRef.current?.open) closeFilters(true);
     // A new search always starts from the first page of each section.
-    nav.navigate(searchHref({ q, region: get('region'), min: get('min'), max: get('max'), inStock: get('inStock') }));
+    nav.navigate(searchHref({ q, store, region: get('region'), min: get('min'), max: get('max'), inStock: get('inStock') }));
   }
 
   function onChange(e: React.ChangeEvent<HTMLFormElement>) {
@@ -93,7 +96,7 @@ export function SearchForm({
     // Only the in-stock chip (outside the popover) applies instantly.
     const instant = t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'checkbox' && !t.closest('details');
     const q = formRef.current?.querySelector<HTMLInputElement>('input[name="q"]')?.value.trim();
-    if (instant && q) formRef.current?.requestSubmit();
+    if (instant && (q || values.store)) formRef.current?.requestSubmit();
   }
 
   return (
@@ -106,6 +109,7 @@ export function SearchForm({
       onChange={onChange}
       className="relative flex flex-col gap-3"
     >
+      {values.store && <input type="hidden" name="store" value={values.store} />}
       <div className="flex gap-2">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">{ko.search.inputLabel}</span>
@@ -117,8 +121,9 @@ export function SearchForm({
             name="q"
             type="search"
             defaultValue={values.q}
-            placeholder={ko.search.placeholder}
-            autoFocus={!values.q}
+            placeholder={values.store ? ko.store.placeholder : ko.search.placeholder}
+            // Browsing a store's list on a phone shouldn't pop the keyboard.
+            autoFocus={!values.q && !values.store}
             enterKeyHint="search"
             autoComplete="off"
             autoCapitalize="none"
@@ -177,7 +182,7 @@ export function SearchForm({
                 </label>
               </div>
               <div className="flex items-center justify-end gap-2">
-                <Link href={searchHref({ q: values.q })} className={buttonVariants({ variant: 'ghost' })}>
+                <Link href={searchHref({ q: values.q, store: values.store })} className={buttonVariants({ variant: 'ghost' })}>
                   {ko.search.filtersReset}
                 </Link>
                 <Button type="submit">{ko.search.filtersApply}</Button>

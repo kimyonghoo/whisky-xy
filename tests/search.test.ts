@@ -57,6 +57,17 @@ describe('searchListings', () => {
     expect((await searchListings(db, { q: '', storeId: 'flask' })).ca.length).toBeGreaterThan(0);
   });
 
+  it('storeId scopes results to one store, with or without a query', async () => {
+    const all = await searchListings(db, { q: '', storeId: 'dewinespot' });
+    const rows = all.main.flatMap((g) => g.rows);
+    expect(rows.length).toBe(6);
+    expect(rows.every((x) => x.storeId === 'dewinespot')).toBe(true);
+    expect(all.ca).toEqual([]);
+    const q = await searchListings(db, { q: 'stagg', storeId: 'liquorcave' });
+    expect(q.main.flatMap((g) => g.rows).map((x) => x.storeId)).toEqual(['liquorcave']);
+    expect(await searchListings(db, { q: '', storeId: 'coolvines' })).toEqual({ main: [], ca: [] });
+  });
+
   it('special characters are safe and literal', async () => {
     await expect(searchListings(db, { q: "100% o'brien _ 위스키" })).resolves.toEqual({ main: [], ca: [] });
     expect(await searchListings(db, { q: '%' })).toEqual({ main: [], ca: [] });

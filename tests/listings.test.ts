@@ -35,3 +35,23 @@ describe('listings queries', () => {
     expect(one.get('liquorcave')).toBeUndefined();
   });
 });
+
+describe('bottleStoreOffers', () => {
+  it('summarises per-store stock and cheapest available price', async () => {
+    const { bottleStoreOffers } = await import('@/lib/listings');
+    const db = await createTestDb();
+    const a = { ...row(1, 'dewinespot', 'Stagg Bourbon', true), priceCents: 15000 };
+    const b = { ...row(2, 'dewinespot', 'Stagg Bourbon', true), priceCents: 13000 };
+    const c = { ...row(3, 'dewinespot', 'Stagg Bourbon', false), priceCents: 9000 };
+    const d = { ...row(4, 'liquorcave', 'Stagg Bourbon', false), priceCents: 9000 };
+    const e = row(5, 'flask', 'Stagg Jr Bourbon', true);
+    await db.insert(listings).values([a, b, c, d, e]);
+
+    const r = await bottleStoreOffers(db, a.bottleKey);
+    expect(r?.title).toBe('Stagg Bourbon');
+    expect(r?.offers.get('dewinespot')).toEqual({ storeId: 'dewinespot', listed: 3, inStock: 2, minAvailablePriceCents: 13000 });
+    expect(r?.offers.get('liquorcave')).toEqual({ storeId: 'liquorcave', listed: 1, inStock: 0, minAvailablePriceCents: null });
+    expect(r?.offers.has('flask')).toBe(false);
+    expect(await bottleStoreOffers(db, 'no-such-key')).toBeNull();
+  });
+});

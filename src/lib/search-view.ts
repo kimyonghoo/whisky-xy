@@ -63,12 +63,13 @@ export function summarizeGroup(group: BottleGroup): GroupSummary {
   };
 }
 
+/** Store-scoped search (`?store=`) never counts as a filter: it has its own header. */
 export function activeFilterCount(p: SearchParams): number {
   return (p.region ? 1 : 0) + (p.inStockOnly ? 1 : 0) + (p.minCents != null ? 1 : 0) + (p.maxCents != null ? 1 : 0);
 }
 
 /** Query params the search page understands, in canonical order. */
-const SEARCH_KEYS = ['q', 'region', 'min', 'max', 'inStock', 'main', 'ca'] as const;
+const SEARCH_KEYS = ['q', 'store', 'region', 'min', 'max', 'inStock', 'main', 'ca'] as const;
 export type SearchKey = (typeof SEARCH_KEYS)[number];
 
 /** Build a search URL from raw params, keeping only known non-empty keys. */

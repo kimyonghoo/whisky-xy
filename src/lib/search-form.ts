@@ -1,4 +1,4 @@
-import type { Region } from '@/lib/stores';
+import { getStore, type Region } from '@/lib/stores';
 import type { SearchParams } from '@/lib/search';
 
 /** Parse a dollar string like "64.5" or "1,299.97" into integer cents without float math. */
@@ -23,6 +23,8 @@ export function parseSearchForm(raw: Raw): SearchParams {
   const region = first(raw.region);
   const params: SearchParams = { q };
   if (region && (REGIONS as string[]).includes(region)) params.region = region as Region;
+  const store = getStore(first(raw.store) ?? '');
+  if (store?.publicAllowed) params.storeId = store.id;
   if (first(raw.inStock)) params.inStockOnly = true;
   const min = parseDollarsToCents(first(raw.min));
   const max = parseDollarsToCents(first(raw.max));

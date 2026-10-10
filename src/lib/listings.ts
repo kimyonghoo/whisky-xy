@@ -29,3 +29,47 @@ export async function storeAvailability(db: Db, bottleKey?: string): Promise<Map
     .groupBy(listings.storeId);
   return new Map(rows.map((r) => [r.storeId, Number(r.n)]));
 }
+
+export interface BottleStoreOffer {
+  storeId: string;
+  /** Listings of this bottle at the store (any stock state). */
+  listed: number;
+  /** Listings currently marked available. */
+  inStock: number;
+  /** Cheapest pre-tax price among available listings, else null. */
+  minAvailablePriceCents: number | null;
+}
+
+export interface BottleOffers {
+  title: string;
+  sizeMl: number | null;
+  offers: Map<string, BottleStoreOffer>;
+}
+
+/** Per-store offers for one bottleKey (map view). Null when no store lists the bottle. */
+export async function bottleStoreOffers(db: Db, bottleKey: string): Promise<BottleOffers | null> {
+  const rows = await db
+    .select({
+      storeId: listings.storeId,
+      title: listings.title,
+      sizeMl: listings.sizeMl,
+      priceCents: listings.priceCents,
+      available: listings.available,
+    })
+    .from(listings)
+    .where(eq(listings.bottleKey, bottleKey))
+    .orderBy(desc(listings.available), listings.priceCents, listings.id);
+  if (rows.length === 0) return null;
+  const offers = new Map<string, BottleStoreOffer>();
+  for (const r of rows) {
+    const o = offers.get(r.storeId) ?? { storeId: r.storeId, listed: 0, inStock: 0, minAvailablePriceCents: null };
+    o.listed++;
+    if (r.available) {
+      o.inStock++;
+      if (o.minAvailablePriceCents === null || r.priceCents < o.minAvailablePriceCents) o.minAvailablePriceCents = r.priceCents;
+    }
+    offers.set(r.storeId, o);
+  }
+  // Rows are ordered in-stock first, then cheapest: the first row's title is the representative one.
+  return { title: rows[0].title, sizeMl: rows[0].sizeMl, offers };
+}

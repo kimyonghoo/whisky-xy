@@ -96,6 +96,11 @@ describe('searchHref', () => {
   it('can remove a param with undefined', () => {
     expect(searchHref({ q: 'a', inStock: '1' }, { inStock: undefined })).toBe('/?q=a');
   });
+  it('keeps store scope in canonical position', () => {
+    expect(searchHref({ store: 'flask' })).toBe('/?store=flask');
+    expect(searchHref({ main: '40', store: 'flask', q: 'stagg' }, { main: undefined })).toBe('/?q=stagg&store=flask');
+    expect(searchHref({ q: 'a', store: 'flask' }, { store: undefined })).toBe('/?q=a');
+  });
   it('returns / with no params', () => {
     expect(searchHref({})).toBe('/');
   });
