@@ -1,4 +1,4 @@
-import { storeFetch } from '@/lib/shopify/http';
+import { liveFetch } from '@/lib/shopify/http';
 import type { FetchFn } from '@/lib/shopify/client';
 
 const BASE = 'https://dailyshot.co';
@@ -45,7 +45,7 @@ function scriptJson(html: string, openTag: RegExp): unknown[] {
 const isRec = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 
 export async function searchDailyshot(q: string, opts: { fetchFn?: FetchFn } = {}): Promise<DailyshotCandidate[]> {
-  const fetchFn = opts.fetchFn ?? storeFetch;
+  const fetchFn = opts.fetchFn ?? liveFetch;
   const { html } = await getHtml(`${BASE}/m/search/result?q=${encodeURIComponent(q)}`, fetchFn);
   const blocks = scriptJson(html, /<script[^>]*id="__NEXT_DATA__"[^>]*>/);
   const best = new Map<string, DailyshotCandidate>();
@@ -79,7 +79,7 @@ export async function searchDailyshot(q: string, opts: { fetchFn?: FetchFn } = {
 
 export async function fetchDailyshotPrice(productId: string, opts: { fetchFn?: FetchFn } = {}): Promise<DailyshotPrice | null> {
   if (!/^\d{1,12}$/.test(productId)) throw new Error('dailyshot: invalid product id');
-  const fetchFn = opts.fetchFn ?? storeFetch;
+  const fetchFn = opts.fetchFn ?? liveFetch;
   const { status, html } = await getHtml(dailyshotUrl(productId), fetchFn, true);
   if (status === 404) return null;
   const blocks = scriptJson(html, /<script[^>]*type="application\/ld\+json"[^>]*>/);

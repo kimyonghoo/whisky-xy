@@ -1,5 +1,5 @@
 import type { Store } from '@/lib/stores';
-import { storeFetch } from '@/lib/shopify/http';
+import { liveFetch, storeFetch } from '@/lib/shopify/http';
 
 export type FetchFn = typeof fetch;
 
@@ -101,7 +101,7 @@ export async function fetchLiveProduct(
   handle: string,
   opts: { fetchFn?: FetchFn; timeoutMs?: number } = {},
 ): Promise<LiveVariant[] | null> {
-  const fetchFn = opts.fetchFn ?? storeFetch;
+  const fetchFn = opts.fetchFn ?? liveFetch;
   const signal = AbortSignal.timeout(opts.timeoutMs ?? 5000);
   const productPath = `/products/${encodeURIComponent(handle)}.js`;
 
