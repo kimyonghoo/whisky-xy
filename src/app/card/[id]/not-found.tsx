@@ -1,15 +1,18 @@
 import Link from 'next/link';
+import { Search, SearchX } from 'lucide-react';
 import { ko } from '@/lib/i18n/ko';
 import { buttonVariants } from '@/components/ui/button';
+import { EmptyState } from '@/components/EmptyState';
 
 export default function CardNotFound() {
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
-      <h1 className="text-3xl font-bold">{ko.card.notFoundTitle}</h1>
-      <p className="text-lg text-muted-foreground">{ko.card.notFoundHint}</p>
-      <Link href="/" className={buttonVariants({ className: 'h-14 px-8 text-lg' })}>
-        {ko.card.backToSearch}
-      </Link>
+    <main id="main" className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-12">
+      <EmptyState as="h1" icon={SearchX} title={ko.card.notFoundTitle} description={ko.card.notFoundHint}>
+        <Link href="/" className={buttonVariants({ size: 'xl' })}>
+          <Search aria-hidden />
+          {ko.card.backToSearch}
+        </Link>
+      </EmptyState>
     </main>
   );
 }

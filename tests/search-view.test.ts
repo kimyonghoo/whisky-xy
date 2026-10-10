@@ -1,0 +1,113 @@
+import { describe, it, expect } from 'vitest';
+import {
+  SECTION_PAGE_SIZE,
+  MAX_SECTION_SHOW,
+  parseShowCount,
+  capGroups,
+  nextShowCount,
+  summarizeGroup,
+  activeFilterCount,
+  searchHref,
+  compareTier,
+} from '@/lib/search-view';
+import type { BottleGroup, ListingRow } from '@/lib/search';
+import { getStore } from '@/lib/stores';
+
+function row(storeId: string, taxIncludedCents: number, available: boolean, id: number): ListingRow {
+  const store = getStore(storeId)!;
+  return { id, storeId, store, taxIncludedCents, available, priceCents: taxIncludedCents } as unknown as ListingRow;
+}
+
+function group(rows: ListingRow[]): BottleGroup {
+  return {
+    bottleKey: 'k', displayTitle: 'T', sizeMl: 750, proof: null, batch: null, imageUrl: null, rows,
+    bestAvailableCents: rows.filter((r) => r.available).map((r) => r.taxIncludedCents).sort((a, b) => a - b)[0] ?? null,
+  };
+}
+
+describe('parseShowCount', () => {
+  it('defaults to one page for missing or junk input', () => {
+    expect(parseShowCount(undefined)).toBe(SECTION_PAGE_SIZE);
+    expect(parseShowCount('')).toBe(SECTION_PAGE_SIZE);
+    expect(parseShowCount('abc')).toBe(SECTION_PAGE_SIZE);
+    expect(parseShowCount('-40')).toBe(SECTION_PAGE_SIZE);
+    expect(parseShowCount('1e3')).toBe(SECTION_PAGE_SIZE);
+    expect(parseShowCount('0')).toBe(SECTION_PAGE_SIZE);
+  });
+  it('accepts positive integers and takes the first array value', () => {
+    expect(parseShowCount('40')).toBe(40);
+    expect(parseShowCount(['60', '80'])).toBe(60);
+  });
+  it('never goes below one page or above the hard cap', () => {
+    expect(parseShowCount('5')).toBe(SECTION_PAGE_SIZE);
+    expect(parseShowCount('999999')).toBe(MAX_SECTION_SHOW);
+    expect(parseShowCount('99999999999999999999')).toBe(MAX_SECTION_SHOW);
+  });
+});
+
+describe('capGroups', () => {
+  const items = Array.from({ length: 45 }, (_, i) => i);
+  it('caps rendering and reports how many are hidden', () => {
+    expect(capGroups(items, 20)).toEqual({ visible: items.slice(0, 20), hiddenCount: 25 });
+  });
+  it('shows everything when under the cap', () => {
+    expect(capGroups(items.slice(0, 3), 20)).toEqual({ visible: [0, 1, 2], hiddenCount: 0 });
+  });
+  it('nextShowCount advances one page without overshooting', () => {
+    expect(nextShowCount(20, 45)).toBe(40);
+    expect(nextShowCount(40, 45)).toBe(45);
+    expect(nextShowCount(480, 1000)).toBe(MAX_SECTION_SHOW);
+  });
+});
+
+describe('summarizeGroup', () => {
+  it('counts stores and in-stock stores, lists regions in fixed order, picks cheapest in stock', () => {
+    const g = group([row('liquorcave', 9000, true, 1), row('dewinespot', 9500, true, 2), row('grainvine', 8000, false, 3)]);
+    const s = summarizeGroup(g);
+    expect(s.storeCount).toBe(3);
+    expect(s.inStockCount).toBe(2);
+    expect(s.regions).toEqual(['brooklyn', 'nj']);
+    expect(s.cheapest?.id).toBe(1);
+  });
+  it('has no cheapest when everything is sold out', () => {
+    const s = summarizeGroup(group([row('dewinespot', 9500, false, 2)]));
+    expect(s.inStockCount).toBe(0);
+    expect(s.cheapest).toBeNull();
+  });
+  it('counts a store once even with several listings', () => {
+    const s = summarizeGroup(group([row('dewinespot', 9500, true, 1), row('dewinespot', 9900, true, 2)]));
+    expect(s.storeCount).toBe(1);
+    expect(s.inStockCount).toBe(1);
+  });
+});
+
+describe('activeFilterCount', () => {
+  it('counts each applied filter', () => {
+    expect(activeFilterCount({ q: 'x' })).toBe(0);
+    expect(activeFilterCount({ q: 'x', region: 'nj', inStockOnly: true, minCents: 0, maxCents: 100 })).toBe(4);
+  });
+});
+
+describe('searchHref', () => {
+  it('keeps known params, drops unknown/empty ones, applies overrides', () => {
+    const href = searchHref({ q: 'jack & coke', region: 'nj', min: '', evil: 'x', main: '20' }, { main: '40' });
+    expect(href).toBe('/?q=jack+%26+coke&region=nj&main=40');
+  });
+  it('can remove a param with undefined', () => {
+    expect(searchHref({ q: 'a', inStock: '1' }, { inStock: undefined })).toBe('/?q=a');
+  });
+  it('returns / with no params', () => {
+    expect(searchHref({})).toBe('/');
+  });
+});
+
+describe('compareTier', () => {
+  it('classifies US-vs-Korea savings', () => {
+    expect(compareTier(0.35)).toBe('savings-big');
+    expect(compareTier(0.2)).toBe('savings-big');
+    expect(compareTier(0.1)).toBe('savings-small');
+    expect(compareTier(0.01)).toBe('same');
+    expect(compareTier(-0.01)).toBe('same');
+    expect(compareTier(-0.15)).toBe('worse');
+  });
+});
