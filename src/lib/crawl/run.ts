@@ -6,11 +6,15 @@ import { getStore } from '@/lib/stores';
 import { fetchCatalog, type FetchFn } from '@/lib/shopify/client';
 import { toObservations, catalogVariantIds } from '@/lib/crawl/map';
 import { ingestStoreCrawl, type ChangeEvent } from '@/lib/crawl/ingest';
+import { refreshFx } from '@/lib/fx';
+import { refreshKrLinks } from '@/lib/krlinks';
 import { selectAlerts, formatAlert } from '@/lib/alerts/match';
 
 export interface CrawlReport {
   stores: { storeId: string; ok: boolean; error?: string; note?: string; observations: number; events: number }[];
   alertsSent: number;
+  fx: 'ok' | string;
+  krLinks: { ok: number; failed: number };
 }
 
 export async function runCrawl(opts: {
@@ -24,7 +28,7 @@ export async function runCrawl(opts: {
 }): Promise<CrawlReport> {
   const { db, stores, notify, siteUrl } = opts;
   const now = opts.now ?? (() => new Date());
-  const report: CrawlReport = { stores: [], alertsSent: 0 };
+  const report: CrawlReport = { stores: [], alertsSent: 0, fx: 'ok', krLinks: { ok: 0, failed: 0 } };
   const events: ChangeEvent[] = [];
 
   for (const store of stores) {
@@ -46,6 +50,19 @@ export async function runCrawl(opts: {
       console.error(`[crawl] ${store.id} failed: ${error}`);
       report.stores.push({ storeId: store.id, ok: false, error, observations: 0, events: 0 });
     }
+  }
+
+  // Korea comparison data is best-effort: never fails the run.
+  try {
+    await refreshFx(db, now(), opts.fetchFn);
+  } catch (err) {
+    report.fx = err instanceof Error ? err.message : String(err);
+    console.error(`[crawl] fx failed: ${report.fx}`);
+  }
+  try {
+    report.krLinks = await refreshKrLinks(db, { fetchFn: opts.fetchFn, delayMs: opts.delayMs, now: now() });
+  } catch (err) {
+    console.error(`[crawl] krLinks failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   const ids = [...new Set(events.map((e) => e.listingId))];

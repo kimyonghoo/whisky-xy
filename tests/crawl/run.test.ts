@@ -98,4 +98,25 @@ describe('runCrawl', () => {
     const rows = await db.select().from(listings).where(eq(listings.storeId, 'flask'));
     expect(rows.every((l) => l.available)).toBe(true);
   });
+
+  it('a throwing fx fetch is reported in the report and leaves store results ok', async () => {
+    const inner = fakeFetch({ [flask.domain]: { pages: flaskPages }, [cave.domain]: { pages: caveWith(true) } });
+    const f = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (new URL(String(input)).hostname === 'open.er-api.com') throw new Error('fx down');
+      return inner(input, init);
+    }) as FetchFn;
+    const r = await runCrawl({ ...base, fetchFn: f });
+    expect(r.stores.every((s) => s.ok)).toBe(true);
+    expect(r.fx).toContain('fx down');
+    expect(r.krLinks).toEqual({ ok: 0, failed: 0 });
+  });
+
+  it('reports fx ok when the rate fetch succeeds', async () => {
+    const inner = fakeFetch({ [flask.domain]: { pages: flaskPages }, [cave.domain]: { pages: caveWith(true) } });
+    const f = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (new URL(String(input)).hostname === 'open.er-api.com') return new Response(JSON.stringify({ result: 'success', rates: { KRW: 1400 } }));
+      return inner(input, init);
+    }) as FetchFn;
+    expect((await runCrawl({ ...base, fetchFn: f })).fx).toBe('ok');
+  });
 });

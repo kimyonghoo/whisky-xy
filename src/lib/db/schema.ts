@@ -56,6 +56,27 @@ export const watches = pgTable('watches', {
   createdAt: ts('created_at').notNull(),
 });
 
+export const krLinks = pgTable('kr_links', {
+  id: serial('id').primaryKey(),
+  bottleKey: text('bottle_key').notNull().unique(),
+  dailyshotProductId: text('dailyshot_product_id').notNull(),
+  nameKo: text('name_ko').notNull(),
+  nameEn: text('name_en'),
+  imageUrl: text('image_url'),
+  lowPriceKrw: integer('low_price_krw').notNull(),
+  highPriceKrw: integer('high_price_krw'),
+  offerCount: integer('offer_count'),
+  checkedAt: ts('checked_at').notNull(),
+});
+
+export const fxRates = pgTable('fx_rates', {
+  date: text('date').primaryKey(),
+  usdKrw: real('usd_krw').notNull(),
+  fetchedAt: ts('fetched_at').notNull(),
+});
+
+export type KrLink = typeof krLinks.$inferSelect;
+export type FxRate = typeof fxRates.$inferSelect;
 export type Listing = typeof listings.$inferSelect;
 export type NewListing = typeof listings.$inferInsert;
 export type Watch = typeof watches.$inferSelect;

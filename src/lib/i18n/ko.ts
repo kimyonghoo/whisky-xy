@@ -143,6 +143,7 @@ export const ko = {
     cheaperInUs: (pct: number) => `한국보다 ${pct}% 저렴`,
     similar: '한국과 비슷',
     cheaperInKorea: (pct: number) => `한국이 ${pct}% 저렴`,
+    verdict: { must: '무조건 사야됨', big: '크게 이득', good: '이득', small: '조금 이득', worse: '한국이 더 쌈' },
   },
   stock: { inStock: '재고 있음', soldOut: '품절', unreliable: '재고 표시 부정확' },
   stale: { warning: '오래된 정보' },
