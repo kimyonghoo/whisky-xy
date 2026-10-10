@@ -10,6 +10,14 @@ describe('money', () => {
     expect(parsePriceToCents('175')).toBe(17500);
     expect(() => parsePriceToCents('abc')).toThrow();
   });
+  it('handles edge cases', () => {
+    expect(parsePriceToCents('12.345')).toBe(1234);
+    expect(parsePriceToCents('$1,299.97')).toBe(129997);
+    expect(parsePriceToCents(' 64.50 ')).toBe(6450);
+    expect(() => parsePriceToCents('.5')).toThrow();
+    expect(() => parsePriceToCents('-1')).toThrow();
+    expect(() => parsePriceToCents('')).toThrow();
+  });
   it('formats USD', () => {
     expect(formatUsd(6450)).toBe('$64.50');
     expect(formatUsd(129997)).toBe('$1,299.97');

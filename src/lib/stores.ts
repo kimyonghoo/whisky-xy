@@ -39,12 +39,12 @@ export const STORES: Store[] = [
     phone: '718-782-9463', taxRate: 0.08875, stockReliability: 'high', onlineOnly: false, publicAllowed: true,
   },
   {
-    id: 'slopecellars', name: 'Slope Cellars', domain: 'slopecellars.com', region: 'brooklyn',
+    id: 'slopecellars', name: 'Slope Cellars', domain: 'shop.slopecellars.com', region: 'brooklyn',
     address: '436 7th Ave, Brooklyn, NY 11215', lat: 40.6635689, lng: -73.9846378,
     phone: '718-369-7307', taxRate: 0.08875, stockReliability: 'high', onlineOnly: false, publicAllowed: true,
   },
   {
-    id: 'liquorcave', name: 'Liquor Cave', domain: 'liquorcave.com', region: 'nj',
+    id: 'liquorcave', name: 'Liquor Cave', domain: 'www.liquorcave.com', region: 'nj',
     address: '775 US-1, Edison, NJ 08817', lat: 40.5125877, lng: -74.3837563,
     phone: '732-662-4699', taxRate: 0.06625, stockReliability: 'low', onlineOnly: false, publicAllowed: true,
     note: '여러 지점 있음 — 방문 전 전화 확인',
@@ -66,7 +66,7 @@ export const STORES: Store[] = [
     phone: '818-761-5373', taxRate: 0.1025, stockReliability: 'high', onlineOnly: false, publicAllowed: true,
   },
   {
-    id: 'bittersandbottles', name: 'Bitters & Bottles', domain: 'bittersandbottles.com', region: 'ca',
+    id: 'bittersandbottles', name: 'Bitters & Bottles', domain: 'www.bittersandbottles.com', region: 'ca',
     address: '240 Grand Ave, South San Francisco, CA 94080', lat: 37.6551751, lng: -122.409552,
     phone: '650-741-6430', taxRate: 0.09875, stockReliability: 'high', onlineOnly: true, publicAllowed: true,
   },
