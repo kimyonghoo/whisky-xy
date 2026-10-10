@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { createTestDb } from './helpers/db';
 import { seed } from './helpers/seed';
 import { listings, priceHistory } from '@/lib/db/schema';
-import { recheckListing } from '@/lib/recheck';
+import { recheckListing, resetRecheckCooldowns } from '@/lib/recheck';
 
 const NOW = new Date('2026-10-10T12:00:00Z');
 const OLD = new Date('2026-10-10T10:00:00Z');
@@ -25,6 +25,11 @@ async function setup(checkedAt = OLD) {
 }
 
 describe('recheckListing', () => {
+  beforeEach(() => {
+    resetRecheckCooldowns();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
   it('updated: price change adds history and sets checkedAt', async () => {
     const { db, row } = await setup();
     const fetchFn = fakeFetch({ variants: [{ id: 555, price: 9000, available: true }] });
@@ -70,5 +75,18 @@ describe('recheckListing', () => {
   it('null for unknown id', async () => {
     const db = await createTestDb();
     expect(await recheckListing(db, 99999, { fetchFn: fakeFetch({}), now: NOW })).toBeNull();
+  });
+
+  it('failure cooldown: no fetch within 60s, fetches again after', async () => {
+    const { db, row } = await setup();
+    const bad = fakeFetch({ throws: true });
+    expect((await recheckListing(db, row.id, { fetchFn: bad, now: NOW }))?.status).toBe('failed');
+    const again = fakeFetch({ variants: [{ id: 555, price: 9000, available: true }] });
+    const r2 = await recheckListing(db, row.id, { fetchFn: again, now: new Date(NOW.getTime() + 10_000) });
+    expect(r2?.status).toBe('failed');
+    expect(again).not.toHaveBeenCalled();
+    const r3 = await recheckListing(db, row.id, { fetchFn: again, now: new Date(NOW.getTime() + 61_000) });
+    expect(r3?.status).toBe('updated');
+    expect(again).toHaveBeenCalled();
   });
 });
