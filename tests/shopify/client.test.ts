@@ -86,3 +86,38 @@ describe('storeHeaders', () => {
     expect(storeHeaders().Cookie).toBe('localization=US; cart_currency=USD');
   });
 });
+
+describe('hardening', () => {
+  it('rejects when a request hangs past timeoutMs', async () => {
+    const hang = ((_u: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_res, rej) => {
+        init?.signal?.addEventListener('abort', () => rej(init.signal!.reason));
+      })) as typeof fetch;
+    await expect(fetchCatalog(store, { fetchFn: hang, delayMs: 0, timeoutMs: 50 })).rejects.toBeTruthy();
+  });
+  it('rejects with domain and content-type on non-JSON 200', async () => {
+    const fake = makeFake((url) =>
+      url.endsWith('/cart.js')
+        ? usd()
+        : new Response('<html>challenge</html>', { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }),
+    );
+    await expect(fetchCatalog(store, { fetchFn: fake, delayMs: 0 })).rejects.toThrow(/dewinespot\.co.*text\/html/);
+  });
+  it('rejects on 301 and always requests with redirect manual', async () => {
+    const seen: (RequestRedirect | undefined)[] = [];
+    const fake = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      seen.push(init?.redirect);
+      return String(input).endsWith('/cart.js')
+        ? usd()
+        : new Response(null, { status: 301, headers: { location: 'https://evil.example/' } });
+    }) as typeof fetch;
+    await expect(fetchCatalog(store, { fetchFn: fake, delayMs: 0 })).rejects.toThrow(/301/);
+    expect(seen.every((r) => r === 'manual')).toBe(true);
+  });
+  it('live: throws on non-integer price', async () => {
+    const fake = makeFake((url) =>
+      url.endsWith('/cart.js') ? usd() : json({ variants: [{ id: 1, price: '175.00', available: true }] }),
+    );
+    await expect(fetchLiveProduct(store, 'x', { fetchFn: fake })).rejects.toThrow(/price/);
+  });
+});

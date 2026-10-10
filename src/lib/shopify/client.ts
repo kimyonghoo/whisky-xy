@@ -34,30 +34,49 @@ export function storeHeaders(): Record<string, string> {
 
 const sleep = (ms: number) => (ms > 0 ? new Promise<void>((r) => setTimeout(r, ms)) : Promise.resolve());
 
-async function checkCurrency(store: Store, fetchFn: FetchFn, signal?: AbortSignal): Promise<void> {
-  const res = await fetchFn(`https://${store.domain}/cart.js`, { headers: storeHeaders(), signal });
+async function storeRequest(store: Store, path: string, fetchFn: FetchFn, signal: AbortSignal): Promise<Response> {
+  // redirect: 'manual' so we never send our cookie to, or read data from, another host.
+  const res = await fetchFn(`https://${store.domain}${path}`, { headers: storeHeaders(), signal, redirect: 'manual' });
+  if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+    throw new Error(`${store.domain} ${path}: unexpected redirect (HTTP ${res.status || 'opaqueredirect'})`);
+  }
+  return res;
+}
+
+async function readJson<T>(store: Store, path: string, res: Response): Promise<T> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    const ct = (res.headers.get('content-type') ?? 'unknown').split(';')[0].trim();
+    throw new Error(`${store.domain} ${path}: expected JSON, got ${ct}`);
+  }
+}
+
+async function checkCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal): Promise<void> {
+  const res = await storeRequest(store, '/cart.js', fetchFn, signal);
   if (!res.ok) throw new Error(`${store.domain} /cart.js failed: HTTP ${res.status}`);
-  const cart = (await res.json()) as { currency?: string };
+  const cart = await readJson<{ currency?: string }>(store, '/cart.js', res);
   if (cart.currency !== 'USD') throw new CurrencyMismatchError(String(cart.currency));
 }
 
 export async function fetchCatalog(
   store: Store,
-  opts: { fetchFn?: FetchFn; delayMs?: number; maxPages?: number } = {},
+  opts: { fetchFn?: FetchFn; delayMs?: number; maxPages?: number; timeoutMs?: number } = {},
 ): Promise<{ products: ShopifyProduct[]; complete: boolean }> {
   const fetchFn = opts.fetchFn ?? fetch;
   const delayMs = opts.delayMs ?? 1100;
   const maxPages = opts.maxPages ?? 100;
+  const timeoutMs = opts.timeoutMs ?? 20000;
 
-  await checkCurrency(store, fetchFn);
+  await checkCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
 
   const products: ShopifyProduct[] = [];
   for (let page = 1; page <= maxPages; page++) {
     await sleep(delayMs);
-    const url = `https://${store.domain}/products.json?limit=250&page=${page}`;
-    const res = await fetchFn(url, { headers: storeHeaders() });
+    const path = `/products.json?limit=250&page=${page}`;
+    const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs));
     if (!res.ok) throw new Error(`${store.domain} products page ${page} failed: HTTP ${res.status}`);
-    const body = (await res.json()) as { products?: ShopifyProduct[] };
+    const body = await readJson<{ products?: ShopifyProduct[] }>(store, path, res);
     const batch = body.products ?? [];
     if (batch.length === 0) return { products, complete: true };
     products.push(...batch);
@@ -72,14 +91,23 @@ export async function fetchLiveProduct(
 ): Promise<LiveVariant[] | null> {
   const fetchFn = opts.fetchFn ?? fetch;
   const signal = AbortSignal.timeout(opts.timeoutMs ?? 5000);
-  const productUrl = `https://${store.domain}/products/${encodeURIComponent(handle)}.js`;
+  const productPath = `/products/${encodeURIComponent(handle)}.js`;
 
   const [, res] = await Promise.all([
     checkCurrency(store, fetchFn, signal),
-    fetchFn(productUrl, { headers: storeHeaders(), signal }),
+    storeRequest(store, productPath, fetchFn, signal),
   ]);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`${store.domain} product ${handle} failed: HTTP ${res.status}`);
-  const body = (await res.json()) as { variants?: { id: number; price: number; available: boolean }[] };
-  return (body.variants ?? []).map((v) => ({ id: v.id, priceCents: v.price, available: v.available }));
+  const body = await readJson<{ variants?: { id: number | string; price: unknown; available: boolean }[] }>(
+    store,
+    productPath,
+    res,
+  );
+  return (body.variants ?? []).map((v) => {
+    if (typeof v.price !== 'number' || !Number.isInteger(v.price)) {
+      throw new Error(`${store.domain} ${productPath}: variant ${v.id} has non-integer price ${String(v.price)}`);
+    }
+    return { id: Number(v.id), priceCents: v.price, available: Boolean(v.available) };
+  });
 }
