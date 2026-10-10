@@ -81,7 +81,13 @@ function Section({ title, groups, q }: { title: string; groups: BottleGroup[]; q
 
 export default function Home({ searchParams }: { searchParams: Promise<RawParams> }) {
   return (
-    <Suspense fallback={<main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6" />}>
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 text-sm text-muted-foreground">
+          {ko.loading}
+        </main>
+      }
+    >
       <SearchView searchParams={searchParams} />
     </Suspense>
   );

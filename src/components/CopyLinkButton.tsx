@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ko } from '@/lib/i18n/ko';
 
 export function CopyLinkButton({ path, label = ko.row.copyCard }: { path: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -17,24 +17,30 @@ export function CopyLinkButton({ path, label = ko.row.copyCard }: { path: string
 
   async function copy() {
     const url = window.location.origin + path;
+    let ok = false;
     try {
       await navigator.clipboard.writeText(url);
+      ok = true;
     } catch {
       const ta = document.createElement('textarea');
       ta.value = url;
       document.body.appendChild(ta);
       ta.select();
-      document.execCommand('copy');
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
       ta.remove();
     }
-    setCopied(true);
+    setState(ok ? 'copied' : 'failed');
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 2000);
+    timer.current = setTimeout(() => setState('idle'), 2000);
   }
 
   return (
     <Button type="button" variant="outline" size="sm" onClick={copy}>
-      {copied ? ko.copy.copied : label}
+      {state === 'copied' ? ko.copy.copied : state === 'failed' ? ko.copy.failed : label}
     </Button>
   );
 }

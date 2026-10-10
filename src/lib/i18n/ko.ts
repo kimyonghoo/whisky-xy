@@ -32,5 +32,6 @@ export const ko = {
   },
   stock: { inStock: '재고 있음', soldOut: '품절', unreliable: '재고 표시 부정확' },
   stale: { warning: '오래된 정보' },
-  copy: { copied: '복사됨' },
+  copy: { copied: '복사됨', failed: '복사 실패' },
+  loading: '검색 중…',
 } as const;
