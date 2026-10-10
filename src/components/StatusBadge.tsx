@@ -1,11 +1,12 @@
-import { BadgeCheck, CircleCheck, CircleX, Clock, TriangleAlert } from 'lucide-react';
+import { BadgeCheck, CircleCheck, CircleHelp, CircleX, Clock, TriangleAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ko } from '@/lib/i18n/ko';
 
-export type StatusKind = 'instock' | 'soldout' | 'unreliable' | 'stale' | 'live';
+export type StatusKind = 'instock' | 'unverified' | 'soldout' | 'unreliable' | 'stale' | 'live';
 
 const CONFIG = {
   instock: { variant: 'instock', Icon: CircleCheck, label: ko.stock.inStock },
+  unverified: { variant: 'stale', Icon: CircleHelp, label: ko.stock.unverified },
   soldout: { variant: 'soldout', Icon: CircleX, label: ko.stock.soldOut },
   unreliable: { variant: 'caution', Icon: TriangleAlert, label: ko.stock.unreliable },
   stale: { variant: 'stale', Icon: Clock, label: ko.stale.warning },

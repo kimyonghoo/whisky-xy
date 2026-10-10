@@ -39,20 +39,23 @@ describe('buildMapStores', () => {
       title: 'Stagg Bourbon',
       sizeMl: 750,
       offers: new Map([
-        ['dewinespot', { storeId: 'dewinespot', listed: 1, inStock: 1, minAvailablePriceCents: 10000 }],
+        ['dewinespot', { storeId: 'dewinespot', listed: 1, inStock: 1, unverified: 0, minAvailablePriceCents: 10000 }],
         // same pre-tax price, lower NJ tax => cheaper
-        ['winechateau', { storeId: 'winechateau', listed: 2, inStock: 2, minAvailablePriceCents: 10000 }],
-        ['coolvines', { storeId: 'coolvines', listed: 1, inStock: 0, minAvailablePriceCents: null }],
+        ['winechateau', { storeId: 'winechateau', listed: 2, inStock: 2, unverified: 0, minAvailablePriceCents: 10000 }],
+        ['coolvines', { storeId: 'coolvines', listed: 1, inStock: 0, unverified: 0, minAvailablePriceCents: null }],
+        // only an available row older than 48 h: "재고 확인 필요", after in-stock, before sold out
+        ['liquorcave', { storeId: 'liquorcave', listed: 1, inStock: 0, unverified: 1, minAvailablePriceCents: null }],
       ]),
     };
     const s = buildMapStores(STORES, avail, bottle);
-    expect(s.slice(0, 3).map((x) => x.id)).toEqual(['winechateau', 'dewinespot', 'coolvines']);
+    expect(s.slice(0, 4).map((x) => x.id)).toEqual(['winechateau', 'dewinespot', 'liquorcave', 'coolvines']);
     expect(s[0]).toMatchObject({ n: 1, dimmed: false, offer: { status: 'instock', inStock: 2, priceCents: 10000, taxIncludedCents: 10663 } });
-    expect(s[2]).toMatchObject({ dimmed: true, offer: { status: 'soldout', priceCents: null } });
-    expect(s.slice(3).every((x) => x.dimmed && x.offer?.status === 'none')).toBe(true);
+    expect(s[2]).toMatchObject({ dimmed: true, offer: { status: 'unverified', priceCents: null } });
+    expect(s[3]).toMatchObject({ dimmed: true, offer: { status: 'soldout', priceCents: null } });
+    expect(s.slice(4).every((x) => x.dimmed && x.offer?.status === 'none')).toBe(true);
     // stores that don't list it keep config order
-    expect(s.slice(3).map((x) => x.id)).toEqual(
-      STORES.map((x) => x.id).filter((id) => !['dewinespot', 'winechateau', 'coolvines'].includes(id)),
+    expect(s.slice(4).map((x) => x.id)).toEqual(
+      STORES.map((x) => x.id).filter((id) => !['dewinespot', 'winechateau', 'coolvines', 'liquorcave'].includes(id)),
     );
   });
 });
@@ -62,7 +65,7 @@ describe('initialView / eastBounds', () => {
     expect(initialView(buildMapStores(STORES, avail, null))).toBe('east');
     const caOnly: BottleOffers = {
       title: 't', sizeMl: null,
-      offers: new Map([['flask', { storeId: 'flask', listed: 1, inStock: 1, minAvailablePriceCents: 100 }]]),
+      offers: new Map([['flask', { storeId: 'flask', listed: 1, inStock: 1, unverified: 0, minAvailablePriceCents: 100 }]]),
     };
     expect(initialView(buildMapStores(STORES, avail, caOnly))).toBe('la');
     const nobody: BottleOffers = { title: 't', sizeMl: null, offers: new Map() };

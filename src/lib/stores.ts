@@ -16,6 +16,13 @@ export interface Store {
   onlineOnly: boolean;
   publicAllowed: boolean;
   note?: string;
+  /**
+   * Shopify products.json path to crawl instead of the whole catalog, e.g. a whisky collection's
+   * `/collections/<handle>/products.json`. Same public endpoint, same headers and pacing. Use it
+   * when the full catalog can't finish within the page limit, so the missing-sweep can run.
+   * The sweep then means "no longer in this collection" (marked sold out, never deleted).
+   */
+  catalogPath?: string;
 }
 
 export const MAIN_REGIONS: Region[] = ['brooklyn', 'nj'];
@@ -53,6 +60,10 @@ export const STORES: Store[] = [
     id: 'winechateau', name: 'Wine Chateau', domain: 'winechateau.com', region: 'nj',
     address: '85 Central Ave, Metuchen, NJ 08840', lat: 40.5414336, lng: -74.3678358,
     phone: '800-946-3190', taxRate: 0.06625, stockReliability: 'high', onlineOnly: false, publicAllowed: true,
+    // The full catalog is > 25,000 products (mostly wine) and never completes in 100 pages, so
+    // the missing-sweep could never run. The public "Whiskeys" collection (checked 2026-10-11:
+    // scotch, bourbon, rye, irish, japanese... ~3.4k products) completes in ~14 pages.
+    catalogPath: '/collections/whiskeys/products.json',
   },
   {
     id: 'coolvines', name: 'CoolVines', domain: 'coolvines.com', region: 'nj',

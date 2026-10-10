@@ -7,6 +7,7 @@ import { normalizeText } from '@/lib/whisky/parse';
 import { getKrLinks } from '@/lib/krlinks';
 import { getLatestFx } from '@/lib/fx';
 import { compareKr } from '@/lib/compare';
+import { confirmedSince, stockState, type StockState } from '@/lib/freshness';
 
 export interface SearchParams {
   q: string;
@@ -20,6 +21,8 @@ export interface SearchParams {
 export interface ListingRow extends Listing {
   store: Store;
   taxIncludedCents: number;
+  /** 'unverified' = available but not checked for 48 h: never ranked or used as a price base. */
+  stock: StockState;
 }
 
 export interface BottleGroup {
@@ -30,6 +33,7 @@ export interface BottleGroup {
   batch: string | null;
   imageUrl: string | null;
   rows: ListingRow[];
+  /** Cheapest confirmed in-stock tax-included price (unverified rows excluded). */
   bestAvailableCents: number | null;
   /**
    * Korea (Dailyshot) comparison, present only when the bottle is linked.
@@ -45,9 +49,11 @@ export function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
+const STOCK_ORDER: Record<StockState, number> = { instock: 0, unverified: 1, soldout: 2 };
+
+/** Confirmed in stock first, then "확인 필요", then sold out; each by tax-included price. */
 function rowCmp(a: ListingRow, b: ListingRow): number {
-  if (a.available !== b.available) return a.available ? -1 : 1;
-  return a.taxIncludedCents - b.taxIncludedCents;
+  return STOCK_ORDER[a.stock] - STOCK_ORDER[b.stock] || a.taxIncludedCents - b.taxIncludedCents;
 }
 
 function buildGroups(rows: ListingRow[]): BottleGroup[] {
@@ -61,7 +67,7 @@ function buildGroups(rows: ListingRow[]): BottleGroup[] {
   for (const [key, rs] of map) {
     rs.sort(rowCmp);
     const first = rs[0];
-    const avail = rs.filter((r) => r.available).map((r) => r.taxIncludedCents);
+    const avail = rs.filter((r) => r.stock === 'instock').map((r) => r.taxIncludedCents);
     groups.push({
       bottleKey: key,
       displayTitle: first.title,
@@ -87,6 +93,8 @@ function buildGroups(rows: ListingRow[]): BottleGroup[] {
 export interface SearchOptions {
   /** Per-section row limit; override is intended for tests only. */
   rowLimit?: number;
+  /** Clock for the 48 h unverified cut-off; tests inject it. */
+  now?: Date;
 }
 
 export async function searchListings(
@@ -97,6 +105,7 @@ export async function searchListings(
   const tokens = normalizeText(p.q ?? '').split(' ').filter(Boolean);
   if (tokens.length === 0 && !p.storeId) return { main: [], ca: [] };
   const limit = opts.rowLimit ?? SECTION_ROW_LIMIT;
+  const now = opts.now ?? new Date();
 
   let stores = STORES.filter((s) => s.publicAllowed);
   if (p.region) stores = stores.filter((s) => s.region === p.region);
@@ -109,7 +118,8 @@ export async function searchListings(
       inArray(listings.storeId, sectionStores.map((s) => s.id)),
       ...tokens.map((t) => ilike(listings.searchText, `%${escapeLike(t)}%`)),
     ];
-    if (p.inStockOnly) conds.push(eq(listings.available, true));
+    // "재고 있는 곳만" means confirmed in stock: unverified (> 48 h) rows are left out too.
+    if (p.inStockOnly) conds.push(eq(listings.available, true), gte(listings.checkedAt, confirmedSince(now)));
     if (p.minCents != null) conds.push(gte(listings.priceCents, p.minCents));
     if (p.maxCents != null) conds.push(lte(listings.priceCents, p.maxCents));
     const found = await db
@@ -122,7 +132,7 @@ export async function searchListings(
     for (const l of found) {
       const store = getStore(l.storeId);
       if (!store) continue;
-      rows.push({ ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate) });
+      rows.push({ ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate), stock: stockState(l, now) });
     }
     return buildGroups(rows);
   };

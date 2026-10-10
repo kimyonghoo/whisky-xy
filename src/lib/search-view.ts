@@ -36,28 +36,35 @@ export function nextShowCount(show: number, total: number, pageSize = SECTION_PA
 
 export interface GroupSummary {
   storeCount: number;
+  /** Stores with a confirmed in-stock row (unverified rows don't count). */
   inStockCount: number;
+  /** Stores whose only "available" rows are older than 48 h ("재고 확인 필요"). */
+  unverifiedCount: number;
   regions: Region[];
-  /** Cheapest in-stock row (rows are pre-sorted in-stock first, then tax-included price). */
+  /** Cheapest confirmed in-stock row; never an unverified one. */
   cheapest: ListingRow | null;
 }
 
 export function summarizeGroup(group: BottleGroup): GroupSummary {
   const stores = new Set<string>();
   const inStock = new Set<string>();
+  const unverified = new Set<string>();
   const regions = new Set<Region>();
   for (const r of group.rows) {
     stores.add(r.storeId);
     regions.add(r.store.region);
-    if (r.available) inStock.add(r.storeId);
+    if (r.stock === 'instock') inStock.add(r.storeId);
+    else if (r.stock === 'unverified') unverified.add(r.storeId);
   }
+  for (const id of inStock) unverified.delete(id);
   let cheapest: ListingRow | null = null;
   for (const r of group.rows) {
-    if (r.available && (cheapest === null || r.taxIncludedCents < cheapest.taxIncludedCents)) cheapest = r;
+    if (r.stock === 'instock' && (cheapest === null || r.taxIncludedCents < cheapest.taxIncludedCents)) cheapest = r;
   }
   return {
     storeCount: stores.size,
     inStockCount: inStock.size,
+    unverifiedCount: unverified.size,
     regions: REGION_ORDER.filter((r) => regions.has(r)),
     cheapest,
   };

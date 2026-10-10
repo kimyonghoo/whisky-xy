@@ -34,6 +34,7 @@ export function NumberDot({ store, className }: { store: MapStore; className?: s
 export function storeStateText(store: MapStore): string {
   if (!store.offer) return store.inStockCount > 0 ? ko.map.inStockWhiskies(store.inStockCount) : ko.map.noWhiskies;
   if (store.offer.status === 'instock') return ko.map.offerInStock;
+  if (store.offer.status === 'unverified') return ko.stock.unverified;
   return store.offer.status === 'soldout' ? ko.map.offerSoldOut : ko.map.offerNone;
 }
 
@@ -64,6 +65,7 @@ export function OfferLine({ store, compact = false }: { store: MapStore; compact
     );
   }
   if (o.status !== 'instock' || o.priceCents === null || o.taxIncludedCents === null) {
+    if (o.status === 'unverified') return <StatusBadge kind="unverified" />;
     return <StatusBadge kind="soldout" label={o.status === 'soldout' ? ko.map.offerSoldOut : ko.map.offerNone} />;
   }
   return (

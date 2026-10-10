@@ -31,8 +31,8 @@ export interface MapStore {
 }
 
 export interface MapOffer {
-  /** 'instock' | 'soldout' (listed but none available) | 'none' (not listed). */
-  status: 'instock' | 'soldout' | 'none';
+  /** 'instock' | 'unverified' (only available rows older than 48 h) | 'soldout' (listed, none available) | 'none' (not listed). */
+  status: 'instock' | 'unverified' | 'soldout' | 'none';
   inStock: number;
   priceCents: number | null;
   taxIncludedCents: number | null;
@@ -61,7 +61,7 @@ export function parseBottleParam(raw: string | string[] | undefined): string | n
 function offerFor(store: Store, bottle: BottleOffers): MapOffer {
   const o = bottle.offers.get(store.id);
   if (!o) return { status: 'none', inStock: 0, priceCents: null, taxIncludedCents: null };
-  if (o.inStock === 0 || o.minAvailablePriceCents === null) return { status: 'soldout', inStock: 0, priceCents: null, taxIncludedCents: null };
+  if (o.inStock === 0 || o.minAvailablePriceCents === null) return { status: o.unverified > 0 ? 'unverified' : 'soldout', inStock: 0, priceCents: null, taxIncludedCents: null };
   return {
     status: 'instock',
     inStock: o.inStock,
@@ -70,7 +70,7 @@ function offerFor(store: Store, bottle: BottleOffers): MapOffer {
   };
 }
 
-const STATUS_ORDER: Record<MapOffer['status'], number> = { instock: 0, soldout: 1, none: 2 };
+const STATUS_ORDER: Record<MapOffer['status'], number> = { instock: 0, unverified: 1, soldout: 2, none: 3 };
 
 /**
  * Stores for the map, in list order, numbered 1..n.

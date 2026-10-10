@@ -41,7 +41,7 @@ export function RankMarker({ rank }: { rank: number | null }) {
  * The main area opens the buy card; secondary actions sit beside it.
  * Card links never prefetch: rendering a card triggers a live store check.
  */
-export function StoreLine({ row, rank, bottleKey, q }: { row: ListingRow; rank: number | null; bottleKey: string; q: string }) {
+export function StoreLine({ row, rank, bottleKey, q, now }: { row: ListingRow; rank: number | null; bottleKey: string; q: string; now?: Date }) {
   const watchHref = `/watchlist?q=${encodeURIComponent(q || row.title)}`;
   const mapHref = `/map?bottle=${encodeURIComponent(bottleKey)}`;
   const best = rank === 1;
@@ -65,8 +65,8 @@ export function StoreLine({ row, rank, bottleKey, q }: { row: ListingRow; rank: 
             {best && <span className="sr-only">{ko.row.rankBest}</span>}
           </span>
           <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <StockBadge available={row.available} reliability={row.store.stockReliability} />
-            <FreshnessIndicator checkedAt={row.checkedAt} />
+            <StockBadge stock={row.stock} reliability={row.store.stockReliability} />
+            <FreshnessIndicator checkedAt={row.checkedAt} now={now} />
           </span>
         </span>
         <PriceBlock
@@ -76,7 +76,7 @@ export function StoreLine({ row, rank, bottleKey, q }: { row: ListingRow; rank: 
           size="sm"
           caption={ko.row.taxIncludedCaption}
           align="end"
-          dimmed={!row.available}
+          dimmed={row.stock !== 'instock'}
         />
         <ChevronRight aria-hidden className="hidden size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 sm:block" />
       </Link>

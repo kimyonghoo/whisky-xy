@@ -9,7 +9,7 @@ import { getListing, getPriceHistory } from '@/lib/listings';
 import { recheckListing } from '@/lib/recheck';
 import { getStore } from '@/lib/stores';
 import { cardMeta, mapsUrl, nyDate, parseCardId, safeHttpsUrl, telHref } from '@/lib/card';
-import { freshness } from '@/lib/freshness';
+import { freshness, stockState } from '@/lib/freshness';
 import { formatUsd, withTaxCents } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
 import { Badge, badgeVariants } from '@/components/ui/badge';
@@ -69,7 +69,10 @@ async function CardView({ params }: Props) {
   const detail = [listing.sizeMl != null ? `${listing.sizeMl} ml` : null, listing.proof != null ? `${listing.proof} proof` : null, listing.batch]
     .filter(Boolean)
     .join(' · ');
-  const stale = freshness(listing.checkedAt, new Date()).stale;
+  const now = new Date();
+  const stale = freshness(listing.checkedAt, now).stale;
+  // After a failed live check, an "available" row older than 48 h reads "재고 확인 필요".
+  const stock = stockState(listing, now);
   const live = status === 'updated' || status === 'cached';
   const lowReliability = store.stockReliability === 'low';
   const tel = telHref(store.phone);
@@ -96,7 +99,7 @@ async function CardView({ params }: Props) {
           {ko.card.statusHeading}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge kind={listing.available ? 'instock' : 'soldout'} size="lg" />
+          <StatusBadge kind={stock} size="lg" />
           {lowReliability && <StatusBadge kind="unreliable" size="lg" />}
         </div>
         <PriceBlock
@@ -105,7 +108,7 @@ async function CardView({ params }: Props) {
           emphasis="shelf"
           size="xl"
           caption={ko.card.shelfPrice}
-          dimmed={!listing.available}
+          dimmed={stock !== 'instock'}
         />
         <div className="flex flex-col gap-3 border-t pt-4">
           <div className="flex flex-wrap items-center gap-2">

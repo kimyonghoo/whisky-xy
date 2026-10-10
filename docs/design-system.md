@@ -57,6 +57,7 @@ Each status comes as a set: `-fg` (text/icon), `-bg` (tint) and `-line` (border)
 | Status | Tokens | Icon | Word (ko.ts) | Meaning |
 |---|---|---|---|---|
 | In stock | `instock-fg #1a6638` / `instock-bg #e8f4ec` / `instock-line` / solid `instock #1e7a42` | CircleCheck | 재고 있음 | the store site says available |
+| Unverified | `stale-fg #8f3110` / `stale-bg #fdede4` (shares the stale tokens) | CircleHelp | 재고 확인 필요 | the store says available, but `checkedAt` > 48 h (`stockState()` in `src/lib/freshness.ts`): two missed crawls. Never ranked, never the cheapest price, never a Korea-compare base |
 | Sold out | `soldout-fg #5f574f` / `soldout-bg #efebe5` | CircleX | 품절 | neutral grey, not red: sold out is information, not an error |
 | Unreliable | `caution-fg #6f4600` / `caution-bg #fff4d6` / `caution-icon #a86c00` | TriangleAlert | 재고 표시 부정확 | the store's stock flag can't be trusted (`stockReliability: 'low'`) |
 | Stale | `stale-fg #8f3110` / `stale-bg #fdede4` | Clock | 오래된 정보 | `checkedAt` > 24 h |
@@ -258,7 +259,7 @@ Five **ordinal** tiers computed by `compareKr()` in `src/lib/compare.ts` (`savin
 
 ### 8.10 Ranked list
 - Use `<ol>` + `RankMarker`. #1 is filled copper and its row gets a `primary-soft` wash plus an sr-only "최저가". Ranks 2+ are outlined, and unranked items (sold out) get a dash.
-- Rank only what is actually comparable (in-stock offers). Sold-out rows sort after them and are not numbered.
+- Rank only what is actually comparable (confirmed in-stock offers, `row.stock === 'instock'`). "재고 확인 필요" rows (available but unchecked > 48 h) sort next with a dash, then sold-out rows; neither is numbered. A bottle with no confirmed row shows the `unverified` badge "재고 확인 필요" (or "전 매장 품절") instead of a lowest price.
 - Show 3 rows per item, then a `<details>` "매장 N곳 더 보기".
 - Lists of items are capped at **20 per section**, followed by "더 보기 (N종 남음)". The cap is pure logic in `src/lib/search-view.ts` (`parseShowCount`, `capGroups`, `nextShowCount`) and driven by URL params (`?main=40`, `?ca=40`, hard max 500).
 

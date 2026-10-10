@@ -2,6 +2,7 @@ import type { Listing } from '@/lib/db/schema';
 import type { Store } from '@/lib/stores';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
+import { stockState } from '@/lib/freshness';
 
 export function mapsUrl(address: string): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -35,8 +36,8 @@ export function nyDate(d: Date): string {
   return `${get('month')}/${get('day')}`;
 }
 
-export function cardMeta(listing: Listing, store: Store): { title: string; description: string; image: string | null } {
-  const stock = listing.available ? ko.stock.inStock : ko.stock.soldOut;
+export function cardMeta(listing: Listing, store: Store, now: Date = new Date()): { title: string; description: string; image: string | null } {
+  const stock = { instock: ko.stock.inStock, unverified: ko.stock.unverified, soldout: ko.stock.soldOut }[stockState(listing, now)];
   return {
     title: listing.title,
     description: `${ko.card.asOf(nyDate(listing.checkedAt), formatUsd(listing.priceCents))} · ${stock} · ${store.name} · ${store.address}`,

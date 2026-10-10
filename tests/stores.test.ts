@@ -16,3 +16,12 @@ describe('stores', () => {
     expect(getStore('bittersandbottles')?.onlineOnly).toBe(true);
   });
 });
+
+describe('store catalog paths', () => {
+  it('every configured catalogPath is a products.json endpoint; Wine Chateau crawls its whisky collection', async () => {
+    const { catalogPathOf } = await import('@/lib/shopify/client');
+    for (const s of STORES) expect(catalogPathOf(s)).toMatch(/products\.json$/);
+    expect(getStore('winechateau')?.catalogPath).toBe('/collections/whiskeys/products.json');
+    expect(catalogPathOf(getStore('dewinespot')!)).toBe('/products.json');
+  });
+});

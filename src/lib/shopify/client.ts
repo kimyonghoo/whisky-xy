@@ -61,6 +61,15 @@ async function checkCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal
   if (cart.currency !== 'USD') throw new CurrencyMismatchError(String(cart.currency));
 }
 
+/** Only `/products.json` or `/collections/<handle>/products.json`: never an arbitrary path. */
+const CATALOG_PATH_RE = /^\/(?:collections\/[a-z0-9][a-z0-9-]*\/)?products\.json$/;
+
+export function catalogPathOf(store: Pick<Store, 'domain' | 'catalogPath'>): string {
+  const p = store.catalogPath ?? '/products.json';
+  if (!CATALOG_PATH_RE.test(p)) throw new Error(`${store.domain}: invalid catalogPath ${p}`);
+  return p;
+}
+
 export async function fetchCatalog(
   store: Store,
   opts: { fetchFn?: FetchFn; delayMs?: number; maxPages?: number; timeoutMs?: number } = {},
@@ -72,10 +81,11 @@ export async function fetchCatalog(
 
   await checkCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
 
+  const base = catalogPathOf(store);
   const products: ShopifyProduct[] = [];
   for (let page = 1; page <= maxPages; page++) {
     await sleep(delayMs);
-    const path = `/products.json?limit=250&page=${page}`;
+    const path = `${base}?limit=250&page=${page}`;
     const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs));
     if (!res.ok) throw new Error(`${store.domain} products page ${page} failed: HTTP ${res.status}`);
     const body = await readJson<{ products?: ShopifyProduct[] }>(store, path, res);

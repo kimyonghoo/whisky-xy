@@ -56,6 +56,26 @@ describe('fetchCatalog', () => {
     expect(products).toHaveLength(2);
     expect(complete).toBe(false);
   });
+  it('crawls the store collection path when catalogPath is set', async () => {
+    const fake = makeFake((url) => {
+      if (url.endsWith('/cart.js')) return usd();
+      if (url.endsWith('page=1')) return json({ products: [prod(1)] });
+      return json({ products: [] });
+    });
+    const { complete } = await fetchCatalog({ ...store, catalogPath: '/collections/whiskeys/products.json' }, { fetchFn: fake, delayMs: 0 });
+    expect(complete).toBe(true);
+    expect(fake.calls.map((c) => c.url)).toEqual([
+      `${HOST}/cart.js`,
+      `${HOST}/collections/whiskeys/products.json?limit=250&page=1`,
+      `${HOST}/collections/whiskeys/products.json?limit=250&page=2`,
+    ]);
+  });
+  it('rejects a catalogPath that is not a products.json endpoint', async () => {
+    const fake = makeFake(() => usd());
+    for (const catalogPath of ['/admin/products.json', '//evil.com/products.json', '/collections/../x/products.json', 'products.json']) {
+      await expect(fetchCatalog({ ...store, catalogPath }, { fetchFn: fake, delayMs: 0 })).rejects.toThrow(/invalid catalogPath/);
+    }
+  });
   it('waits delayMs between requests', async () => {
     const fake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({ products: [] })));
     const t = Date.now();

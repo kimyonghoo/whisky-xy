@@ -12,15 +12,16 @@ import {
 import type { BottleGroup, ListingRow } from '@/lib/search';
 import { getStore } from '@/lib/stores';
 
-function row(storeId: string, taxIncludedCents: number, available: boolean, id: number): ListingRow {
+function row(storeId: string, taxIncludedCents: number, available: boolean | 'unverified', id: number): ListingRow {
   const store = getStore(storeId)!;
-  return { id, storeId, store, taxIncludedCents, available, priceCents: taxIncludedCents } as unknown as ListingRow;
+  const stock = available === 'unverified' ? 'unverified' : available ? 'instock' : 'soldout';
+  return { id, storeId, store, taxIncludedCents, available: available !== false, stock, priceCents: taxIncludedCents } as unknown as ListingRow;
 }
 
 function group(rows: ListingRow[]): BottleGroup {
   return {
     bottleKey: 'k', displayTitle: 'T', sizeMl: 750, proof: null, batch: null, imageUrl: null, rows,
-    bestAvailableCents: rows.filter((r) => r.available).map((r) => r.taxIncludedCents).sort((a, b) => a - b)[0] ?? null,
+    bestAvailableCents: rows.filter((r) => r.stock === 'instock').map((r) => r.taxIncludedCents).sort((a, b) => a - b)[0] ?? null,
   };
 }
 
@@ -72,6 +73,23 @@ describe('summarizeGroup', () => {
     const s = summarizeGroup(group([row('dewinespot', 9500, false, 2)]));
     expect(s.inStockCount).toBe(0);
     expect(s.cheapest).toBeNull();
+  });
+  it('never picks an unverified (> 48 h) row as cheapest and counts it separately', () => {
+    const s = summarizeGroup(group([row('dewinespot', 9500, true, 1), row('liquorcave', 5000, 'unverified', 2), row('grainvine', 4000, false, 3)]));
+    expect(s.cheapest?.id).toBe(1);
+    expect(s.inStockCount).toBe(1);
+    expect(s.unverifiedCount).toBe(1);
+  });
+  it('has no cheapest when the only available rows are unverified', () => {
+    const s = summarizeGroup(group([row('liquorcave', 5000, 'unverified', 2), row('dewinespot', 9000, false, 3)]));
+    expect(s.cheapest).toBeNull();
+    expect(s.inStockCount).toBe(0);
+    expect(s.unverifiedCount).toBe(1);
+  });
+  it('does not count a store as unverified when it also has a confirmed row', () => {
+    const s = summarizeGroup(group([row('dewinespot', 9500, true, 1), row('dewinespot', 5000, 'unverified', 2)]));
+    expect(s.inStockCount).toBe(1);
+    expect(s.unverifiedCount).toBe(0);
   });
   it('counts a store once even with several listings', () => {
     const s = summarizeGroup(group([row('dewinespot', 9500, true, 1), row('dewinespot', 9900, true, 2)]));

@@ -17,11 +17,12 @@ export function BottleResult({ group, q, admin = false, now }: { group: BottleGr
   const s = summarizeGroup(group);
   const ranks = new Map<number, number>();
   let n = 0;
-  for (const r of group.rows) if (r.available) ranks.set(r.id, ++n);
+  // Rank only confirmed in-stock offers; "재고 확인 필요" and sold-out rows get a dash.
+  for (const r of group.rows) if (r.stock === 'instock') ranks.set(r.id, ++n);
   const head = group.rows.slice(0, ROWS_PER_GROUP);
   const rest = group.rows.slice(ROWS_PER_GROUP);
   const line = (r: (typeof group.rows)[number]) => (
-    <StoreLine key={r.id} row={r} rank={ranks.get(r.id) ?? null} bottleKey={group.bottleKey} q={q} />
+    <StoreLine key={r.id} row={r} rank={ranks.get(r.id) ?? null} bottleKey={group.bottleKey} q={q} now={now} />
   );
 
   return (
@@ -45,6 +46,8 @@ export function BottleResult({ group, q, admin = false, now }: { group: BottleGr
                 {formatUsd(s.cheapest.taxIncludedCents)}
               </span>
             </>
+          ) : s.unverifiedCount > 0 ? (
+            <StatusBadge kind="unverified" size="md" label={ko.group.noConfirmedStock} />
           ) : (
             <StatusBadge kind="soldout" size="md" label={ko.group.allSoldOut} />
           )}

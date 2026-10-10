@@ -151,10 +151,11 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   // Results show relative times ("3시간 전 확인"), so they must render per request.
   await connection();
 
-  const [{ main, ca }, jar] = await Promise.all([searchListings(await getDb(), params), cookies()]);
+  // One clock per render: the 48 h "재고 확인 필요" cut-off and the relative times agree.
+  const now = new Date();
+  const [{ main, ca }, jar] = await Promise.all([searchListings(await getDb(), params, { now }), cookies()]);
   // Admins see the "한국 가격 연결" action on each group; the cookie is re-checked by every action.
   const admin = isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY);
-  const now = new Date();
   const none = main.length === 0 && ca.length === 0;
   // A whole-store list can exceed the per-section query limit: say so instead of implying that's everything.
   const truncated = [main, ca].some((sec) => sec.reduce((n, g) => n + g.rows.length, 0) >= SECTION_ROW_LIMIT);

@@ -58,8 +58,8 @@ function SearchAction() {
 
 async function CompareView() {
   await connection();
-  const r = await listKrComparisons(await getDb());
   const now = new Date();
+  const r = await listKrComparisons(await getDb(), now);
 
   if (!r.fx && r.linked > 0) {
     return (

@@ -49,8 +49,8 @@ describe('bottleStoreOffers', () => {
 
     const r = await bottleStoreOffers(db, a.bottleKey);
     expect(r?.title).toBe('Stagg Bourbon');
-    expect(r?.offers.get('dewinespot')).toEqual({ storeId: 'dewinespot', listed: 3, inStock: 2, minAvailablePriceCents: 13000 });
-    expect(r?.offers.get('liquorcave')).toEqual({ storeId: 'liquorcave', listed: 1, inStock: 0, minAvailablePriceCents: null });
+    expect(r?.offers.get('dewinespot')).toEqual({ storeId: 'dewinespot', listed: 3, inStock: 2, unverified: 0, minAvailablePriceCents: 13000 });
+    expect(r?.offers.get('liquorcave')).toEqual({ storeId: 'liquorcave', listed: 1, inStock: 0, unverified: 0, minAvailablePriceCents: null });
     expect(r?.offers.has('flask')).toBe(false);
     expect(await bottleStoreOffers(db, 'no-such-key')).toBeNull();
   });
