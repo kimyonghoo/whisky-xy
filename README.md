@@ -69,7 +69,7 @@ npm run dev                  # http://localhost:3000
 | `TELEGRAM_BOT_TOKEN` | 알림 사용 시 | @BotFather가 발급한 봇 토큰 |
 | `TELEGRAM_CHAT_IDS` | 알림 사용 시 | 알림을 받을 채팅 ID, 쉼표로 구분 |
 | `SITE_URL` | 권장 | 공개 사이트 주소. 알림의 카드 링크와 크롤러 User-Agent에 사용 |
-| `ADMIN_KEY` | 관리 화면 사용 시 | `/watchlist`, `/link-kr` 보호용 비밀 키. 긴 무작위 문자열로 만들 것(아래 참고). 비어 있으면 관리 화면은 열리지 않음 |
+| `ADMIN_KEY` | 관리 화면 사용 시 | `/watchlist`, `/link-kr` 보호용 비밀 키. **32자 이상** 무작위 문자열(아래 참고). 비어 있거나 32자 미만이면 관리 화면은 열리지 않음(서버 로그에 경고). 쿠키에는 키가 아니라 서명된 30일 세션만 저장됨 |
 | `NEXT_PUBLIC_MAP_TILE_URL` | 공개 출시 전 필수 | 지도 타일 URL(`https://.../{z}/{x}/{y}...` 형식). 비우면 OpenStreetMap 공개 타일 |
 | `NEXT_PUBLIC_MAP_TILE_ATTRIBUTION` | 타일 URL 설정 시 | 위 타일 제공자가 요구하는 출처 표기(일반 텍스트) |
 

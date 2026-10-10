@@ -2,7 +2,16 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { ADMIN_COOKIE, adminCookieOptions, isAdmin } from '@/lib/admin';
+import {
+  ADMIN_COOKIE,
+  LEGACY_ADMIN_COOKIE,
+  WRONG_KEY_DELAY_MS,
+  adminCookieOptions,
+  checkAdminKey,
+  createAdminSession,
+  expiredCookieOptions,
+  isAdmin,
+} from '@/lib/admin';
 import { getDb } from '@/lib/db/client';
 import { createWatch, deleteWatch, parseWatchForm, parseWatchId, type WatchField } from '@/lib/watches';
 import { ko } from '@/lib/i18n/ko';
@@ -32,15 +41,25 @@ async function adminFromCookie(): Promise<boolean> {
 export async function loginAction(_prev: LoginState, fd: FormData): Promise<LoginState> {
   const key = fd.get('key');
   if (typeof key !== 'string' || key.length === 0) return { error: ko.watch.gate.emptyKey };
-  // Same message whether the key is wrong or ADMIN_KEY is unset: don't reveal configuration.
-  if (!isAdmin(key, process.env.ADMIN_KEY)) return { error: ko.watch.gate.wrongKey };
-  (await cookies()).set(ADMIN_COOKIE, key, adminCookieOptions());
+  // Same message whether the key is wrong, too short, or ADMIN_KEY is unset: don't reveal configuration.
+  const session = checkAdminKey(key, process.env.ADMIN_KEY) ? createAdminSession(process.env.ADMIN_KEY) : null;
+  if (!session) {
+    // Fixed delay on every wrong key slows guessing to a crawl.
+    await new Promise((r) => setTimeout(r, WRONG_KEY_DELAY_MS));
+    return { error: ko.watch.gate.wrongKey };
+  }
+  const jar = await cookies();
+  // The cookie holds a signed, expiring session, never the key itself.
+  jar.set(ADMIN_COOKIE, session, adminCookieOptions());
+  jar.set(LEGACY_ADMIN_COOKIE, '', expiredCookieOptions());
   revalidatePath(PATH);
   return {};
 }
 
 export async function logoutAction(): Promise<void> {
-  (await cookies()).delete(ADMIN_COOKIE);
+  const jar = await cookies();
+  jar.set(ADMIN_COOKIE, '', expiredCookieOptions());
+  jar.set(LEGACY_ADMIN_COOKIE, '', expiredCookieOptions());
   revalidatePath(PATH);
 }
 
