@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as schema from './schema';
@@ -19,7 +20,9 @@ async function create(): Promise<Db> {
   const { PGlite } = await import('@electric-sql/pglite');
   const { drizzle } = await import('drizzle-orm/pglite');
   const { migrate } = await import('drizzle-orm/pglite/migrator');
-  const client = new PGlite(path.join(process.cwd(), '.data', 'pglite'));
+  const dir = path.join(process.cwd(), '.data', 'pglite');
+  fs.mkdirSync(dir, { recursive: true });
+  const client = new PGlite(dir);
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
   return db as unknown as Db;
