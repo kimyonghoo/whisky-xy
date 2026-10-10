@@ -3,5 +3,5 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
-  test: { environment: 'node' },
+  test: { environment: 'node', testTimeout: 30000, hookTimeout: 30000 },
 });

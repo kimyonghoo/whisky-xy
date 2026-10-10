@@ -33,5 +33,5 @@ describe('listings queries', () => {
     expect(one.get('dewinespot')).toBe(1);
     expect(one.get('flask')).toBe(1);
     expect(one.get('liquorcave')).toBeUndefined();
-  }, 30000);
+  });
 });

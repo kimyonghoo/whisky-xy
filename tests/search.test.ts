@@ -1,24 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createTestDb } from './helpers/db';
 import { listings } from '@/lib/db/schema';
-import { searchListings, escapeLike } from '@/lib/search';
-import { bottleKey, normalizeText } from '@/lib/whisky/parse';
+import { ilike } from 'drizzle-orm';
+import { searchListings, escapeLike, SECTION_ROW_LIMIT } from '@/lib/search';
+import { seed } from './helpers/seed';
 import type { Db } from '@/lib/db/client';
-
-let n = 0;
-export function seed(over: { storeId: string; title: string; priceCents: number; available?: boolean; variantTitle?: string | null; vendor?: string }) {
-  n++;
-  const variantTitle = over.variantTitle ?? null;
-  const vendor = over.vendor ?? 'Vendor';
-  const now = new Date();
-  return {
-    storeId: over.storeId, productId: `p${n}`, variantId: `v${n}`, handle: `h${n}`, title: over.title, variantTitle, vendor,
-    productType: 'Whiskey', imageUrl: null, url: `https://x/${n}`, priceCents: over.priceCents, available: over.available ?? true,
-    sizeMl: 750, proof: null, batch: null, bottleKey: bottleKey({ title: over.title, variantTitle }),
-    searchText: normalizeText(`${over.title} ${variantTitle ?? ''} ${vendor}`),
-    firstSeenAt: now, lastSeenAt: now, checkedAt: now, updatedAt: now,
-  };
-}
 
 describe('searchListings', () => {
   let db: Db;
@@ -83,5 +69,48 @@ describe('searchListings', () => {
     expect(titles.indexOf('Sold Out Only Whiskey')).toBeGreaterThan(titles.indexOf('Zeta Whiskey'));
     const g = r.main.find((x) => x.displayTitle === 'Sold Out Only Whiskey')!;
     expect(g.bestAvailableCents).toBeNull();
+  });
+
+  it('has a per-section limit constant of 500', () => {
+    expect(SECTION_ROW_LIMIT).toBe(500);
+  });
+
+  it('CA rows cannot crowd main rows out of the limit', async () => {
+    const d = await createTestDb();
+    await d.insert(listings).values([
+      seed({ storeId: 'flask', title: 'Crowd Rye A', priceCents: 100 }),
+      seed({ storeId: 'flask', title: 'Crowd Rye B', priceCents: 200 }),
+      seed({ storeId: 'bittersandbottles', title: 'Crowd Rye C', priceCents: 300 }),
+      seed({ storeId: 'dewinespot', title: 'Crowd Rye D', priceCents: 9000 }),
+      seed({ storeId: 'liquorcave', title: 'Crowd Rye E', priceCents: 9500 }),
+    ]);
+    const r = await searchListings(d, { q: 'crowd rye' }, { rowLimit: 2 });
+    expect(r.main.flatMap((g) => g.rows).map((x) => x.storeId).sort()).toEqual(['dewinespot', 'liquorcave']);
+    expect(r.ca.flatMap((g) => g.rows).length).toBe(2);
+  });
+
+  it('percent and underscore in input never act as wildcards', async () => {
+    const d = await createTestDb();
+    await d.insert(listings).values([
+      seed({ storeId: 'dewinespot', title: 'Foo 100 Proof', priceCents: 1000 }),
+      seed({ storeId: 'dewinespot', title: 'Foo 1000', priceCents: 1000 }),
+      seed({ storeId: 'dewinespot', title: 'Raw', priceCents: 1000, searchText: 'raw 100% pure' }),
+      seed({ storeId: 'dewinespot', title: 'Raw2', priceCents: 1000, searchText: 'raw 100x pure' }),
+      seed({ storeId: 'dewinespot', title: 'Und', priceCents: 1000, searchText: 'und a_b' }),
+      seed({ storeId: 'dewinespot', title: 'Und2', priceCents: 1000, searchText: 'und axb' }),
+    ]);
+    // normalization strips % so the token is just '100' (substring semantics, no wildcard)
+    const r = await searchListings(d, { q: '100%' });
+    const titles = r.main.flatMap((g) => g.rows).map((x) => x.title).sort();
+    expect(titles).toEqual(['Foo 100 Proof', 'Foo 1000', 'Raw', 'Raw2']);
+    // '%' alone never matches everything
+    expect(await searchListings(d, { q: '%' })).toEqual({ main: [], ca: [] });
+    // escapeLike through the same ilike builder against raw searchText containing % and _
+    const hit = async (pat: string) =>
+      (await d.select({ t: listings.title }).from(listings).where(ilike(listings.searchText, `%${escapeLike(pat)}%`))).map((x) => x.t);
+    expect(await hit('100%')).toEqual(['Raw']);
+    expect(await hit('a_b')).toEqual(['Und']);
+    expect(await hit('%')).toEqual(['Raw']);
+    expect(await hit('_')).toEqual(['Und']);
   });
 });

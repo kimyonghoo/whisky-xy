@@ -30,7 +30,7 @@ export interface BottleGroup {
   bestAvailableCents: number | null;
 }
 
-const ROW_LIMIT = 500;
+export const SECTION_ROW_LIMIT = 500;
 
 export function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
@@ -75,37 +75,52 @@ function buildGroups(rows: ListingRow[]): BottleGroup[] {
   return groups;
 }
 
-export async function searchListings(db: Db, p: SearchParams): Promise<{ main: BottleGroup[]; ca: BottleGroup[] }> {
+export interface SearchOptions {
+  /** Per-section row limit; override is intended for tests only. */
+  rowLimit?: number;
+}
+
+export async function searchListings(
+  db: Db,
+  p: SearchParams,
+  opts: SearchOptions = {},
+): Promise<{ main: BottleGroup[]; ca: BottleGroup[] }> {
   const tokens = normalizeText(p.q ?? '').split(' ').filter(Boolean);
   if (tokens.length === 0 && !p.storeId) return { main: [], ca: [] };
+  const limit = opts.rowLimit ?? SECTION_ROW_LIMIT;
 
   let stores = STORES.filter((s) => s.publicAllowed);
   if (p.region) stores = stores.filter((s) => s.region === p.region);
   if (p.storeId) stores = stores.filter((s) => s.id === p.storeId);
-  if (stores.length === 0) return { main: [], ca: [] };
 
-  const conds = [
-    inArray(listings.storeId, stores.map((s) => s.id)),
-    ...tokens.map((t) => ilike(listings.searchText, `%${escapeLike(t)}%`)),
-  ];
-  if (p.inStockOnly) conds.push(eq(listings.available, true));
-  if (p.minCents != null) conds.push(gte(listings.priceCents, p.minCents));
-  if (p.maxCents != null) conds.push(lte(listings.priceCents, p.maxCents));
+  // Each section is queried separately so one region can never crowd out the other.
+  const section = async (sectionStores: Store[]): Promise<BottleGroup[]> => {
+    if (sectionStores.length === 0) return [];
+    const conds = [
+      inArray(listings.storeId, sectionStores.map((s) => s.id)),
+      ...tokens.map((t) => ilike(listings.searchText, `%${escapeLike(t)}%`)),
+    ];
+    if (p.inStockOnly) conds.push(eq(listings.available, true));
+    if (p.minCents != null) conds.push(gte(listings.priceCents, p.minCents));
+    if (p.maxCents != null) conds.push(lte(listings.priceCents, p.maxCents));
+    const found = await db
+      .select()
+      .from(listings)
+      .where(and(...conds))
+      .orderBy(desc(listings.available), asc(listings.priceCents), asc(listings.id))
+      .limit(limit);
+    const rows: ListingRow[] = [];
+    for (const l of found) {
+      const store = getStore(l.storeId);
+      if (!store) continue;
+      rows.push({ ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate) });
+    }
+    return buildGroups(rows);
+  };
 
-  const found = await db
-    .select()
-    .from(listings)
-    .where(and(...conds))
-    .orderBy(desc(listings.available), asc(listings.priceCents), asc(listings.id))
-    .limit(ROW_LIMIT);
-
-  const main: ListingRow[] = [];
-  const ca: ListingRow[] = [];
-  for (const l of found) {
-    const store = getStore(l.storeId);
-    if (!store) continue;
-    const row: ListingRow = { ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate) };
-    (MAIN_REGIONS.includes(store.region) ? main : ca).push(row);
-  }
-  return { main: buildGroups(main), ca: buildGroups(ca) };
+  const [main, ca] = await Promise.all([
+    section(stores.filter((s) => MAIN_REGIONS.includes(s.region))),
+    section(stores.filter((s) => !MAIN_REGIONS.includes(s.region))),
+  ]);
+  return { main, ca };
 }
