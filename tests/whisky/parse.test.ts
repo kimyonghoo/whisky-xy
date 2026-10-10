@@ -14,6 +14,26 @@ describe('isWhiskyProduct', () => {
   });
 });
 
+describe('fix round 1', () => {
+  it('isWhiskyProduct handles cask finishes and beer', () => {
+    expect(isWhiskyProduct({ title: 'Glendronach Port Wine Cask Finish Scotch', productType: 'Single Malt Scotch', tags: [] })).toBe(true);
+    expect(isWhiskyProduct({ title: 'Cabernet Cask Finished Bourbon', productType: 'Bourbon', tags: [] })).toBe(true);
+    expect(isWhiskyProduct({ title: 'Bourbon Barrel Aged Stout', productType: 'Beer', tags: [] })).toBe(false);
+  });
+  it('parseBatch ignores small batch / age / proof', () => {
+    expect(parseBatch('Four Roses Small Batch 90 Proof')).toBeNull();
+    expect(parseBatch('Small Batch 12 Year')).toBeNull();
+    expect(parseBatch('Batch 12Yr')).toBeNull();
+    expect(parseBatch('Jack Daniels 12Yr Batch # 2')).toBe('2');
+    expect(bottleKey({ title: 'Four Roses Small Batch Bourbon 90 Proof', variantTitle: null }).includes('|b|')).toBe(true);
+  });
+  it('parseProof ignores sizes; Stagg Jr vs George T', () => {
+    expect(parseProof('Barrel Proof 100ml')).toBeNull();
+    expect(bottleKey({ title: 'Stagg Jr Kentucky Straight Bourbon Whiskey', variantTitle: null }))
+      .not.toBe(bottleKey({ title: 'George T. Stagg Kentucky Straight Bourbon Whiskey', variantTitle: null }));
+  });
+});
+
 describe('parseSizeMl', () => {
   it('parses sizes', () => {
     expect(parseSizeMl('Buffalo Trace Single Oak 375ml / Half-Bottle')).toBe(375);

@@ -1,11 +1,19 @@
 // Pure text parsing helpers for whisky listings. No DB, no network.
 
 const WHISKY_RE = /whisk(e)?y|bourbon|scotch|\brye\b|single malt/i;
-const REJECT_RE =
-  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|\bwine\b|cabernet|sauvignon|chardonnay|gift card|glass(es|ware)?\b|bitters/i;
+const ALWAYS_REJECT_RE =
+  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters/i;
+// Wine/grape and beer terms only reject when productType is not itself whisky-like
+// (cask-finished whisky legitimately mentions port, cabernet, etc.).
+const NON_WHISKY_TYPE_REJECT_RE =
+  /\bwine\b|cabernet|sauvignon|chardonnay|\b(beer|stout|ale|ipa|lager|porter)\b/i;
 
 export function isWhiskyProduct(p: { title: string; productType: string; tags: string[] }): boolean {
-  if (REJECT_RE.test(p.title) || REJECT_RE.test(p.productType)) return false;
+  if (ALWAYS_REJECT_RE.test(p.title) || ALWAYS_REJECT_RE.test(p.productType)) return false;
+  const typeIsWhisky = WHISKY_RE.test(p.productType);
+  if (!typeIsWhisky && (NON_WHISKY_TYPE_REJECT_RE.test(p.title) || NON_WHISKY_TYPE_REJECT_RE.test(p.productType))) {
+    return false;
+  }
   return WHISKY_RE.test(`${p.title} ${p.productType} ${p.tags.join(' ')}`);
 }
 
@@ -27,7 +35,7 @@ export function parseSizeMl(text: string): number | null {
 // Order matters: "94 Proof" / "Proof 94" / "94º". Degree sign and ordinal sign both accepted.
 const PROOF_PATTERNS = [
   /(?<![\d.])(\d{2,3}(?:\.\d)?)\s*proof\b/gi,
-  /\bproof\s*(\d{2,3}(?:\.\d)?)(?![\d.]*\d)/gi,
+  /\bproof\s*(\d{2,3}(?:\.\d)?)(?![\d.]*\d)(?!\s*(?:ml|cl|l)\b)/gi,
   /(?<![\d.])(\d{2,3})\s*[º°]/g,
 ];
 
@@ -45,7 +53,8 @@ export function parseProof(text: string): number | null {
   return proofMatch(text)?.proof ?? null;
 }
 
-const BATCH_NUM_RE = /batch\s*#?\s*([0-9]+[a-z]?)/i;
+const BATCH_NUM_RE =
+  /(?<!\b(?:small|single)\s+)batch\s*#?\s*([0-9]+(?:[a-z](?![a-z]))?)(?!\d)(?!\s*(?:proof|yrs?|years?|yo)\b)/i;
 const BATCH_CODE_RE = /\b([abc]\d{3})\b/i;
 
 function batchMatch(text: string): { batch: string; match: string } | null {
