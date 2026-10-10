@@ -9,7 +9,7 @@ import {
   activeFilterCount,
   searchHref,
 } from '@/lib/search-view';
-import type { BottleGroup, ListingRow } from '@/lib/search';
+import { identifyingVariant, type BottleGroup, type ListingRow } from '@/lib/search';
 import { getStore } from '@/lib/stores';
 
 function row(storeId: string, taxIncludedCents: number, available: boolean | 'unverified', id: number): ListingRow {
@@ -95,6 +95,16 @@ describe('summarizeGroup', () => {
     const s = summarizeGroup(group([row('dewinespot', 9500, true, 1), row('dewinespot', 9900, true, 2)]));
     expect(s.storeCount).toBe(1);
     expect(s.inStockCount).toBe(1);
+  });
+});
+
+describe('identifyingVariant', () => {
+  it('keeps variants that identify the bottle and drops pure sizes', () => {
+    expect(identifyingVariant('2024')).toBe('2024');
+    expect(identifyingVariant('2024 / 750ml')).toBe('2024 / 750ml');
+    expect(identifyingVariant('750ml')).toBeNull();
+    expect(identifyingVariant('1.75 L')).toBeNull();
+    expect(identifyingVariant(null)).toBeNull();
   });
 });
 

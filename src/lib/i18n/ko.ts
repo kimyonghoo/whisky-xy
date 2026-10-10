@@ -195,7 +195,7 @@ export const ko = {
     noFxBody: '환율을 아직 가져오지 못해 원화로 비교할 수 없어요. 다음 가격 확인 때 다시 시도해요.',
     goSearch: '위스키 검색하기',
     tiersLabel: '판정 기준 (미국에서 사면 아끼는 비율)',
-    tiers: { must: '50% 이상', big: '30–49%', good: '15–29%', small: '0–14%', worse: '0% 미만' },
+    tiers: { must: '50% 이상', big: '30–49%', good: '15–29%', small: '0–14%', worse: '한국이 조금이라도 싸면' },
     rank: (n: number) => `${n}위`,
     usStoreStale: '미국 매장',
     srRow: (rank: number, verdict: string, kr: string, us: string, store: string, diff: string) =>

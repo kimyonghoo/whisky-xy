@@ -28,7 +28,7 @@ export function BottleResult({ group, q, admin = false, now }: { group: BottleGr
   return (
     <Card as="article">
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
-        <BottleHeader title={group.displayTitle} imageUrl={group.imageUrl} spec={group}>
+        <BottleHeader title={group.displayTitle} subtitle={group.displayVariant} imageUrl={group.imageUrl} spec={group}>
           <div className="flex flex-wrap items-center gap-1.5">
             {s.regions.map((r) => (
               <RegionChip key={r} region={r} />

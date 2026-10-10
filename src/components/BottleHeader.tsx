@@ -66,7 +66,10 @@ export function BottleHeader({
     <div className="flex min-w-0 gap-3.5 sm:gap-4">
       <BottleImage src={imageUrl} alt={title} className="size-[4.5rem] sm:size-24" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <H className="line-clamp-2 text-base leading-snug font-semibold tracking-tight sm:text-lg">{title}</H>
+        <H className="line-clamp-2 text-base leading-snug font-semibold tracking-tight sm:text-lg">
+          {title}
+          {subtitle && <span className="font-medium text-muted-foreground"> · {subtitle}</span>}
+        </H>
         <SpecChips spec={spec} />
         {children}
       </div>

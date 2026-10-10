@@ -28,6 +28,8 @@ export interface ListingRow extends Listing {
 export interface BottleGroup {
   bottleKey: string;
   displayTitle: string;
+  /** Variant title that tells groups apart (e.g. release year), shown next to the title. */
+  displayVariant?: string | null;
   sizeMl: number | null;
   proof: number | null;
   batch: string | null;
@@ -56,6 +58,16 @@ function rowCmp(a: ListingRow, b: ListingRow): number {
   return STOCK_ORDER[a.stock] - STOCK_ORDER[b.stock] || a.taxIncludedCents - b.taxIncludedCents;
 }
 
+/**
+ * The variant title when it identifies the bottle (e.g. a release year "2024"), else null.
+ * Pure size variants ("750ml", "1.75 L") are already shown as a spec chip.
+ */
+export function identifyingVariant(variantTitle: string | null): string | null {
+  if (!variantTitle) return null;
+  const rest = variantTitle.replace(/\d+(?:\.\d+)?\s*(?:ml|liters?|litres?|l)\b/gi, '').replace(/[^a-z0-9]/gi, '');
+  return rest ? variantTitle.trim() : null;
+}
+
 function buildGroups(rows: ListingRow[]): BottleGroup[] {
   const map = new Map<string, ListingRow[]>();
   for (const r of rows) {
@@ -71,6 +83,7 @@ function buildGroups(rows: ListingRow[]): BottleGroup[] {
     groups.push({
       bottleKey: key,
       displayTitle: first.title,
+      displayVariant: identifyingVariant(first.variantTitle),
       sizeMl: first.sizeMl,
       proof: first.proof,
       batch: first.batch,
