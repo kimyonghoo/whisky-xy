@@ -31,15 +31,17 @@ function classify(
  * Upserts one store's crawl. The first crawl of a store (no existing rows) is silent.
  * Listings missing from `obs` are marked sold out unless opts.markMissingSoldOut is false
  * (use false for incomplete/truncated catalogs); in that case they are left untouched.
+ * If opts.catalogVariantIds is given, only listings absent from that raw catalog are swept.
  */
 export async function ingestStoreCrawl(
   db: Db,
   storeId: string,
   obs: Observation[],
   now: Date,
-  opts?: { markMissingSoldOut?: boolean },
+  opts?: { markMissingSoldOut?: boolean; catalogVariantIds?: Set<string> },
 ): Promise<ChangeEvent[]> {
   const markMissing = opts?.markMissingSoldOut ?? true;
+  const catalogIds = opts?.catalogVariantIds;
   // last observation wins for duplicate variants
   const byVariant = new Map<string, Observation>();
   for (const o of obs) byVariant.set(o.variantId, o);
@@ -82,6 +84,8 @@ export async function ingestStoreCrawl(
     if (markMissing) {
       for (const prev of existingRows) {
         if (byVariant.has(prev.variantId) || !prev.available) continue;
+        // still in the store's raw catalog but filtered/unparseable by us: not gone
+        if (catalogIds?.has(prev.variantId)) continue;
         await tx
           .update(listings)
           .set({ available: false, checkedAt: now, updatedAt: now })

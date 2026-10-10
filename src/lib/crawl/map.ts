@@ -67,3 +67,10 @@ export function toObservations(store: Store, p: ShopifyProduct): Observation[] {
   }
   return out;
 }
+
+/** Every variant id present in the raw catalog, regardless of whisky/size/price filtering. */
+export function catalogVariantIds(products: ShopifyProduct[]): Set<string> {
+  const ids = new Set<string>();
+  for (const p of products) for (const v of p.variants) ids.add(String(v.id));
+  return ids;
+}

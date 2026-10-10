@@ -71,7 +71,40 @@ describe('ingestStoreCrawl', () => {
   });
 });
 
+describe('ingest edge cases', () => {
+  it('catalogVariantIds containing the missing listing leaves it untouched', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, true), b(3499, true)], t0);
+    const ev = await ingestStoreCrawl(db, 'flask', [b(3499, true)], t1, { catalogVariantIds: new Set(['a', 'b']) });
+    expect(ev).toEqual([]);
+    const row = await rowFor('a');
+    expect(row.available).toBe(true);
+    expect(row.checkedAt).toEqual(t0);
+  });
+  it('catalogVariantIds lacking the missing listing marks it sold_out', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, true), b(3499, true)], t0);
+    const ev = await ingestStoreCrawl(db, 'flask', [b(3499, true)], t1, { catalogVariantIds: new Set(['b']) });
+    expect(ev).toEqual([expect.objectContaining({ kind: 'sold_out', prevPriceCents: 6499 })]);
+  });
+  it('simultaneous price and availability change yields one event and one history row', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, true)], t0);
+    const ev = await ingestStoreCrawl(db, 'flask', [a(5999, false)], t1);
+    expect(ev).toHaveLength(1);
+    expect(ev[0]).toMatchObject({ kind: 'sold_out', prevPriceCents: 6499, priceCents: 5999 });
+    expect(await db.select().from(priceHistory)).toHaveLength(2);
+  });
+  it('missing listing that is already unavailable emits nothing', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, false), b(3499, true)], t0);
+    expect(await ingestStoreCrawl(db, 'flask', [b(3499, true)], t1)).toEqual([]);
+    expect(await db.select().from(priceHistory)).toHaveLength(2);
+  });
+});
+
 describe('recordLiveCheck', () => {
+  it('emits restock when unavailable becomes available', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, false)], t0);
+    const ev = await recordLiveCheck(db, await rowFor('a'), { priceCents: 6499, available: true }, t1);
+    expect(ev).toMatchObject({ kind: 'restock', available: true });
+  });
   it('writes history only when changed', async () => {
     await ingestStoreCrawl(db, 'flask', [a(6499, true)], t0);
     const row = await rowFor('a');

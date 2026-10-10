@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toObservations } from '@/lib/crawl/map';
+import { toObservations, catalogVariantIds } from '@/lib/crawl/map';
 import { getStore } from '@/lib/stores';
 
 const flask = getStore('flask')!;
@@ -41,5 +41,14 @@ describe('toObservations', () => {
       variants: [{ id: 21, title: '750ml', price: 'abc', available: true }, { id: 22, title: '750ml', price: '10.00', available: true }],
     });
     expect(obs.map((o) => o.variantId)).toEqual(['22']);
+  });
+});
+
+describe('catalogVariantIds', () => {
+  it('includes every variant, even filtered, unparseable and non-whisky ones', () => {
+    const glass = { ...p, id: 2, title: 'Wine Glass Set', product_type: 'Glassware', vendor: 'X', tags: 'gift',
+      variants: [{ id: 31, title: 'One', price: '5.00', available: true }] };
+    const bad = { ...p, id: 3, variants: [{ id: 41, title: '750ml', price: 'abc', available: true }] };
+    expect([...catalogVariantIds([p, glass, bad])].sort()).toEqual(['11', '12', '13', '31', '41']);
   });
 });
