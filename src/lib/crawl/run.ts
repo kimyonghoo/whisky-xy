@@ -68,8 +68,12 @@ export async function runCrawl(opts: {
   const ids = [...new Set(events.map((e) => e.listingId))];
   if (ids.length > 0) {
     const watchRows = await db.select().from(watches);
-    const rows = await db.select().from(listings).where(inArray(listings.id, ids));
-    const byId = new Map<number, Listing>(rows.map((l) => [l.id, l]));
+    const byId = new Map<number, Listing>();
+    // chunked: a mass sold-out sweep can yield more ids than Postgres' bind-param limit
+    for (let i = 0; i < ids.length; i += 5000) {
+      const rows = await db.select().from(listings).where(inArray(listings.id, ids.slice(i, i + 5000)));
+      for (const l of rows) byId.set(l.id, l);
+    }
     for (const c of selectAlerts(watchRows, events, byId)) {
       const store = getStore(c.listing.storeId);
       if (!store) continue;

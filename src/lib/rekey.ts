@@ -1,7 +1,22 @@
-import { eq, inArray } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { krLinks, listings } from '@/lib/db/schema';
 import { bottleKey } from '@/lib/whisky/parse';
+
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+/** Sets bottle_key per id in chunks of one UPDATE ... FROM (VALUES ...) each (all values bound). */
+async function setBottleKeys(tx: Tx, table: typeof listings | typeof krLinks, pairs: { id: number; key: string }[]): Promise<void> {
+  for (let i = 0; i < pairs.length; i += 1000) {
+    const values = sql.join(
+      pairs.slice(i, i + 1000).map((p) => sql`(${p.id}::integer, ${p.key}::text)`),
+      sql`, `,
+    );
+    await tx.execute(
+      sql`update ${table} set ${sql.identifier(table.bottleKey.name)} = v.k from (values ${values}) as v(id, k) where ${table.id} = v.id`,
+    );
+  }
+}
 
 export interface RekeyReport {
   listingsScanned: number;
@@ -43,14 +58,9 @@ export async function rekeyAll(db: Db, log: (msg: string) => void = () => {}): P
       }
     }
 
-    let listingsChanged = 0;
-    for (const [key, ids] of changed) {
-      for (let i = 0; i < ids.length; i += 500) {
-        const chunk = ids.slice(i, i + 500);
-        await tx.update(listings).set({ bottleKey: key }).where(inArray(listings.id, chunk));
-        listingsChanged += chunk.length;
-      }
-    }
+    const listingPairs = [...changed].flatMap(([key, ids]) => ids.map((id) => ({ id, key })));
+    await setBottleKeys(tx, listings, listingPairs);
+    const listingsChanged = listingPairs.length;
 
     const links = await tx.select().from(krLinks);
     const target = new Map<number, string>();
@@ -97,13 +107,9 @@ export async function rekeyAll(db: Db, log: (msg: string) => void = () => {}): P
       await tx.delete(krLinks).where(inArray(krLinks.id, linksDropped.map((d) => d.id)));
     }
     // Two phases so a move onto a key another link is leaving never violates UNIQUE.
-    for (const m of moves) {
-      await tx.update(krLinks).set({ bottleKey: `__rekey_tmp__:${m.id}` }).where(eq(krLinks.id, m.id));
-    }
-    for (const m of moves) {
-      await tx.update(krLinks).set({ bottleKey: m.to }).where(eq(krLinks.id, m.id));
-      log(`[rekey] kr_link ${m.id} -> "${m.to}"`);
-    }
+    await setBottleKeys(tx, krLinks, moves.map((m) => ({ id: m.id, key: `__rekey_tmp__:${m.id}` })));
+    await setBottleKeys(tx, krLinks, moves.map((m) => ({ id: m.id, key: m.to })));
+    for (const m of moves) log(`[rekey] kr_link ${m.id} -> "${m.to}"`);
 
     return {
       listingsScanned: rows.length,

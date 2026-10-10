@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, priceHistory, type Listing } from '@/lib/db/schema';
 import type { Observation } from './map';
@@ -27,11 +27,35 @@ function classify(
   return null;
 }
 
+// Rows per statement. listings has 21 insert columns, so 500 rows = 10.5k bind params,
+// well under Postgres' 65535 limit; priceHistory (4 cols) and id lists are far below it.
+const CHUNK = 500;
+
+function chunked<T>(xs: T[], size = CHUNK): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += size) out.push(xs.slice(i, i + size));
+  return out;
+}
+
+// Columns refreshed on conflict (everything except storeId, variantId, firstSeenAt).
+const UPDATE_COLS = [
+  'productId', 'handle', 'title', 'variantTitle', 'vendor', 'productType', 'imageUrl', 'url',
+  'priceCents', 'available', 'sizeMl', 'proof', 'batch', 'bottleKey', 'searchText',
+  'lastSeenAt', 'checkedAt', 'updatedAt',
+] as const satisfies readonly (keyof typeof listings.$inferInsert)[];
+
+const UPSERT_SET = Object.fromEntries(
+  UPDATE_COLS.map((k) => [k, sql`excluded.${sql.identifier(listings[k].name)}`]),
+) as Record<(typeof UPDATE_COLS)[number], SQL>;
+
 /**
  * Upserts one store's crawl. The first crawl of a store (no existing rows) is silent.
  * Listings missing from `obs` are marked sold out unless opts.markMissingSoldOut is false
  * (use false for incomplete/truncated catalogs); in that case they are left untouched.
  * If opts.catalogVariantIds is given, only listings absent from that raw catalog are swept.
+ *
+ * Diffs are computed in memory against the store's existing rows; writes are multi-row
+ * statements in chunks, all in one transaction.
  */
 export async function ingestStoreCrawl(
   db: Db,
@@ -45,54 +69,74 @@ export async function ingestStoreCrawl(
   // last observation wins for duplicate variants
   const byVariant = new Map<string, Observation>();
   for (const o of obs) byVariant.set(o.variantId, o);
+  const observed = [...byVariant.values()];
 
   return db.transaction(async (tx) => {
     const existingRows = await tx.select().from(listings).where(eq(listings.storeId, storeId));
     const existing = new Map(existingRows.map((r) => [r.variantId, r]));
     const firstCrawl = existing.size === 0;
-    const events: ChangeEvent[] = [];
 
-    for (const o of byVariant.values()) {
-      const prev = existing.get(o.variantId);
-      const fields = {
-        productId: o.productId, handle: o.handle, title: o.title, variantTitle: o.variantTitle,
-        vendor: o.vendor, productType: o.productType, imageUrl: o.imageUrl, url: o.url,
-        priceCents: o.priceCents, available: o.available, sizeMl: o.sizeMl, proof: o.proof,
-        batch: o.batch, bottleKey: o.bottleKey, searchText: o.searchText,
-        lastSeenAt: now, checkedAt: now, updatedAt: now,
-      };
-      const [row] = await tx
+    // 1. Upsert every observed listing; map variantId -> listing id.
+    const idByVariant = new Map<string, number>();
+    for (const part of chunked(observed)) {
+      const rows = await tx
         .insert(listings)
-        .values({ storeId, variantId: o.variantId, firstSeenAt: now, ...fields })
-        .onConflictDoUpdate({ target: [listings.storeId, listings.variantId], set: fields })
-        .returning({ id: listings.id });
+        .values(
+          part.map((o) => ({
+            storeId, variantId: o.variantId, firstSeenAt: now,
+            productId: o.productId, handle: o.handle, title: o.title, variantTitle: o.variantTitle,
+            vendor: o.vendor, productType: o.productType, imageUrl: o.imageUrl, url: o.url,
+            priceCents: o.priceCents, available: o.available, sizeMl: o.sizeMl, proof: o.proof,
+            batch: o.batch, bottleKey: o.bottleKey, searchText: o.searchText,
+            lastSeenAt: now, checkedAt: now, updatedAt: now,
+          })),
+        )
+        .onConflictDoUpdate({ target: [listings.storeId, listings.variantId], set: UPSERT_SET })
+        .returning({ id: listings.id, variantId: listings.variantId });
+      for (const r of rows) idByVariant.set(r.variantId, r.id);
+    }
 
+    // 2. Diff in memory (same order and rules as the former per-row loop).
+    const events: ChangeEvent[] = [];
+    const history: (typeof priceHistory.$inferInsert)[] = [];
+    for (const o of observed) {
+      const id = idByVariant.get(o.variantId)!;
+      const prev = existing.get(o.variantId);
       if (!prev) {
-        await tx.insert(priceHistory).values({ listingId: row.id, priceCents: o.priceCents, available: o.available, recordedAt: now });
+        history.push({ listingId: id, priceCents: o.priceCents, available: o.available, recordedAt: now });
         if (!firstCrawl && o.available) {
-          events.push({ kind: 'new', listingId: row.id, prevPriceCents: null, priceCents: o.priceCents, available: true });
+          events.push({ kind: 'new', listingId: id, prevPriceCents: null, priceCents: o.priceCents, available: true });
         }
         continue;
       }
       const kind = classify(prev, o);
       if (kind) {
-        await tx.insert(priceHistory).values({ listingId: row.id, priceCents: o.priceCents, available: o.available, recordedAt: now });
-        events.push({ kind, listingId: row.id, prevPriceCents: prev.priceCents, priceCents: o.priceCents, available: o.available });
+        history.push({ listingId: id, priceCents: o.priceCents, available: o.available, recordedAt: now });
+        events.push({ kind, listingId: id, prevPriceCents: prev.priceCents, priceCents: o.priceCents, available: o.available });
       }
     }
 
+    // 3. Sweep listings missing from this crawl.
+    const goneIds: number[] = [];
     if (markMissing) {
       for (const prev of existingRows) {
         if (byVariant.has(prev.variantId) || !prev.available) continue;
         // still in the store's raw catalog but filtered/unparseable by us: not gone
         if (catalogIds?.has(prev.variantId)) continue;
-        await tx
-          .update(listings)
-          .set({ available: false, checkedAt: now, updatedAt: now })
-          .where(eq(listings.id, prev.id));
-        await tx.insert(priceHistory).values({ listingId: prev.id, priceCents: prev.priceCents, available: false, recordedAt: now });
+        goneIds.push(prev.id);
+        history.push({ listingId: prev.id, priceCents: prev.priceCents, available: false, recordedAt: now });
         events.push({ kind: 'sold_out', listingId: prev.id, prevPriceCents: prev.priceCents, priceCents: prev.priceCents, available: false });
       }
+    }
+    for (const part of chunked(goneIds)) {
+      await tx
+        .update(listings)
+        .set({ available: false, checkedAt: now, updatedAt: now })
+        .where(inArray(listings.id, part));
+    }
+
+    for (const part of chunked(history)) {
+      await tx.insert(priceHistory).values(part);
     }
     return events;
   });
