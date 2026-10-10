@@ -86,3 +86,58 @@ describe('bottleKey', () => {
     expect(k('Jack Daniels Bonded Tennessee Whiskey', '700ml')).not.toBe(k('Jack Daniels Bonded Tennessee Whiskey', '1 Liter'));
   });
 });
+
+describe('bottleKey canonicalization (I1)', () => {
+  const k = (title: string, variantTitle: string | null = null) => bottleKey({ title, variantTitle });
+
+  it('groups GTS 2024 listings from different stores that differ only in marketing words or missing size', () => {
+    const gts2024 = [
+      'George T. Stagg Kentucky Straight Bourbon Whiskey 2024 Release 750ml', // store A
+      'BTAC George T. Stagg Bourbon 2024 750ml', // store B
+      'Buffalo Trace Antique Collection George T. Stagg 2024', // store C, no size
+      'George T Stagg 2024 Edition Bourbon Whiskey', // store D
+    ].map((t) => k(t));
+    expect(new Set(gts2024).size).toBe(1);
+    expect(gts2024[0]).toBe('2024 george stagg t|p|b|s750');
+
+    const gts2023 = [
+      'George T. Stagg Bourbon 2023 Release 750ml',
+      'BTAC George T Stagg 2023',
+    ].map((t) => k(t));
+    expect(new Set(gts2023).size).toBe(1);
+
+    // 2023 and 2024 releases are different bottles: two groups in total.
+    expect(new Set([...gts2024, ...gts2023]).size).toBe(2);
+  });
+
+  it('keeps Stagg, Stagg Jr. and George T. Stagg in three separate groups', () => {
+    const stagg = k('Stagg Kentucky Straight Bourbon Whiskey 750ml');
+    const staggJr = k('Stagg Jr. Kentucky Straight Bourbon Whiskey 750ml');
+    const gts = k('George T. Stagg Kentucky Straight Bourbon Whiskey 750ml');
+    expect(new Set([stagg, staggJr, gts]).size).toBe(3);
+    // and their marketing-word variants still land in their own group
+    expect(k('Stagg Bourbon')).toBe(stagg);
+    expect(k('Stagg Jr Bourbon Whiskey')).toBe(staggJr);
+    expect(k('BTAC George T. Stagg Bourbon')).toBe(gts);
+    expect(k('Stagg Bourbon')).not.toBe(k('Stagg Jr Bourbon'));
+    expect(k('Stagg Jr Bourbon')).not.toBe(k('George T Stagg Bourbon'));
+    expect(k('Stagg Bourbon')).not.toBe(k('George T Stagg Bourbon'));
+  });
+
+  it('strips "buffalo trace antique collection" only as a whole phrase', () => {
+    expect(k('Buffalo Trace Kentucky Straight Bourbon 750ml')).toBe('buffalo trace|p|b|s750');
+    expect(k('Buffalo Trace Antique Collection Sazerac Rye 18 Year'))
+      .not.toBe(k('Buffalo Trace Bourbon'));
+  });
+
+  it('treats a missing size as 750 ml but keeps stated other sizes apart', () => {
+    expect(k('Blantons Single Barrel Bourbon')).toBe(k('Blantons Single Barrel Bourbon 750ml'));
+    expect(k('Blantons Single Barrel Bourbon', '1.75L')).not.toBe(k('Blantons Single Barrel Bourbon'));
+    expect(k('Blantons Single Barrel Bourbon 1L')).not.toBe(k('Blantons Single Barrel Bourbon'));
+  });
+
+  it('keeps proof and rye in the key (missing vs present proof stays split, the safe direction)', () => {
+    expect(k('George T Stagg 2024 Release 138.7 Proof')).not.toBe(k('George T. Stagg 2024 Release'));
+    expect(k('Sazerac Rye Whiskey')).not.toBe(k('Sazerac Whiskey'));
+  });
+});

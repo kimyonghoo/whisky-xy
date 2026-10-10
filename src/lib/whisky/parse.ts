@@ -84,10 +84,22 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
+// Words that never identify a bottle: generic category/marketing words. Identity words
+// (`rye`, `jr`, `george`, `t`, years, `barrel`, `proof`) are deliberately NOT here, so
+// Stagg / Stagg Jr / George T. Stagg and different release years stay separate.
 const STOPWORDS = new Set([
   'whiskey', 'whisky', 'the', 'kentucky', 'tennessee', 'straight',
   'default', 'title', 'year', 'years', 'old', 'yr',
+  'bourbon', 'release', 'edition', 'bottle',
 ]);
+
+// Whole phrases removed from the normalized text before tokenizing. Phrases only:
+// stripping `buffalo`/`trace` separately would collapse "Buffalo Trace Bourbon".
+const STRIP_PHRASES_RE = /\b(?:buffalo trace antique collection|btac)\b/g;
+
+/** Size used in the key when the title states none: sub-200 ml is filtered out at
+ *  ingest and 1 L / 1.75 L are almost always stated, so "no size" means 750 ml. */
+export const DEFAULT_KEY_SIZE_ML = 750;
 
 export function bottleKey(p: { title: string; variantTitle: string | null }): string {
   const text = `${p.title} ${p.variantTitle ?? ''}`;
@@ -101,10 +113,11 @@ export function bottleKey(p: { title: string; variantTitle: string | null }): st
   }
 
   const tokens = normalizeText(stripped)
+    .replace(STRIP_PHRASES_RE, ' ')
     .split(' ')
     .filter((t) => t && !STOPWORDS.has(t));
   return (
     [...new Set(tokens)].sort().join(' ') +
-    `|p${proof?.proof ?? ''}|b${batch?.batch ?? ''}|s${size?.ml ?? ''}`
+    `|p${proof?.proof ?? ''}|b${batch?.batch ?? ''}|s${size?.ml ?? DEFAULT_KEY_SIZE_ML}`
   );
 }

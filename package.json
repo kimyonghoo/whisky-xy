@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "crawl": "tsx scripts/crawl.ts"
+    "crawl": "tsx scripts/crawl.ts",
+    "rekey": "tsx scripts/rekey.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
