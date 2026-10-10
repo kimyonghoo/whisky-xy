@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       # --ignore-scripts: no dependency lifecycle scripts run at all. esbuild (used by tsx and
       # drizzle-kit) loads its prebuilt @esbuild/<platform> optional package without postinstall.
