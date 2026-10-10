@@ -13,6 +13,10 @@ describe('parseDollarsToCents', () => {
     expect(parseDollarsToCents('abc')).toBeUndefined();
     expect(parseDollarsToCents('-5')).toBeUndefined();
     expect(parseDollarsToCents('1.234')).toBeUndefined();
+    // M2: values that would overflow int4 (or exceed $100,000) are dropped, not a 500
+    expect(parseDollarsToCents('99999999999')).toBeUndefined();
+    expect(parseDollarsToCents('100000.01')).toBeUndefined();
+    expect(parseDollarsToCents('100000')).toBe(10_000_000);
   });
 });
 

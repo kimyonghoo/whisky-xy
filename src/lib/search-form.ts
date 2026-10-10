@@ -1,5 +1,6 @@
 import { getStore, type Region } from '@/lib/stores';
 import type { SearchParams } from '@/lib/search';
+import { WATCH_LIMITS } from '@/lib/watch-form';
 
 /** Parse a dollar string like "64.5" or "1,299.97" into integer cents without float math. */
 export function parseDollarsToCents(s: string | undefined): number | undefined {
@@ -7,7 +8,10 @@ export function parseDollarsToCents(s: string | undefined): number | undefined {
   const cleaned = s.trim().replace(/[$,\s]/g, '');
   if (!/^\d+(\.\d{0,2})?$/.test(cleaned)) return undefined;
   const [whole, frac = ''] = cleaned.split('.');
-  return parseInt(whole, 10) * 100 + parseInt((frac + '00').slice(0, 2), 10);
+  // Absurd values (e.g. ?max=99999999999) would overflow the int4 price column: drop them.
+  if (whole.length > 9) return undefined;
+  const cents = parseInt(whole, 10) * 100 + parseInt((frac + '00').slice(0, 2), 10);
+  return cents <= WATCH_LIMITS.maxPriceCents ? cents : undefined;
 }
 
 const REGIONS: Region[] = ['brooklyn', 'nj', 'ca'];

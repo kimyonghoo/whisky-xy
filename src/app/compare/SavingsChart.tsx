@@ -15,6 +15,7 @@ import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceCompareChip, VERDICT_STYLE } from '@/components/PriceCompareChip';
 import { diffLabel } from '@/components/KrCompareChip';
 import { RankMarker, RegionChip } from '@/components/StoreLine';
+import { StatusBadge } from '@/components/StatusBadge';
 
 /**
  * Savings ranking: one row per bottle, two horizontal bars (Korea lowest vs US tax-included in KRW)
@@ -38,7 +39,9 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
   const kr = formatKrw(link.lowPriceKrw);
   const us = formatKrw(compare.usKrw);
   const diff = diffLabel(compare);
-  const store = `${best.store.name} · ${REGION_LABEL[best.store.region]}`;
+  // M6: a low-reliability store's stock flag can't be trusted; say so next to the price base.
+  const lowReliability = best.store.stockReliability === 'low';
+  const store = `${best.store.name} · ${REGION_LABEL[best.store.region]}${lowReliability ? ` · ${ko.stock.unreliable}` : ''}`;
   const titleId = `cmp-${rank}-t`;
   const usStale = freshness(best.checkedAt, now).stale;
   return (
@@ -72,6 +75,7 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
               {best.store.name}
             </span>
             <RegionChip region={best.store.region} />
+            {lowReliability && <StatusBadge kind="unreliable" size="sm" />}
             <span className="tabular">{ko.row.taxIncluded(formatUsd(best.taxIncludedCents))}</span>
           </p>
         </div>

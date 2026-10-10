@@ -17,4 +17,13 @@ describe('sendTelegram', () => {
     const f = vi.fn(async () => new Response('no', { status: 400 }));
     await expect(sendTelegram('T', ['1'], 'x', f as unknown as typeof fetch)).rejects.toThrow();
   });
+  it('network errors never leak the token-bearing URL (M4)', async () => {
+    const f = vi.fn(async (url: string) => {
+      throw new TypeError(`fetch failed: ${url}`, { cause: new Error(url) });
+    });
+    const err = await sendTelegram('SECRET-TOKEN', ['1'], 'x', f as unknown as typeof fetch).catch((e: Error) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe('Telegram sendMessage failed: network');
+    expect(JSON.stringify(err) + String((err as Error).cause ?? '')).not.toContain('SECRET-TOKEN');
+  });
 });
