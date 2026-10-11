@@ -7,7 +7,8 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import {
   STORE_ZOOM, cityView, mapTileConfig, type MapStore, type MapViewId,
 } from '@/lib/map-view';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
+import { useDict } from '@/lib/i18n/client';
 import { StorePopupContent, storeStateText } from './StoreParts';
 
 export interface ViewRequest {
@@ -43,7 +44,7 @@ function reducedMotion(): boolean {
  * Marker icon built with DOM APIs (textContent only), never an HTML string.
  * The 44px outer box is the touch target; the 30px dot is the visual.
  */
-function markerIcon(store: MapStore): L.DivIcon {
+function markerIcon(store: MapStore, d: Dict): L.DivIcon {
   const dot = document.createElement('span');
   dot.className = [
     'store-marker-dot flex size-[1.875rem] items-center justify-center rounded-full border-2 text-sm font-bold tabular shadow-raised',
@@ -55,7 +56,7 @@ function markerIcon(store: MapStore): L.DivIcon {
   num.textContent = String(store.n);
   const label = document.createElement('span');
   label.className = 'sr-only';
-  label.textContent = ko.map.markerLabel(store.n, store.name, storeStateText(store));
+  label.textContent = d.map.markerLabel(store.n, store.name, storeStateText(store, d));
   dot.append(num, label);
   return L.divIcon({
     html: dot,
@@ -124,8 +125,9 @@ export default function StoreMap({
   onDeselect,
   onTileError,
 }: StoreMapProps) {
+  const d = useDict();
   const markers = useRef(new Map<string, L.Marker>());
-  const icons = useMemo(() => new Map(stores.map((s) => [s.id, markerIcon(s)])), [stores]);
+  const icons = useMemo(() => new Map(stores.map((s) => [s.id, markerIcon(s, d)])), [stores, d]);
 
   // Selection styling toggles a data attribute instead of swapping icons, so keyboard focus on a marker survives.
   useEffect(() => {

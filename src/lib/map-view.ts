@@ -5,6 +5,7 @@ import { searchHref } from '@/lib/search-view';
 import type { Store } from '@/lib/stores';
 import { CITIES, type CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 
 /** Plain, serialisable store data for the client map + list. */
 export interface MapStore {
@@ -79,7 +80,7 @@ const STATUS_ORDER: Record<MapOffer['status'], number> = { instock: 0, unverifie
  * Without a bottle: config order (Brooklyn, NJ, CA). With a bottle: stores that have it in stock
  * first by tax-included price, then sold-out listings, then stores that don't list it.
  */
-export function buildMapStores(stores: Store[], availability: Map<string, number>, bottle: BottleOffers | null): MapStore[] {
+export function buildMapStores(stores: Store[], availability: Map<string, number>, bottle: BottleOffers | null, d: Dict = ko): MapStore[] {
   const items = stores
     .filter((s) => s.publicAllowed)
     .map((s, i) => ({ s, i, offer: bottle ? offerFor(s, bottle) : null }));
@@ -99,7 +100,7 @@ export function buildMapStores(stores: Store[], availability: Map<string, number
     n: idx + 1,
     name: s.name,
     city: s.city,
-    cityLabel: ko.city[s.city],
+    cityLabel: d.city[s.city],
     address: s.address,
     lat: s.lat,
     lng: s.lng,

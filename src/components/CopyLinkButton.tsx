@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, CircleAlert, Link2, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ko } from '@/lib/i18n/ko';
+import { useDict } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
 
 type CopyState = 'idle' | 'copied' | 'failed';
@@ -57,13 +57,14 @@ function StateIcon({ state, idle }: { state: CopyState; idle: React.ReactNode })
 /** Copies the absolute buy-card URL (for pasting into KakaoTalk). */
 export function CopyLinkButton({
   path,
-  label = ko.row.copyCard,
+  label,
   className,
 }: {
   path: string;
   label?: string;
   className?: string;
 }) {
+  const d = useDict();
   const [state, flash] = useFlash();
   async function copy() {
     flash((await copyText(window.location.origin + path)) ? 'copied' : 'failed');
@@ -71,13 +72,14 @@ export function CopyLinkButton({
   return (
     <Button type="button" variant="outline" size="sm" onClick={copy} className={cn('min-w-[8.5rem]', className)}>
       <StateIcon state={state} idle={<Link2 aria-hidden />} />
-      <span aria-live="polite">{state === 'copied' ? ko.copy.copied : state === 'failed' ? ko.copy.failed : label}</span>
+      <span aria-live="polite">{state === 'copied' ? d.copy.copied : state === 'failed' ? d.copy.failed : (label ?? d.row.copyCard)}</span>
     </Button>
   );
 }
 
 /** Opens the OS share sheet when available (phones), otherwise copies the link. */
 export function ShareCardButton({ path, title, className }: { path: string; title: string; className?: string }) {
+  const d = useDict();
   const [state, flash] = useFlash();
   async function share() {
     const url = window.location.origin + path;
@@ -94,7 +96,7 @@ export function ShareCardButton({ path, title, className }: { path: string; titl
   return (
     <Button type="button" variant="outline" size="lg" onClick={share} className={className}>
       <StateIcon state={state} idle={<Share2 aria-hidden />} />
-      <span aria-live="polite">{state === 'copied' ? ko.copy.copied : state === 'failed' ? ko.copy.failed : ko.card.share}</span>
+      <span aria-live="polite">{state === 'copied' ? d.copy.copied : state === 'failed' ? d.copy.failed : d.card.share}</span>
     </Button>
   );
 }

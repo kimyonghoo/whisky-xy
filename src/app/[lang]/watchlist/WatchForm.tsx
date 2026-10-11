@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WATCH_CITY_IDS, LINE_SIBLINGS, splitTerms, suggestExcludes, type WatchField } from '@/lib/watch-form';
 import type { CityId } from '@/lib/geo';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
+import { useDict, useLocale } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
 import { createWatchAction, type CreateState } from './actions';
 
@@ -37,9 +38,9 @@ function fromState(values: CreateState['values']): WatchFormDefaults {
 }
 
 /** Hint for a known bottle line (e.g. Stagg), shown while the excludes are the suggested ones. */
-function lineHintFor(include: string): string | null {
+function lineHintFor(include: string, d: Dict): string | null {
   for (const t of splitTerms(include)) {
-    if (Object.hasOwn(LINE_SIBLINGS, t) && ko.watch.lineHint[t]) return ko.watch.lineHint[t];
+    if (Object.hasOwn(LINE_SIBLINGS, t) && d.watch.lineHint[t]) return d.watch.lineHint[t];
   }
   return null;
 }
@@ -50,6 +51,7 @@ function lineHintFor(include: string): string | null {
  * (Stagg → jr, junior, george) until the user edits them.
  */
 export function WatchForm({ initial }: { initial: WatchFormDefaults }) {
+  const d = useDict();
   const [state, action, pending] = useActionState<CreateState, FormData>(createWatchAction, { seq: 0 });
   // Error → keep what was typed. Success → a clean form. First render → the ?q= prefill.
   const defaults = state.error ? fromState(state.values) : state.ok ? EMPTY : initial;
@@ -58,9 +60,9 @@ export function WatchForm({ initial }: { initial: WatchFormDefaults }) {
       <div className="flex flex-col gap-1">
         <h2 id="new-watch-h" className="flex items-center gap-2 text-xl font-bold tracking-tight">
           <Plus aria-hidden className="size-5 text-primary" />
-          {ko.watch.formHeading}
+          {d.watch.formHeading}
         </h2>
-        <p className="text-sm text-muted-foreground">{ko.watch.formSub}</p>
+        <p className="text-sm text-muted-foreground">{d.watch.formSub}</p>
       </div>
       <FormBody key={state.seq} defaults={defaults} action={action} pending={pending} state={state} />
     </section>
@@ -78,6 +80,8 @@ function FormBody({
   pending: boolean;
   state: CreateState;
 }) {
+  const d = useDict();
+  const locale = useLocale();
   const id = useId();
   const [include, setInclude] = useState(defaults.include);
   const [exclude, setExclude] = useState(defaults.exclude);
@@ -93,7 +97,7 @@ function FormBody({
     el?.focus();
   }, [errField]);
 
-  const hint = lineHintFor(include);
+  const hint = lineHintFor(include, d);
   const showLineHint = hint !== null && exclude === suggestExcludes(splitTerms(include)).join(', ') && exclude !== '';
 
   function onIncludeChange(v: string) {
@@ -115,22 +119,23 @@ function FormBody({
   });
   const labelCls = 'text-sm font-semibold';
   const hintCls = 'text-sm text-muted-foreground';
-  const optional = <span className="ml-1 font-medium text-muted-foreground">({ko.watch.fields.optional})</span>;
+  const optional = <span className="ml-1 font-medium text-muted-foreground">({d.watch.fields.optional})</span>;
 
   return (
     <form ref={formRef} action={action} className="flex flex-col gap-5" noValidate>
+      <input type="hidden" name="lang" value={locale} />
       <input type="hidden" name="citiesSubmitted" value="1" />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${id}-include`} className={labelCls}>
-          {ko.watch.fields.include}
+          {d.watch.fields.include}
         </label>
         <Input
           id={`${id}-include`}
           name="include"
           value={include}
           onChange={(e) => onIncludeChange(e.target.value)}
-          placeholder={ko.watch.fields.includePlaceholder}
+          placeholder={d.watch.fields.includePlaceholder}
           autoCapitalize="none"
           autoComplete="off"
           spellCheck={false}
@@ -141,13 +146,13 @@ function FormBody({
         />
         {fieldError('include')}
         <p id={`${id}-include-hint`} className={hintCls}>
-          {ko.watch.fields.includeHint}
+          {d.watch.fields.includeHint}
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${id}-exclude`} className={labelCls}>
-          {ko.watch.fields.exclude}
+          {d.watch.fields.exclude}
           {optional}
         </label>
         <Input
@@ -158,7 +163,7 @@ function FormBody({
             setExclude(e.target.value);
             setExcludeTouched(true);
           }}
-          placeholder={ko.watch.fields.excludePlaceholder}
+          placeholder={d.watch.fields.excludePlaceholder}
           autoCapitalize="none"
           autoComplete="off"
           spellCheck={false}
@@ -174,13 +179,13 @@ function FormBody({
               {hint}
             </p>
           )}
-          <p className={hintCls}>{ko.watch.fields.excludeHint}</p>
+          <p className={hintCls}>{d.watch.fields.excludeHint}</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${id}-price`} className={labelCls}>
-          {ko.watch.fields.maxPrice}
+          {d.watch.fields.maxPrice}
           {optional}
         </label>
         <div className="relative max-w-60">
@@ -192,7 +197,7 @@ function FormBody({
             name="maxPrice"
             inputMode="decimal"
             defaultValue={defaults.maxPrice}
-            placeholder={ko.watch.fields.maxPricePlaceholder}
+            placeholder={d.watch.fields.maxPricePlaceholder}
             autoComplete="off"
             maxLength={20}
             className="pl-7 tabular"
@@ -201,12 +206,12 @@ function FormBody({
         </div>
         {fieldError('maxPrice')}
         <p id={`${id}-price-hint`} className={hintCls}>
-          {ko.watch.fields.maxPriceHint}
+          {d.watch.fields.maxPriceHint}
         </p>
       </div>
 
       <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-cities-hint`}>
-        <legend className={cn(labelCls, 'mb-1.5')}>{ko.watch.fields.cities}</legend>
+        <legend className={cn(labelCls, 'mb-1.5')}>{d.watch.fields.cities}</legend>
         <div className="flex flex-wrap gap-2">
           {WATCH_CITY_IDS.map((r, i) => (
             <label
@@ -227,25 +232,25 @@ function FormBody({
               >
                 <Check className="size-3 opacity-0 group-has-checked/chk:opacity-100" strokeWidth={3} />
               </span>
-              {ko.city[r]}
+              {d.city[r]}
             </label>
           ))}
         </div>
         {fieldError('cities')}
         <p id={`${id}-cities-hint`} className={hintCls}>
-          {ko.watch.fields.citiesHint}
+          {d.watch.fields.citiesHint}
         </p>
       </fieldset>
 
       <details open={advancedOpen} className="group/adv rounded-xl border bg-muted/40">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold pointer-coarse:min-h-11">
-          {ko.watch.fields.advanced}
+          {d.watch.fields.advanced}
           <ChevronDown aria-hidden className="size-4 transition-transform group-open/adv:rotate-180" />
         </summary>
         <div className="flex flex-col gap-4 border-t px-4 pt-4 pb-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-label`} className={labelCls}>
-              {ko.watch.fields.label}
+              {d.watch.fields.label}
               {optional}
             </label>
             <Input
@@ -258,19 +263,19 @@ function FormBody({
             />
             {fieldError('label')}
             <p id={`${id}-label-hint`} className={hintCls}>
-              {ko.watch.fields.labelHint}
+              {d.watch.fields.labelHint}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${id}-batch`} className={labelCls}>
-                {ko.watch.fields.batch}
+                {d.watch.fields.batch}
               </label>
               <Input
                 id={`${id}-batch`}
                 name="batch"
                 defaultValue={defaults.batch}
-                placeholder={ko.watch.fields.batchPlaceholder}
+                placeholder={d.watch.fields.batchPlaceholder}
                 autoCapitalize="characters"
                 autoComplete="off"
                 spellCheck={false}
@@ -280,14 +285,14 @@ function FormBody({
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${id}-size`} className={labelCls}>
-                {ko.watch.fields.size}
+                {d.watch.fields.size}
               </label>
               <Input
                 id={`${id}-size`}
                 name="sizeMl"
                 inputMode="numeric"
                 defaultValue={defaults.sizeMl}
-                placeholder={ko.watch.fields.sizePlaceholder}
+                placeholder={d.watch.fields.sizePlaceholder}
                 autoComplete="off"
                 maxLength={5}
                 className="tabular"
@@ -314,7 +319,7 @@ function FormBody({
         )}
         <Button type="submit" size="lg" className="w-full sm:w-auto sm:self-start" disabled={pending}>
           {pending ? <LoaderCircle aria-hidden className="motion-safe:animate-spin" /> : <Plus aria-hidden />}
-          {pending ? ko.watch.submitting : ko.watch.submit}
+          {pending ? d.watch.submitting : d.watch.submit}
         </Button>
         <p role="status" className="flex min-h-5 items-start gap-1.5 text-sm font-semibold text-instock-fg">
           {state.ok && state.message && (

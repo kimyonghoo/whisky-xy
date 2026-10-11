@@ -3,6 +3,7 @@ import { normalizeText } from '@/lib/whisky/parse';
 import { parsePriceToCents } from '@/lib/money';
 import { isCityId, liveCities, type CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 
 /**
  * Bottle lines whose name is contained in sibling products' names.
@@ -74,8 +75,8 @@ function normalizeBatch(raw: string): string {
     .replace(/^0+(?=\d)/, '');
 }
 
-export function parseWatchForm(fd: FormData): WatchInput | WatchFormError {
-  const e = ko.watch.errors;
+export function parseWatchForm(fd: FormData, d: Dict = ko): WatchInput | WatchFormError {
+  const e = d.watch.errors;
   const includeRaw = str(fd, 'include');
   const includeTerms = splitTerms(includeRaw);
   if (includeTerms.length === 0) return { error: e.includeRequired, field: 'include' };

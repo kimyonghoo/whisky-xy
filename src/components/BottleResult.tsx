@@ -4,11 +4,12 @@ import { ROWS_PER_GROUP, summarizeGroup } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { approxKrw, formatKrw, fxDateLabel } from '@/lib/kr-view';
 import type { FxRate } from '@/lib/db/schema';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
 import { BottleHeader } from '@/components/BottleHeader';
 import { StatusBadge } from '@/components/StatusBadge';
-import { CityChip, StoreLine } from '@/components/StoreLine';
+import { StoreLine } from '@/components/StoreLine';
+import { CityChip } from '@/components/CityChip';
 import { KrCompareChip } from '@/components/KrCompareChip';
 
 /**
@@ -21,6 +22,7 @@ export function BottleResult({
   admin = false,
   now,
   fx = null,
+  d,
 }: {
   group: BottleGroup;
   q: string;
@@ -28,6 +30,8 @@ export function BottleResult({
   now: Date;
   /** Latest USD→KRW rate; when present the lowest price also shows a rounded 원화 amount. */
   fx?: FxRate | null;
+  /** The page's dictionary (a Server Component: no context; the caller has it from getDict). */
+  d: Dict;
 }) {
   const s = summarizeGroup(group);
   const krw = s.cheapest && fx ? formatKrw(approxKrw(s.cheapest.taxIncludedCents, fx.usdKrw)) : null;
@@ -38,7 +42,7 @@ export function BottleResult({
   const head = group.rows.slice(0, ROWS_PER_GROUP);
   const rest = group.rows.slice(ROWS_PER_GROUP);
   const line = (r: (typeof group.rows)[number]) => (
-    <StoreLine key={r.id} row={r} rank={ranks.get(r.id) ?? null} bottleKey={group.bottleKey} q={q} now={now} />
+    <StoreLine key={r.id} row={r} rank={ranks.get(r.id) ?? null} bottleKey={group.bottleKey} q={q} now={now} d={d} />
   );
 
   return (
@@ -49,42 +53,42 @@ export function BottleResult({
             {s.cities.map((r) => (
               <CityChip key={r} city={r} />
             ))}
-            <span className="text-xs font-medium text-muted-foreground tabular">{ko.group.stores(s.inStockCount, s.storeCount)}</span>
+            <span className="text-xs font-medium text-muted-foreground tabular">{d.group.stores(s.inStockCount, s.storeCount)}</span>
           </div>
         </BottleHeader>
         <div className="flex items-baseline justify-between gap-3 rounded-xl bg-muted/70 px-3.5 py-2.5 sm:min-w-40 sm:flex-col sm:items-end sm:bg-transparent sm:p-0 sm:text-right">
           {s.cheapest ? (
             <>
               <span className="text-sm font-semibold text-primary">
-                {ko.group.lowest} <span className="font-medium text-muted-foreground">· {ko.group.lowestHint}</span>
+                {d.group.lowest} <span className="font-medium text-muted-foreground">· {d.group.lowestHint}</span>
               </span>
               <span className="flex flex-col items-end gap-1">
                 <span className="text-2xl leading-none font-bold tracking-tight tabular sm:text-[1.75rem]">
                   {formatUsd(s.cheapest.taxIncludedCents)}
                 </span>
                 {krw && fx && (
-                  <span className="text-sm font-medium text-muted-foreground tabular" title={ko.group.krwApproxLabel(krw, fxDateLabel(fx.date))}>
-                    <span aria-hidden>{ko.group.krwApprox(krw)}</span>
-                    <span className="sr-only">{ko.group.krwApproxLabel(krw, fxDateLabel(fx.date))}</span>
+                  <span className="text-sm font-medium text-muted-foreground tabular" title={d.group.krwApproxLabel(krw, fxDateLabel(fx.date))}>
+                    <span aria-hidden>{d.group.krwApprox(krw)}</span>
+                    <span className="sr-only">{d.group.krwApproxLabel(krw, fxDateLabel(fx.date))}</span>
                   </span>
                 )}
               </span>
             </>
           ) : s.unverifiedCount > 0 ? (
-            <StatusBadge kind="unverified" size="md" label={ko.group.noConfirmedStock} />
+            <StatusBadge kind="unverified" size="md" label={d.group.noConfirmedStock} />
           ) : (
-            <StatusBadge kind="soldout" size="md" label={ko.group.allSoldOut} />
+            <StatusBadge kind="soldout" size="md" label={d.group.allSoldOut} />
           )}
         </div>
       </div>
-      <KrCompareChip q={q} kr={group.kr} bottleKey={group.bottleKey} displayTitle={group.displayTitle} admin={admin} now={now} />
+      <KrCompareChip q={q} kr={group.kr} bottleKey={group.bottleKey} displayTitle={group.displayTitle} admin={admin} now={now} d={d} />
       <ol className="divide-y border-t" aria-label={group.displayTitle}>
         {head.map(line)}
       </ol>
       {rest.length > 0 && (
         <details className="group/more border-t">
           <summary className="flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold text-primary hover:bg-muted/60">
-            {ko.group.moreStores(rest.length)}
+            {d.group.moreStores(rest.length)}
             <ChevronDown aria-hidden className="size-4 transition-transform group-open/more:rotate-180" />
           </summary>
           <ol className="divide-y border-t" start={head.length + 1}>

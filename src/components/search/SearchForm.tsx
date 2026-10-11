@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { Check, LoaderCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { searchHref } from '@/lib/search-view';
 import { SIZE_OPTIONS, sizeLabel } from '@/lib/search-form';
-import { ko } from '@/lib/i18n/ko';
+import { localizePath } from '@/lib/i18n';
+import { useDict, useLocale } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useSearchNav } from '@/components/search/SearchShell';
+import { LocaleLink } from '@/components/LocaleLink';
 
 export interface SearchFormValues {
   q: string;
@@ -42,6 +43,8 @@ export function SearchForm({
   filterCount: number;
   variant?: 'hero' | 'bar';
 }) {
+  const d = useDict();
+  const locale = useLocale();
   const nav = useSearchNav();
   const pending = nav?.pending ?? false;
   const formRef = useRef<HTMLFormElement>(null);
@@ -91,7 +94,7 @@ export function SearchForm({
     }
     if (detailsRef.current?.open) closeFilters(true);
     // A new search always starts from the first page of each section.
-    nav.navigate(searchHref({ q, store, city: get('city'), size: get('size'), min: get('min'), max: get('max'), inStock: get('inStock') }));
+    nav.navigate(localizePath(locale, searchHref({ q, store, city: get('city'), size: get('size'), min: get('min'), max: get('max'), inStock: get('inStock') })));
   }
 
   function onChange(e: React.ChangeEvent<HTMLFormElement>) {
@@ -106,7 +109,7 @@ export function SearchForm({
     <form
       ref={formRef}
       method="get"
-      action="/"
+      action={localizePath(locale, '/')}
       role="search"
       onSubmit={onSubmit}
       onChange={onChange}
@@ -116,7 +119,7 @@ export function SearchForm({
       {values.city && <input type="hidden" name="city" value={values.city} />}
       <div className="flex gap-2">
         <label className="relative min-w-0 flex-1">
-          <span className="sr-only">{ko.search.inputLabel}</span>
+          <span className="sr-only">{d.search.inputLabel}</span>
           <Search
             aria-hidden
             className={cn('pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground', hero ? 'size-5' : 'size-[1.125rem]')}
@@ -125,7 +128,7 @@ export function SearchForm({
             name="q"
             type="search"
             defaultValue={values.q}
-            placeholder={values.store ? ko.store.placeholder : ko.search.placeholder}
+            placeholder={values.store ? d.store.placeholder : d.search.placeholder}
             // Browsing a store's list on a phone shouldn't pop the keyboard.
             autoFocus={!values.q && !values.store}
             enterKeyHint="search"
@@ -138,7 +141,7 @@ export function SearchForm({
         </label>
         <Button type="submit" size={hero ? 'xl' : 'lg'} className="min-w-12 px-4 sm:px-6" disabled={pending}>
           {pending ? <LoaderCircle aria-hidden className="motion-safe:animate-spin" /> : <Search aria-hidden />}
-          <span className="sr-only sm:not-sr-only">{pending ? ko.search.pending : ko.search.submit}</span>
+          <span className="sr-only sm:not-sr-only">{pending ? d.search.pending : d.search.submit}</span>
         </Button>
       </div>
 
@@ -152,13 +155,13 @@ export function SearchForm({
             >
               <Check className="size-3 opacity-0 group-has-checked/chk:opacity-100" strokeWidth={3} />
             </span>
-            {ko.search.inStockOnly}
+            {d.search.inStockOnly}
           </label>
 
           <details ref={detailsRef} className="group/filters" onToggle={(e) => setFiltersOpen(e.currentTarget.open)}>
             <summary ref={summaryRef} className={cn(chip, 'list-none group-open/filters:border-foreground/40 group-open/filters:bg-muted')}>
               <SlidersHorizontal aria-hidden className="size-4" />
-              {ko.search.filters}
+              {d.search.filters}
               {filterCount > 0 && (
                 <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground tabular">
                   {filterCount}
@@ -168,9 +171,9 @@ export function SearchForm({
             <div className="absolute inset-x-0 top-full z-30 mt-2 flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-raised sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(2,minmax(0,1fr))]">
                 <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">
-                  {ko.search.sizeLabel}
+                  {d.search.sizeLabel}
                   <NativeSelect name="size" defaultValue={values.size}>
-                    <option value="">{ko.search.sizeAll}</option>
+                    <option value="">{d.search.sizeAll}</option>
                     {SIZE_OPTIONS.map((ml) => (
                       <option key={ml} value={ml}>
                         {sizeLabel(ml)}
@@ -179,19 +182,19 @@ export function SearchForm({
                   </NativeSelect>
                 </label>
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">
-                  {ko.search.minLabel}
+                  {d.search.minLabel}
                   <Input name="min" inputMode="decimal" defaultValue={values.min} placeholder="0" className="tabular" />
                 </label>
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">
-                  {ko.search.maxLabel}
+                  {d.search.maxLabel}
                   <Input name="max" inputMode="decimal" defaultValue={values.max} placeholder="500" className="tabular" />
                 </label>
               </div>
               <div className="flex items-center justify-end gap-2">
-                <Link href={searchHref({ q: values.q, store: values.store, city: values.city })} className={buttonVariants({ variant: 'ghost' })}>
-                  {ko.search.filtersReset}
-                </Link>
-                <Button type="submit">{ko.search.filtersApply}</Button>
+                <LocaleLink href={searchHref({ q: values.q, store: values.store, city: values.city })} className={buttonVariants({ variant: 'ghost' })}>
+                  {d.search.filtersReset}
+                </LocaleLink>
+                <Button type="submit">{d.search.filtersApply}</Button>
               </div>
             </div>
           </details>

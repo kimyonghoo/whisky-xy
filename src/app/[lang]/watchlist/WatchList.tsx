@@ -1,13 +1,13 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { BadgeCheck, CircleAlert, LoaderCircle, Minus, Plus, Search, Tag, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { CityChip } from '@/components/StoreLine';
+import { CityChip } from '@/components/CityChip';
 import type { CityId } from '@/lib/geo';
-import { ko } from '@/lib/i18n/ko';
+import { useDict, useLocale } from '@/lib/i18n/client';
+import { LocaleLink } from '@/components/LocaleLink';
 import { cn } from '@/lib/utils';
 import { deleteWatchAction, type DeleteState } from './actions';
 
@@ -30,6 +30,7 @@ export interface WatchItem {
  * revalidated list, so the announcement comes from diffing the previous and current items.
  */
 export function WatchList({ items }: { items: WatchItem[] }) {
+  const d = useDict();
   const [prev, setPrev] = useState(items);
   const [announce, setAnnounce] = useState('');
   if (prev !== items) {
@@ -37,7 +38,7 @@ export function WatchList({ items }: { items: WatchItem[] }) {
     const ids = new Set(items.map((w) => w.id));
     const gone = prev.filter((w) => !ids.has(w.id));
     setPrev(items);
-    if (gone.length === 1) setAnnounce(ko.watch.deleted(gone[0].label));
+    if (gone.length === 1) setAnnounce(d.watch.deleted(gone[0].label));
   }
   return (
     <div className="flex flex-col gap-3">
@@ -61,10 +62,11 @@ export function WatchList({ items }: { items: WatchItem[] }) {
 }
 
 function TermList({ kind, terms }: { kind: 'include' | 'exclude'; terms: string[] }) {
+  const d = useDict();
   const Icon = kind === 'include' ? Plus : Minus;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{ko.watch.item[kind]}</dt>
+      <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{d.watch.item[kind]}</dt>
       {terms.map((t) => (
         <dd key={t}>
           <Badge
@@ -83,6 +85,8 @@ function TermList({ kind, terms }: { kind: 'include' | 'exclude'; terms: string[
 }
 
 function WatchCard({ item }: { item: WatchItem }) {
+  const d = useDict();
+  const locale = useLocale();
   const [confirming, setConfirming] = useState(false);
   // The server action is passed as-is so the form keeps its progressive-enhancement wiring.
   const [state, action, pending] = useActionState<DeleteState, FormData>(deleteWatchAction, {});
@@ -109,7 +113,7 @@ function WatchCard({ item }: { item: WatchItem }) {
           <h3 id={headingId} className="text-base leading-snug font-semibold sm:text-lg">
             {item.label}
           </h3>
-          <p className="text-xs font-medium text-muted-foreground tabular">{ko.watch.item.since(item.created)}</p>
+          <p className="text-xs font-medium text-muted-foreground tabular">{d.watch.item.since(item.created)}</p>
         </div>
         <p
           className={cn(
@@ -118,8 +122,8 @@ function WatchCard({ item }: { item: WatchItem }) {
           )}
         >
           <Tag aria-hidden className="size-3.5" />
-          <span className="sr-only">{ko.watch.item.target}</span>
-          {item.target ?? ko.watch.item.anyPrice}
+          <span className="sr-only">{d.watch.item.target}</span>
+          {item.target ?? d.watch.item.anyPrice}
         </p>
       </div>
 
@@ -127,7 +131,7 @@ function WatchCard({ item }: { item: WatchItem }) {
         <TermList kind="include" terms={item.includeTerms} />
         {item.excludeTerms.length > 0 && <TermList kind="exclude" terms={item.excludeTerms} />}
         <div className="flex flex-wrap items-center gap-1.5">
-          <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{ko.watch.item.cities}</dt>
+          <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{d.watch.item.cities}</dt>
           {item.cities.map((r) => (
             <dd key={r}>
               <CityChip city={r} />
@@ -136,14 +140,14 @@ function WatchCard({ item }: { item: WatchItem }) {
           {item.batch && (
             <dd>
               <Badge variant="spec" size="sm" lang="en">
-                {ko.watch.item.batch(item.batch)}
+                {d.watch.item.batch(item.batch)}
               </Badge>
             </dd>
           )}
           {item.sizeMl != null && (
             <dd>
               <Badge variant="spec" size="sm" className="tabular">
-                {ko.watch.item.size(item.sizeMl)}
+                {d.watch.item.size(item.sizeMl)}
               </Badge>
             </dd>
           )}
@@ -151,6 +155,7 @@ function WatchCard({ item }: { item: WatchItem }) {
       </dl>
 
       <form action={action} className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
+        <input type="hidden" name="lang" value={locale} />
         <input type="hidden" name="id" value={item.id} />
         {state.error && (
           <p role="alert" className="mr-auto flex items-start gap-1.5 text-sm font-semibold text-danger-fg">
@@ -161,22 +166,22 @@ function WatchCard({ item }: { item: WatchItem }) {
         {confirming || pending ? (
           <>
             <span className="mr-auto text-sm font-semibold" aria-live="polite">
-              {pending ? ko.watch.item.deleting : ko.watch.item.confirmDelete}
+              {pending ? d.watch.item.deleting : d.watch.item.confirmDelete}
             </span>
             <Button ref={cancelRef} type="button" variant="ghost" size="sm" onClick={() => setConfirming(false)} disabled={pending}>
-              {ko.watch.item.confirmNo}
+              {d.watch.item.confirmNo}
             </Button>
             <Button type="submit" variant="destructive" size="sm" disabled={pending}>
               {pending ? <LoaderCircle aria-hidden className="motion-safe:animate-spin" /> : <Trash2 aria-hidden />}
-              {pending ? ko.watch.item.deleting : ko.watch.item.confirmYes}
+              {pending ? d.watch.item.deleting : d.watch.item.confirmYes}
             </Button>
           </>
         ) : (
           <>
-            <Link href={item.searchHref} prefetch={false} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <LocaleLink href={item.searchHref} prefetch={false} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
               <Search aria-hidden />
-              {ko.watch.item.search}
-            </Link>
+              {d.watch.item.search}
+            </LocaleLink>
             <Button
               ref={deleteRef}
               type="button"
@@ -184,10 +189,10 @@ function WatchCard({ item }: { item: WatchItem }) {
               size="sm"
               className="text-danger-fg hover:bg-danger-bg"
               onClick={() => setConfirming(true)}
-              aria-label={ko.watch.item.deleteLabel(item.label)}
+              aria-label={d.watch.item.deleteLabel(item.label)}
             >
               <Trash2 aria-hidden />
-              {ko.watch.item.delete}
+              {d.watch.item.delete}
             </Button>
           </>
         )}

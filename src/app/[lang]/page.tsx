@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import Link from 'next/link';
 import { connection } from 'next/server';
 import { cookies } from 'next/headers';
 import { MapPin, SearchX, Store as StoreIcon, X } from 'lucide-react';
@@ -11,25 +10,28 @@ import { parseSearchForm, sizeLabel } from '@/lib/search-form';
 import { getLatestFx } from '@/lib/fx';
 import { activeFilterCount, distinctBottleCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
+import { getDict } from '@/lib/i18n/server';
 import { STORES, getStore, type Store } from '@/lib/stores';
 import { CITY_COOKIE, isCityId, liveCities, resolveCity } from '@/lib/geo';
 import { buttonVariants } from '@/components/ui/button';
+import { LocaleLink } from '@/components/LocaleLink';
 import { ComingSoonNotice } from '@/components/ComingSoonNotice';
 import { EmptyState } from '@/components/EmptyState';
 import { StatusBadge } from '@/components/StatusBadge';
-import { CityChip } from '@/components/StoreLine';
+import { CityChip } from '@/components/CityChip';
 import { CitySections } from '@/components/search/CitySections';
 import { ResultsRegion, SearchShell } from '@/components/search/SearchShell';
 import { SearchForm, type SearchFormValues } from '@/components/search/SearchForm';
 
 type RawParams = Record<string, string | string[] | undefined>;
 
-export default function Home({ searchParams }: { searchParams: Promise<RawParams> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<RawParams> }) {
+  const d = await getDict();
   return (
     // Fallback = the landing hero, so `/` (the common cold load) never flashes a results skeleton.
     // In-app searches navigate in a transition and keep the old results dimmed instead.
-    <Suspense fallback={<Hero values={EMPTY_VALUES} />}>
+    <Suspense fallback={<Hero values={EMPTY_VALUES} d={d} />}>
       <SearchView searchParams={searchParams} />
     </Suspense>
   );
@@ -44,16 +46,16 @@ function firstString(v: string | string[] | undefined): string {
 const exampleChip =
   'inline-flex h-9 items-center rounded-full border border-border-strong bg-card px-3.5 text-sm font-medium text-foreground shadow-card transition-colors hover:border-primary/50 hover:bg-primary-soft pointer-coarse:min-h-11';
 
-function Examples({ className }: { className?: string }) {
+function Examples({ className, d }: { className?: string; d: Dict }) {
   return (
     <div className={className}>
-      <p className="mb-2.5 text-sm font-semibold text-muted-foreground">{ko.search.curatedLabel}</p>
+      <p className="mb-2.5 text-sm font-semibold text-muted-foreground">{d.search.curatedLabel}</p>
       <ul className="flex flex-wrap justify-center gap-2">
-        {ko.search.examples.map((ex) => (
+        {d.search.examples.map((ex) => (
           <li key={ex}>
-            <Link href={searchHref({ q: ex })} prefetch={false} className={exampleChip} lang="en">
+            <LocaleLink href={searchHref({ q: ex })} prefetch={false} className={exampleChip} lang="en">
               {ex}
-            </Link>
+            </LocaleLink>
           </li>
         ))}
       </ul>
@@ -61,29 +63,29 @@ function Examples({ className }: { className?: string }) {
   );
 }
 
-function Hero({ values }: { values: SearchFormValues }) {
+function Hero({ values, d }: { values: SearchFormValues; d: Dict }) {
   const stores = STORES.filter((s) => s.publicAllowed);
   const cities = liveCities();
   return (
     <main id="main" className="flex-1">
       <section className="border-b bg-[radial-gradient(120%_80%_at_50%_0%,var(--primary-soft)_0%,transparent_70%)]">
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 pt-12 pb-14 text-center sm:px-6 sm:pt-20 sm:pb-20">
-          <p className="text-sm font-bold tracking-[0.12em] text-primary">{ko.search.heroEyebrow}</p>
-          <h1 className="text-[2rem] leading-[1.15] font-extrabold tracking-tight text-balance sm:text-5xl">{ko.search.heroTitle}</h1>
-          <p className="max-w-xl text-base text-pretty text-muted-foreground sm:text-lg">{ko.search.heroLead}</p>
+          <p className="text-sm font-bold tracking-[0.12em] text-primary">{d.search.heroEyebrow}</p>
+          <h1 className="text-[2rem] leading-[1.15] font-extrabold tracking-tight text-balance sm:text-5xl">{d.search.heroTitle}</h1>
+          <p className="max-w-xl text-base text-pretty text-muted-foreground sm:text-lg">{d.search.heroLead}</p>
           <div className="w-full max-w-2xl text-left">
             <SearchShell>
               <SearchForm values={values} filterCount={0} variant="hero" />
             </SearchShell>
           </div>
-          <Examples className="mt-1" />
+          <Examples className="mt-1" d={d} />
         </div>
       </section>
       <section className="mx-auto grid w-full max-w-4xl gap-8 px-4 py-12 sm:grid-cols-[1fr_auto] sm:px-6">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">{ko.search.howTitle}</h2>
+          <h2 className="text-lg font-bold tracking-tight">{d.search.howTitle}</h2>
           <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-            {ko.search.how.map((step) => (
+            {d.search.how.map((step) => (
               <li key={step.kicker} className="flex gap-3 rounded-2xl border bg-card p-4 shadow-card">
                 <span className="flex flex-col gap-0.5">
                   <span className="text-xs font-bold tracking-[0.12em] text-primary tabular">{step.kicker}</span>
@@ -95,12 +97,12 @@ function Hero({ values }: { values: SearchFormValues }) {
           </ol>
         </div>
         <div className="sm:w-52">
-          <h2 className="text-lg font-bold tracking-tight">{ko.search.coverageTitle}</h2>
+          <h2 className="text-lg font-bold tracking-tight">{d.search.coverageTitle}</h2>
           <ul className="mt-4 flex flex-col gap-2 text-sm">
             {cities.map((c) => (
               <li key={c.id} className="flex items-center gap-2">
                 <MapPin aria-hidden className="size-4 text-primary" />
-                {ko.search.coverageRegion(ko.city[c.id], stores.filter((s) => s.city === c.id).length)}
+                {d.search.coverageRegion(d.city[c.id], stores.filter((s) => s.city === c.id).length)}
               </li>
             ))}
           </ul>
@@ -110,20 +112,21 @@ function Hero({ values }: { values: SearchFormValues }) {
   );
 }
 
-function FilterChip({ href, label }: { href: string; label: string }) {
+function FilterChip({ href, label, d }: { href: string; label: string; d: Dict }) {
   return (
-    <Link
+    <LocaleLink
       href={href}
-      aria-label={ko.search.removeFilter(label)}
+      aria-label={d.search.removeFilter(label)}
       className="inline-flex h-8 items-center gap-1 rounded-full bg-foreground py-1 pr-2 pl-3 text-sm font-semibold text-background transition-opacity hover:opacity-85 pointer-coarse:min-h-11"
     >
       {label}
       <X aria-hidden className="size-4" />
-    </Link>
+    </LocaleLink>
   );
 }
 
 async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }) {
+  const d = await getDict();
   const raw = await searchParams;
   const filters = parseSearchForm(raw);
   const store = filters.storeId ? getStore(filters.storeId) : undefined;
@@ -141,7 +144,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 
   // `?store=` without a query lists that store's whole catalogue (capped per section like any search).
   // A coming-soon city never reaches the cookie: only live cities are ever stored there.
-  if (!filters.q && !store && !urlCity.soon) return <Hero values={values} />;
+  if (!filters.q && !store && !urlCity.soon) return <Hero values={values} d={d} />;
   // Results show relative times ("3시간 전 확인"), so they must render per request.
   await connection();
 
@@ -183,31 +186,31 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 
   const chips: { label: string; href: string }[] = [];
   if (params.sizeMl != null) chips.push({ label: sizeLabel(params.sizeMl), href: searchHref(linkRaw, { size: undefined, ...reset }) });
-  if (params.minCents != null) chips.push({ label: ko.search.priceMin(formatUsd(params.minCents)), href: searchHref(linkRaw, { min: undefined, ...reset }) });
-  if (params.maxCents != null) chips.push({ label: ko.search.priceMax(formatUsd(params.maxCents)), href: searchHref(linkRaw, { max: undefined, ...reset }) });
+  if (params.minCents != null) chips.push({ label: d.search.priceMin(formatUsd(params.minCents)), href: searchHref(linkRaw, { min: undefined, ...reset }) });
+  if (params.maxCents != null) chips.push({ label: d.search.priceMax(formatUsd(params.maxCents)), href: searchHref(linkRaw, { max: undefined, ...reset }) });
 
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
-      {store && <StoreScopeHeader store={store} clearHref={searchHref(linkRaw, { store: undefined, ...reset })} />}
+      {store && <StoreScopeHeader d={d} store={store} clearHref={searchHref(linkRaw, { store: undefined, ...reset })} />}
       <SearchShell>
         <SearchForm key={searchHref(linkRaw, reset)} values={values} filterCount={panelFilters} />
 
         {chips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="sr-only">{ko.search.activeFilters}</span>
+            <span className="sr-only">{d.search.activeFilters}</span>
             {chips.map((c) => (
-              <FilterChip key={c.label} {...c} />
+              <FilterChip key={c.label} {...c} d={d} />
             ))}
           </div>
         )}
 
         {searchedAs && (
           <p className="text-sm text-muted-foreground">
-            {ko.search.searchedAsPrefix}
+            {d.search.searchedAsPrefix}
             <span lang="en" className="font-semibold text-foreground">
               {searchedAs}
             </span>
-            {ko.search.searchedAsSuffix}
+            {d.search.searchedAsSuffix}
           </p>
         )}
 
@@ -215,33 +218,33 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
           {none && store ? (
             <EmptyState
               icon={SearchX}
-              title={ko.store.empty}
-              description={params.q ? ko.store.emptyQuery(params.q) : ko.store.emptyHint}
+              title={d.store.empty}
+              description={params.q ? d.store.emptyQuery(params.q) : d.store.emptyHint}
             >
               {activeFilterCount(params) > 0 && (
-                <Link href={searchHref({ q: params.q, store: store.id, city: keepCity })} className={buttonVariants({ variant: 'default' })}>
-                  {ko.search.filtersReset}
-                </Link>
+                <LocaleLink href={searchHref({ q: params.q, store: store.id, city: keepCity })} className={buttonVariants({ variant: 'default' })}>
+                  {d.search.filtersReset}
+                </LocaleLink>
               )}
               {params.q && (
-                <Link href={searchHref({ q: params.q, city: keepCity })} className={buttonVariants({ variant: activeFilterCount(params) > 0 ? 'outline' : 'default' })}>
-                  {ko.store.searchAll}
-                </Link>
+                <LocaleLink href={searchHref({ q: params.q, city: keepCity })} className={buttonVariants({ variant: activeFilterCount(params) > 0 ? 'outline' : 'default' })}>
+                  {d.store.searchAll}
+                </LocaleLink>
               )}
-              <Link href="/map" className={buttonVariants({ variant: 'outline' })}>
+              <LocaleLink href="/map" className={buttonVariants({ variant: 'outline' })}>
                 <MapPin aria-hidden />
-                {ko.nav.map}
-              </Link>
+                {d.nav.map}
+              </LocaleLink>
             </EmptyState>
           ) : none ? (
             <EmptyState
               icon={SearchX}
-              title={ko.search.noResults}
+              title={d.search.noResults}
               description={
                 <div className="flex flex-col gap-3">
-                  <p>{ko.search.noResultsHint(params.q)}</p>
+                  <p>{d.search.noResultsHint(params.q)}</p>
                   <ul className="flex flex-col gap-1 text-left text-sm">
-                    {[...ko.search.noResultsTips, ...(activeFilterCount(params) > 0 ? [ko.search.noResultsFiltered] : [])].map((t) => (
+                    {[...d.search.noResultsTips, ...(activeFilterCount(params) > 0 ? [d.search.noResultsFiltered] : [])].map((t) => (
                       <li key={t} className="flex gap-2">
                         <span aria-hidden className="text-primary">
                           •
@@ -254,22 +257,22 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
               }
             >
               {activeFilterCount(params) > 0 && (
-                <Link href={searchHref({ q: params.q, city: keepCity })} className={buttonVariants({ variant: 'default' })}>
-                  {ko.search.filtersReset}
-                </Link>
+                <LocaleLink href={searchHref({ q: params.q, city: keepCity })} className={buttonVariants({ variant: 'default' })}>
+                  {d.search.filtersReset}
+                </LocaleLink>
               )}
-              <Examples className="mt-2" />
+              <Examples className="mt-2" d={d} />
             </EmptyState>
           ) : (
             <>
               <p className="text-sm font-medium text-muted-foreground" role="status">
                 {store
                   ? params.q
-                    ? ko.store.summaryQuery(params.q, bottleTotal)
-                    : ko.store.summary(bottleTotal, truncated)
-                  : ko.search.resultSummary(params.q, bottleTotal)}
+                    ? d.store.summaryQuery(params.q, bottleTotal)
+                    : d.store.summary(bottleTotal, truncated)
+                  : d.search.resultSummary(params.q, bottleTotal)}
               </p>
-              {store && truncated && <p className="-mt-1 text-sm text-muted-foreground">{ko.store.truncatedHint}</p>}
+              {store && truncated && <p className="-mt-1 text-sm text-muted-foreground">{d.store.truncatedHint}</p>}
 
               <CitySections sections={sections} selected={city.id} raw={linkRaw} q={params.q} admin={admin} now={now} fx={fx} />
             </>
@@ -281,7 +284,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 }
 
 /** Header for a store-scoped list (`/?store=<id>`), with a way back to all stores. */
-function StoreScopeHeader({ store, clearHref }: { store: Store; clearHref: string }) {
+function StoreScopeHeader({ store, clearHref, d }: { store: Store; clearHref: string; d: Dict }) {
   return (
     <header className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-5">
       <div className="flex min-w-0 items-start gap-3">
@@ -289,13 +292,13 @@ function StoreScopeHeader({ store, clearHref }: { store: Store; clearHref: strin
           <StoreIcon aria-hidden className="size-5" />
         </span>
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="text-sm font-semibold text-primary">{ko.store.eyebrow}</p>
+          <p className="text-sm font-semibold text-primary">{d.store.eyebrow}</p>
           <h1 className="text-xl leading-snug font-bold tracking-tight text-balance sm:text-2xl">
-            <span lang="en">{store.name}</span> {ko.store.headingSuffix}
+            <span lang="en">{store.name}</span> {d.store.headingSuffix}
           </h1>
           <div className="flex flex-wrap items-center gap-1.5">
             <CityChip city={store.city} />
-            {store.onlineOnly && <span className="text-xs font-medium text-muted-foreground">{ko.row.onlineOnly}</span>}
+            {store.onlineOnly && <span className="text-xs font-medium text-muted-foreground">{d.row.onlineOnly}</span>}
             {store.stockReliability === 'low' && <StatusBadge kind="unreliable" />}
           </div>
           <p lang="en" className="text-sm text-muted-foreground">
@@ -303,10 +306,10 @@ function StoreScopeHeader({ store, clearHref }: { store: Store; clearHref: strin
           </p>
         </div>
       </div>
-      <Link href={clearHref} aria-label={ko.store.clearLabel(store.name)} className={buttonVariants({ variant: 'outline', size: 'sm', className: 'self-start sm:self-center' })}>
+      <LocaleLink href={clearHref} aria-label={d.store.clearLabel(store.name)} className={buttonVariants({ variant: 'outline', size: 'sm', className: 'self-start sm:self-center' })}>
         <X aria-hidden />
-        {ko.store.clear}
-      </Link>
+        {d.store.clear}
+      </LocaleLink>
     </header>
   );
 }

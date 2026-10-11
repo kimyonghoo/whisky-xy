@@ -9,7 +9,7 @@ vi.mock('next/headers', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-const { loginAction, logoutAction } = await import('@/app/watchlist/actions');
+const { loginAction, logoutAction } = await import('@/app/[lang]/watchlist/actions');
 const { ADMIN_COOKIE, LEGACY_ADMIN_COOKIE, WRONG_KEY_DELAY_MS, isAdmin } = await import('@/lib/admin');
 
 const KEY = 'Zx9-' + 'a'.repeat(40);
@@ -52,6 +52,19 @@ describe('loginAction / logoutAction', () => {
     expect((await loginAction({}, form('short'))).error).toBeTruthy();
     expect(jar.has(ADMIN_COOKIE)).toBe(false);
     err.mockRestore();
+  });
+
+  it('answers in the whitelisted hidden lang, Korean otherwise', async () => {
+    const { ko } = await import('@/lib/i18n/ko');
+    const { en } = await import('@/lib/i18n/en');
+    const withLang = (lang: string) => {
+      const fd = form('');
+      fd.set('lang', lang);
+      return fd;
+    };
+    expect((await loginAction({}, withLang('en'))).error).toBe(en.watch.gate.emptyKey);
+    expect((await loginAction({}, withLang('xx'))).error).toBe(ko.watch.gate.emptyKey);
+    expect((await loginAction({}, form(''))).error).toBe(ko.watch.gate.emptyKey);
   });
 
   it('logout expires the session cookie with the same path/secure attributes', async () => {

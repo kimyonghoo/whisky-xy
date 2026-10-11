@@ -1,16 +1,17 @@
 import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 
 export const STALE_AFTER_MS = 86_400_000;
 
-export function freshness(checkedAt: Date, now: Date, staleAfterMs = STALE_AFTER_MS): { stale: boolean; label: string } {
+export function freshness(checkedAt: Date, now: Date, staleAfterMs = STALE_AFTER_MS, d: Dict = ko): { stale: boolean; label: string } {
   const diff = Math.max(0, now.getTime() - checkedAt.getTime());
   const stale = diff > staleAfterMs;
   const minutes = Math.floor(diff / 60_000);
   let label: string;
-  if (minutes < 1) label = ko.freshness.justNow;
-  else if (minutes < 60) label = ko.freshness.minutesAgo(minutes);
-  else if (minutes < 1440) label = ko.freshness.hoursAgo(Math.floor(minutes / 60));
-  else label = ko.freshness.daysAgo(Math.floor(minutes / 1440));
+  if (minutes < 1) label = d.freshness.justNow;
+  else if (minutes < 60) label = d.freshness.minutesAgo(minutes);
+  else if (minutes < 1440) label = d.freshness.hoursAgo(Math.floor(minutes / 60));
+  else label = d.freshness.daysAgo(Math.floor(minutes / 1440));
   return { stale, label };
 }
 

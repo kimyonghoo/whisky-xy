@@ -24,7 +24,7 @@ function group(rows: ListingRow[]): BottleGroup {
   };
 }
 
-const render = (g: BottleGroup) => renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} />);
+const render = (g: BottleGroup) => renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} d={ko} />);
 
 describe('BottleResult status branches', () => {
   it('ranks only confirmed rows; an unverified row shows "재고 확인 필요" and no rank', () => {
@@ -55,7 +55,7 @@ describe('BottleResult status branches', () => {
   it('shows a rounded 원화 amount under the lowest price when a rate exists', () => {
     const g = group([row(1, 'dewinespot', 9000, 'instock', 2)]);
     const fx = { date: '2026-10-11', usdKrw: 1400, fetchedAt: now };
-    const html = renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} fx={fx} />);
+    const html = renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} fx={fx} d={ko} />);
     expect(html).toContain(ko.group.krwApprox('126,000원'));
     expect(render(g)).not.toContain('원');
   });

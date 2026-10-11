@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { ArrowLeft, ExternalLink, History, MapPin, Navigation, Phone } from 'lucide-react';
@@ -11,7 +10,9 @@ import { getStore } from '@/lib/stores';
 import { cardMeta, mapsUrl, nyDate, parseCardId, safeHttpsUrl, telHref } from '@/lib/card';
 import { freshness, stockState } from '@/lib/freshness';
 import { formatUsd, withTaxCents } from '@/lib/money';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
+import { getDict } from '@/lib/i18n/server';
+import { LocaleLink } from '@/components/LocaleLink';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { BottleHeader } from '@/components/BottleHeader';
@@ -19,7 +20,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceBlock } from '@/components/PriceBlock';
 import { Notice } from '@/components/Notice';
-import { CityChip } from '@/components/StoreLine';
+import { CityChip } from '@/components/CityChip';
 import { CardSkeleton } from '@/components/Skeletons';
 import { ShareCardButton } from '@/components/CopyLinkButton';
 import { RecheckButton } from './RecheckButton';
@@ -31,10 +32,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = parseCardId((await params).id);
   if (id === null) return {};
   await connection();
+  const d = await getDict();
   const listing = await getListing(await getDb(), id);
   const store = listing && getStore(listing.storeId);
   if (!listing || !store) return {};
-  const m = cardMeta(listing, store);
+  const m = cardMeta(listing, store, new Date(), d);
   return {
     title: m.title,
     description: m.description,
@@ -42,15 +44,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function CardPage({ params }: Props) {
+export default async function CardPage({ params }: Props) {
+  const d = await getDict();
   return (
-    <Suspense fallback={<CardSkeleton />}>
-      <CardView params={params} />
+    <Suspense fallback={<CardSkeleton d={d} />}>
+      <CardView params={params} d={d} />
     </Suspense>
   );
 }
 
-async function CardView({ params }: Props) {
+async function CardView({ params, d }: Props & { d: Dict }) {
   const id = parseCardId((await params).id);
   if (id === null) notFound();
   // Live recheck + relative freshness are per-request by nature.
@@ -70,7 +73,7 @@ async function CardView({ params }: Props) {
     .filter(Boolean)
     .join(' · ');
   const now = new Date();
-  const stale = freshness(listing.checkedAt, now).stale;
+  const stale = freshness(listing.checkedAt, now, undefined, d).stale;
   // After a failed live check, an "available" row older than 48 h reads "재고 확인 필요".
   const stock = stockState(listing, now);
   const live = status === 'updated' || status === 'cached';
@@ -79,10 +82,10 @@ async function CardView({ params }: Props) {
 
   return (
     <main id="main" className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-8 sm:pt-6">
-      <Link href="/" className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-2 self-start text-muted-foreground' })}>
+      <LocaleLink href="/" className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-2 self-start text-muted-foreground' })}>
         <ArrowLeft aria-hidden />
-        {ko.card.backToSearch}
-      </Link>
+        {d.card.backToSearch}
+      </LocaleLink>
 
       <BottleHeader
         variant="hero"
@@ -96,7 +99,7 @@ async function CardView({ params }: Props) {
       {/* Price + stock: the decision. */}
       <section aria-labelledby="status-h" className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-card">
         <h2 id="status-h" className="sr-only">
-          {ko.card.statusHeading}
+          {d.card.statusHeading}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge kind={stock} size="lg" />
@@ -107,13 +110,13 @@ async function CardView({ params }: Props) {
           taxIncludedCents={taxIncluded}
           emphasis="shelf"
           size="xl"
-          caption={ko.card.shelfPrice}
+          caption={d.card.shelfPrice}
           dimmed={stock !== 'instock'}
         />
         <div className="flex flex-col gap-3 border-t pt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <FreshnessIndicator checkedAt={listing.checkedAt} showDate size="md" />
-            {live && <StatusBadge kind="live" size="sm" label={ko.card.liveChecked} />}
+            <FreshnessIndicator checkedAt={listing.checkedAt} now={now} showDate size="md" />
+            {live && <StatusBadge kind="live" size="sm" label={d.card.liveChecked} />}
           </div>
           <RecheckButton id={listing.id} />
         </div>
@@ -122,34 +125,34 @@ async function CardView({ params }: Props) {
       {lowReliability && (
         <Notice
           tone="caution"
-          title={ko.card.lowReliabilityTitle}
+          title={d.card.lowReliabilityTitle}
           action={
             <a href={tel} className={buttonVariants({ variant: 'outline', className: 'border-caution-line' })}>
               <Phone aria-hidden />
-              {ko.card.call} · <span className="tabular">{store.phone}</span>
+              {d.card.call} · <span className="tabular">{store.phone}</span>
             </a>
           }
         >
-          {ko.card.lowReliabilityBody}
+          {d.card.lowReliabilityBody}
         </Notice>
       )}
       {status === 'failed' && (
-        <Notice tone="danger" urgent title={ko.card.recheckFailed}>
-          {ko.card.recheckFailedHint}
+        <Notice tone="danger" urgent title={d.card.recheckFailed}>
+          {d.card.recheckFailedHint}
         </Notice>
       )}
-      {status === 'gone' && <Notice tone="caution" urgent title={ko.card.gone} />}
+      {status === 'gone' && <Notice tone="caution" urgent title={d.card.gone} />}
       {status === 'throttled' && (
-        <Notice tone="info" title={ko.card.throttledTitle}>
-          {ko.card.throttledHint}
+        <Notice tone="info" title={d.card.throttledTitle}>
+          {d.card.throttledHint}
         </Notice>
       )}
-      {stale && status !== 'failed' && <Notice tone="stale" title={ko.stale.warning}>{ko.card.staleHint}</Notice>}
+      {stale && status !== 'failed' && <Notice tone="stale" title={d.stale.warning}>{d.card.staleHint}</Notice>}
 
       {/* Store + primary actions. On phones the actions dock to the bottom edge (thumb reach). */}
       <section aria-labelledby="store-h" className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-card">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-muted-foreground">{ko.card.storeHeading}</p>
+          <p className="text-sm font-semibold text-muted-foreground">{d.card.storeHeading}</p>
           <h2 id="store-h" className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight">
             {store.name}
             <CityChip city={store.city} />
@@ -167,7 +170,7 @@ async function CardView({ params }: Props) {
         </div>
         {(store.onlineOnly || store.note) && (
           <div className="flex flex-col gap-2">
-            {store.onlineOnly && <Notice tone="info">{ko.card.onlineOnlyNote}</Notice>}
+            {store.onlineOnly && <Notice tone="info">{d.card.onlineOnlyNote}</Notice>}
             {store.note && <Notice tone="info">{store.note}</Notice>}
           </div>
         )}
@@ -182,14 +185,14 @@ async function CardView({ params }: Props) {
             className={buttonVariants({ variant: 'default', size: 'xl' })}
           >
             <Navigation aria-hidden />
-            {ko.card.directions}
+            {d.card.directions}
           </a>
           <a href={tel} className={buttonVariants({ variant: 'outline', size: 'xl' })}>
             <Phone aria-hidden />
-            {ko.card.call}
+            {d.card.call}
           </a>
         </div>
-        <p className="text-sm text-muted-foreground">{ko.card.note}</p>
+        <p className="text-sm text-muted-foreground">{d.card.note}</p>
         {storeUrl && (
           <a
             href={storeUrl}
@@ -197,7 +200,7 @@ async function CardView({ params }: Props) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-primary underline-offset-4 hover:underline pointer-coarse:min-h-11"
           >
-            {ko.card.storePage}
+            {d.card.storePage}
             <ExternalLink aria-hidden className="size-4" />
           </a>
         )}
@@ -210,19 +213,19 @@ async function CardView({ params }: Props) {
       <details className="group/hist rounded-2xl border bg-card shadow-card">
         <summary className="flex min-h-14 items-center gap-2 px-5 text-base font-semibold">
           <History aria-hidden className="size-5 text-muted-foreground" />
-          {ko.card.history}
+          {d.card.history}
           <span className={badgeVariants({ variant: 'secondary', className: 'ml-auto tabular' })}>{history.length}</span>
         </summary>
         <div className="border-t px-5 pt-2 pb-4">
           {history.length === 0 ? (
-            <p className="py-2 text-base text-muted-foreground">{ko.card.noHistory}</p>
+            <p className="py-2 text-base text-muted-foreground">{d.card.noHistory}</p>
           ) : (
             <table className="w-full text-base tabular">
               <thead>
                 <tr className="text-left text-sm text-muted-foreground">
-                  <th scope="col" className="py-2 font-medium">{ko.card.historyDate}</th>
-                  <th scope="col" className="py-2 text-right font-medium">{ko.card.historyPrice}</th>
-                  <th scope="col" className="py-2 text-right font-medium">{ko.card.historyStock}</th>
+                  <th scope="col" className="py-2 font-medium">{d.card.historyDate}</th>
+                  <th scope="col" className="py-2 text-right font-medium">{d.card.historyPrice}</th>
+                  <th scope="col" className="py-2 text-right font-medium">{d.card.historyStock}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -232,7 +235,7 @@ async function CardView({ params }: Props) {
                     <td className="py-2.5 text-right font-semibold">{formatUsd(h.priceCents)}</td>
                     <td className="py-2.5 text-right">
                       <Badge variant={h.available ? 'instock' : 'soldout'} size="sm">
-                        {h.available ? ko.stock.inStock : ko.stock.soldOut}
+                        {h.available ? d.stock.inStock : d.stock.soldOut}
                       </Badge>
                     </td>
                   </tr>

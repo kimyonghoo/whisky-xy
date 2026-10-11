@@ -1,11 +1,11 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 
-export function CardSkeleton() {
+export function CardSkeleton({ d }: { d: Dict }) {
   return (
     <main id="main" className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 py-6">
       <p role="status" className="sr-only">
-        {ko.loadingCard}
+        {d.loadingCard}
       </p>
       <Skeleton className="aspect-[4/3] max-h-80 w-full rounded-2xl" />
       <Skeleton className="h-9 w-11/12" />

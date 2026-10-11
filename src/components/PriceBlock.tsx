@@ -1,5 +1,7 @@
+'use client';
+
 import { formatUsd } from '@/lib/money';
-import { ko } from '@/lib/i18n/ko';
+import { useDict } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
 
 const SIZE = {
@@ -33,10 +35,11 @@ export function PriceBlock({
   align?: 'start' | 'end';
   className?: string;
 }) {
+  const d = useDict();
   const s = SIZE[size];
   const main = emphasis === 'tax' ? taxIncludedCents : priceCents;
-  const sub = emphasis === 'tax' ? ko.row.preTax(formatUsd(priceCents)) : ko.row.taxIncluded(formatUsd(taxIncludedCents));
-  const cap = caption === undefined ? (emphasis === 'tax' ? ko.group.lowestHint : null) : caption;
+  const sub = emphasis === 'tax' ? d.row.preTax(formatUsd(priceCents)) : d.row.taxIncluded(formatUsd(taxIncludedCents));
+  const cap = caption === undefined ? (emphasis === 'tax' ? d.group.lowestHint : null) : caption;
   return (
     <div className={cn('flex flex-col', align === 'end' ? 'items-end text-right' : 'items-start', className)}>
       {cap && <span className={cn('font-semibold tracking-tight text-muted-foreground', s.cap)}>{cap}</span>}

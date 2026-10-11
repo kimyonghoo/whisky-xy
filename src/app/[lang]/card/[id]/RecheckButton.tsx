@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { BadgeCheck, CircleAlert, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ko } from '@/lib/i18n/ko';
+import { useDict } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
 
 type Result = { tone: 'success' | 'info' | 'caution' | 'danger'; text: string };
@@ -21,6 +21,7 @@ const TONE = {
  * ("방금 확인했습니다" / cached / gone / failed), then the page refreshes with the new data.
  */
 export function RecheckButton({ id, className }: { id: number; className?: string }) {
+  const d = useDict();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
@@ -36,18 +37,18 @@ export function RecheckButton({ id, className }: { id: number; className?: strin
       const data = (await res.json()) as { status?: string };
       setResult(
         data.status === 'updated'
-          ? { tone: 'success', text: ko.card.recheckUpdated }
+          ? { tone: 'success', text: d.card.recheckUpdated }
           : data.status === 'cached'
-            ? { tone: 'info', text: ko.card.recheckCached }
+            ? { tone: 'info', text: d.card.recheckCached }
             : data.status === 'gone'
-              ? { tone: 'caution', text: ko.card.gone }
+              ? { tone: 'caution', text: d.card.gone }
               : data.status === 'throttled'
-                ? { tone: 'caution', text: ko.card.recheckThrottled }
-                : { tone: 'danger', text: ko.card.recheckFailed },
+                ? { tone: 'caution', text: d.card.recheckThrottled }
+                : { tone: 'danger', text: d.card.recheckFailed },
       );
       startTransition(() => router.refresh());
     } catch {
-      setResult({ tone: 'danger', text: ko.card.recheckFailed });
+      setResult({ tone: 'danger', text: d.card.recheckFailed });
     } finally {
       setBusy(false);
     }
@@ -58,7 +59,7 @@ export function RecheckButton({ id, className }: { id: number; className?: strin
     <div className={cn('flex flex-col gap-2', className)}>
       <Button type="button" variant="outline" size="lg" className="w-full" onClick={run} disabled={working} aria-describedby={`recheck-${id}`}>
         <RefreshCw aria-hidden className={cn(working && 'motion-safe:animate-spin')} />
-        {working ? ko.card.rechecking : ko.card.recheck}
+        {working ? d.card.rechecking : d.card.recheck}
       </Button>
       <p id={`recheck-${id}`} role="status" aria-live="polite" className={cn('flex min-h-6 items-center gap-1.5 text-[0.9375rem] font-semibold', t?.cls)}>
         {t && result && (

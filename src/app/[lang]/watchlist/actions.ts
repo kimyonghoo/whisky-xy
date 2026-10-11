@@ -14,7 +14,7 @@ import {
 } from '@/lib/admin';
 import { getDb } from '@/lib/db/client';
 import { createWatch, deleteWatch, parseWatchForm, parseWatchId, type WatchField } from '@/lib/watches';
-import { ko } from '@/lib/i18n/ko';
+import { DEFAULT_LOCALE, LOCALES, dictFor, isLocale, localizePath, type Dict } from '@/lib/i18n';
 
 export type LoginState = { error?: string };
 
@@ -33,26 +33,37 @@ export type DeleteState = { ok?: boolean; error?: string };
 
 const PATH = '/watchlist';
 
+/** Root params are unavailable in Server Actions: forms post a hidden `lang`, whitelisted here. */
+function dictOf(fd: FormData): Dict {
+  const v = fd.get('lang');
+  return dictFor(isLocale(v) ? v : DEFAULT_LOCALE);
+}
+
+function revalidateWatchlist() {
+  for (const l of LOCALES) revalidatePath(localizePath(l, PATH));
+}
+
 async function adminFromCookie(): Promise<boolean> {
   const jar = await cookies();
   return isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY);
 }
 
 export async function loginAction(_prev: LoginState, fd: FormData): Promise<LoginState> {
+  const d = dictOf(fd);
   const key = fd.get('key');
-  if (typeof key !== 'string' || key.length === 0) return { error: ko.watch.gate.emptyKey };
+  if (typeof key !== 'string' || key.length === 0) return { error: d.watch.gate.emptyKey };
   // Same message whether the key is wrong, too short, or ADMIN_KEY is unset: don't reveal configuration.
   const session = checkAdminKey(key, process.env.ADMIN_KEY) ? createAdminSession(process.env.ADMIN_KEY) : null;
   if (!session) {
     // Fixed delay on every wrong key slows guessing to a crawl.
     await new Promise((r) => setTimeout(r, WRONG_KEY_DELAY_MS));
-    return { error: ko.watch.gate.wrongKey };
+    return { error: d.watch.gate.wrongKey };
   }
   const jar = await cookies();
   // The cookie holds a signed, expiring session, never the key itself.
   jar.set(ADMIN_COOKIE, session, adminCookieOptions());
   jar.set(LEGACY_ADMIN_COOKIE, '', expiredCookieOptions());
-  revalidatePath(PATH);
+  revalidateWatchlist();
   return {};
 }
 
@@ -60,7 +71,7 @@ export async function logoutAction(): Promise<void> {
   const jar = await cookies();
   jar.set(ADMIN_COOKIE, '', expiredCookieOptions());
   jar.set(LEGACY_ADMIN_COOKIE, '', expiredCookieOptions());
-  revalidatePath(PATH);
+  revalidateWatchlist();
 }
 
 function rawValues(fd: FormData): Record<string, string | string[]> {
@@ -80,29 +91,31 @@ function rawValues(fd: FormData): Record<string, string | string[]> {
 }
 
 export async function createWatchAction(prev: CreateState, fd: FormData): Promise<CreateState> {
+  const d = dictOf(fd);
   const seq = (prev?.seq ?? 0) + 1;
-  if (!(await adminFromCookie())) return { seq, error: ko.watch.sessionExpired, values: rawValues(fd) };
-  const parsed = parseWatchForm(fd);
+  if (!(await adminFromCookie())) return { seq, error: d.watch.sessionExpired, values: rawValues(fd) };
+  const parsed = parseWatchForm(fd, d);
   if ('error' in parsed) return { seq, error: parsed.error, field: parsed.field, values: rawValues(fd) };
   try {
     await createWatch(await getDb(), parsed);
   } catch {
-    return { seq, error: ko.watch.saveFailed, values: rawValues(fd) };
+    return { seq, error: d.watch.saveFailed, values: rawValues(fd) };
   }
-  revalidatePath(PATH);
-  return { seq, ok: true, message: ko.watch.created(parsed.label) };
+  revalidateWatchlist();
+  return { seq, ok: true, message: d.watch.created(parsed.label) };
 }
 
 export async function deleteWatchAction(_prev: DeleteState, fd: FormData): Promise<DeleteState> {
-  if (!(await adminFromCookie())) return { error: ko.watch.sessionExpired };
+  const d = dictOf(fd);
+  if (!(await adminFromCookie())) return { error: d.watch.sessionExpired };
   const id = parseWatchId(fd.get('id'));
-  if (id === null) return { error: ko.watch.deleteFailed };
+  if (id === null) return { error: d.watch.deleteFailed };
   try {
     // Already gone (e.g. deleted in another tab) counts as done: the list refreshes either way.
     await deleteWatch(await getDb(), id);
-    revalidatePath(PATH);
+    revalidateWatchlist();
     return { ok: true };
   } catch {
-    return { error: ko.watch.deleteFailed };
+    return { error: d.watch.deleteFailed };
   }
 }

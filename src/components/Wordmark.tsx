@@ -1,4 +1,4 @@
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 /** Brand mark: a copper tile with a rocks glass holding a honey pour. Same art as app/icon.svg. */
@@ -18,15 +18,15 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-export function Wordmark({ compact = false }: { compact?: boolean }) {
+export function Wordmark({ d, compact = false }: { d: Dict; compact?: boolean }) {
   return (
     <span className="flex items-center gap-2 sm:gap-2.5">
       <BrandMark className="max-sm:size-7" />
       <span className="flex flex-col leading-none">
-        <span className="text-[0.875rem] font-extrabold tracking-tight whitespace-nowrap sm:text-base">{ko.site.title}</span>
+        <span className="text-[0.875rem] font-extrabold tracking-tight whitespace-nowrap sm:text-base">{d.site.title}</span>
         {!compact && (
           <span className="mt-1 hidden text-[0.6875rem] font-semibold tracking-[0.14em] text-muted-foreground sm:block">
-            {ko.site.wordmarkSub}
+            {d.site.wordmarkSub}
           </span>
         )}
       </span>

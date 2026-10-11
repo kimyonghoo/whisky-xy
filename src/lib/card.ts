@@ -2,6 +2,7 @@ import type { Listing } from '@/lib/db/schema';
 import type { Store } from '@/lib/stores';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 import { stockState } from '@/lib/freshness';
 
 export function mapsUrl(address: string): string {
@@ -39,11 +40,11 @@ export function nyDate(d: Date): string {
   return `${get('month')}/${get('day')}`;
 }
 
-export function cardMeta(listing: Listing, store: Store, now: Date = new Date()): { title: string; description: string; image: string | null } {
-  const stock = { instock: ko.stock.inStock, unverified: ko.stock.unverified, soldout: ko.stock.soldOut }[stockState(listing, now)];
+export function cardMeta(listing: Listing, store: Store, now: Date = new Date(), d: Dict = ko): { title: string; description: string; image: string | null } {
+  const stock = { instock: d.stock.inStock, unverified: d.stock.unverified, soldout: d.stock.soldOut }[stockState(listing, now)];
   return {
     title: listing.title,
-    description: `${ko.card.asOf(nyDate(listing.checkedAt), formatUsd(listing.priceCents))} · ${stock} · ${store.name} · ${store.address}`,
+    description: `${d.card.asOf(nyDate(listing.checkedAt), formatUsd(listing.priceCents))} · ${stock} · ${store.name} · ${store.address}`,
     image: safeHttpsUrl(listing.imageUrl),
   };
 }

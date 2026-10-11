@@ -1,28 +1,41 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Heart, Map as MapIcon, Scale, Search } from 'lucide-react';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
+import { useDict, useLocale } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
+import { LocaleLink } from '@/components/LocaleLink';
 
+/** Unprefixed hrefs; `match` gets the pathname with the locale prefix removed. */
 const ITEMS = [
-  { href: '/', label: ko.nav.search, Icon: Search, match: (p: string) => p === '/' || p.startsWith('/card') },
-  { href: '/map', label: ko.nav.map, Icon: MapIcon, match: (p: string) => p.startsWith('/map') },
-  { href: '/compare', label: ko.nav.compare, Icon: Scale, match: (p: string) => p.startsWith('/compare') },
-  { href: '/watchlist', label: ko.nav.watchlist, short: ko.nav.watchlistShort, Icon: Heart, match: (p: string) => p.startsWith('/watchlist') },
+  { href: '/', label: (d: Dict) => d.nav.search, Icon: Search, match: (p: string) => p === '/' || p.startsWith('/card') },
+  { href: '/map', label: (d: Dict) => d.nav.map, Icon: MapIcon, match: (p: string) => p.startsWith('/map') },
+  { href: '/compare', label: (d: Dict) => d.nav.compare, Icon: Scale, match: (p: string) => p.startsWith('/compare') },
+  { href: '/watchlist', label: (d: Dict) => d.nav.watchlist, short: (d: Dict) => d.nav.watchlistShort, Icon: Heart, match: (p: string) => p.startsWith('/watchlist') },
 ] as const;
 
+/** '/en/map' → '/map', '/ko' → '/'. */
+function unprefixed(pathname: string, locale: string): string {
+  const prefix = `/${locale}`;
+  if (pathname === prefix) return '/';
+  return pathname.startsWith(`${prefix}/`) ? pathname.slice(prefix.length) : pathname;
+}
+
 function Items({ pathname }: { pathname: string | null }) {
+  const d = useDict();
+  const locale = useLocale();
+  const path = pathname === null ? null : unprefixed(pathname, locale);
   return (
     <ul className="flex items-center sm:gap-1">
       {ITEMS.map((item) => {
-        const { href, label, Icon, match } = item;
-        const short = 'short' in item ? item.short : undefined;
-        const active = pathname !== null && match(pathname);
+        const { href, Icon, match } = item;
+        const label = item.label(d);
+        const short = 'short' in item ? item.short(d) : undefined;
+        const active = path !== null && match(path);
         return (
           <li key={href}>
-            <Link
+            <LocaleLink
               href={href}
               prefetch={href === '/'}
               aria-current={active ? 'page' : undefined}
@@ -43,7 +56,7 @@ function Items({ pathname }: { pathname: string | null }) {
                 label
               )}
               {active && <span aria-hidden className="absolute inset-x-2 -bottom-[0.5625rem] h-0.5 rounded-full bg-primary sm:inset-x-3" />}
-            </Link>
+            </LocaleLink>
           </li>
         );
       })}

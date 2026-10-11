@@ -12,7 +12,7 @@ import { parseProductId, returnQuery } from '@/lib/kr-view';
 import { parseBottleParam } from '@/lib/map-view';
 import { safeHttpsUrl } from '@/lib/card';
 import { searchHref } from '@/lib/search-view';
-import { ko } from '@/lib/i18n/ko';
+import { DEFAULT_LOCALE, LOCALES, dictFor, isLocale, localizePath, type Locale } from '@/lib/i18n';
 
 export type LinkState = { error?: string };
 export type UnlinkState = { ok?: boolean; error?: string };
@@ -34,33 +34,43 @@ function name(v: string | undefined): string | null {
   return s && s.length <= MAX_NAME ? s : null;
 }
 
+/** Root params are unavailable in Server Actions: the form posts a hidden `lang`, whitelisted here. */
+function localeOf(fd: FormData): Locale {
+  const v = fd.get('lang');
+  return isLocale(v) ? v : DEFAULT_LOCALE;
+}
+
 function revalidateAll() {
-  revalidatePath('/');
-  revalidatePath('/compare');
-  revalidatePath('/link-kr');
+  for (const l of LOCALES) {
+    revalidatePath(localizePath(l, '/'));
+    revalidatePath(localizePath(l, '/compare'));
+    revalidatePath(localizePath(l, '/link-kr'));
+  }
 }
 
 /** "이 상품으로 연결": re-check admin, validate inputs, fetch the live Dailyshot price, upsert, go back to search. */
 export async function connectKrAction(_prev: LinkState, fd: FormData): Promise<LinkState> {
-  if (!(await adminFromCookie())) return { error: ko.linkKr.sessionExpired };
+  const locale = localeOf(fd);
+  const d = dictFor(locale);
+  if (!(await adminFromCookie())) return { error: d.linkKr.sessionExpired };
 
   const bottleKey = parseBottleParam(str(fd, 'bottle'));
   const productId = parseProductId(fd.get('productId'));
   const nameKo = name(str(fd, 'nameKo'));
-  if (!bottleKey || !productId || !nameKo) return { error: ko.linkKr.invalid };
+  if (!bottleKey || !productId || !nameKo) return { error: d.linkKr.invalid };
 
   const db = await getDb();
   // bottleKey comes from the client: it must belong to an existing public listing.
   const bottle = await getBottleSummary(db, bottleKey);
-  if (!bottle) return { error: ko.linkKr.invalid };
+  if (!bottle) return { error: d.linkKr.invalid };
 
   let price: DailyshotPrice | null;
   try {
     price = await fetchDailyshotPrice(productId);
   } catch {
-    return { error: ko.linkKr.linkFailed };
+    return { error: d.linkKr.linkFailed };
   }
-  if (!price) return { error: ko.linkKr.productGone };
+  if (!price) return { error: d.linkKr.productGone };
 
   try {
     await upsertKrLink(
@@ -76,25 +86,26 @@ export async function connectKrAction(_prev: LinkState, fd: FormData): Promise<L
       new Date(),
     );
   } catch {
-    return { error: ko.linkKr.saveFailed };
+    return { error: d.linkKr.saveFailed };
   }
 
   revalidateAll();
-  // Internal path only: searchHref always starts with "/" and encodes the query.
-  redirect(searchHref({ q: returnQuery(str(fd, 'from'), bottle.title) }));
+  // Internal path only: searchHref always starts with "/" and encodes the query; the locale is whitelisted.
+  redirect(localizePath(locale, searchHref({ q: returnQuery(str(fd, 'from'), bottle.title) })));
 }
 
 /** "연결 해제": re-check admin, validate the bottle, delete the link. Stays on the page. */
 export async function unlinkKrAction(_prev: UnlinkState, fd: FormData): Promise<UnlinkState> {
-  if (!(await adminFromCookie())) return { error: ko.linkKr.sessionExpired };
+  const d = dictFor(localeOf(fd));
+  if (!(await adminFromCookie())) return { error: d.linkKr.sessionExpired };
   const bottleKey = parseBottleParam(str(fd, 'bottle'));
-  if (!bottleKey) return { error: ko.linkKr.invalid };
+  if (!bottleKey) return { error: d.linkKr.invalid };
   try {
     const db = await getDb();
-    if (!(await getBottleSummary(db, bottleKey))) return { error: ko.linkKr.invalid };
+    if (!(await getBottleSummary(db, bottleKey))) return { error: d.linkKr.invalid };
     await deleteKrLink(db, bottleKey);
   } catch {
-    return { error: ko.linkKr.unlinkFailed };
+    return { error: d.linkKr.unlinkFailed };
   }
   revalidateAll();
   return { ok: true };

@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronsDown, Minus, PartyPopper, TrendingUp, type LucideIcon } from 'lucide-react';
 import type { Verdict } from '@/lib/compare';
-import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 /** Verdict styling (docs/design-system.md §3a). Icon + word + colour, never colour alone. */
@@ -60,10 +60,12 @@ export function PriceCompareChip({
   verdict,
   size = 'sm',
   className,
+  d,
 }: {
   verdict: Verdict;
   size?: keyof typeof SIZE;
   className?: string;
+  d: Dict;
 }) {
   const v = VERDICT_STYLE[verdict];
   return (
@@ -76,7 +78,7 @@ export function PriceCompareChip({
       )}
     >
       <v.Icon aria-hidden className={v.icon} />
-      {ko.compare.verdict[verdict]}
+      {d.compare.verdict[verdict]}
     </span>
   );
 }

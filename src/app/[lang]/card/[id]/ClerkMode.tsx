@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Hand, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ko } from '@/lib/i18n/ko';
+import { useDict } from '@/lib/i18n/client';
 
 type WakeLock = { release: () => Promise<void> };
 
@@ -23,6 +23,7 @@ export function ClerkMode({
   detail: string;
   price?: string;
 }) {
+  const d = useDict();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -66,7 +67,7 @@ export function ClerkMode({
     <>
       <Button ref={openerRef} type="button" variant="dark" size="xl" className="w-full" onClick={() => setOpen(true)}>
         <Hand aria-hidden />
-        {ko.card.showClerk}
+        {d.card.showClerk}
       </Button>
       {open && (
         <div
@@ -77,12 +78,12 @@ export function ClerkMode({
           className="fixed inset-0 z-50 flex cursor-pointer flex-col overflow-y-auto bg-white text-black motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
         >
           <div className="flex items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))]">
-            <p className="text-base font-medium text-neutral-600">{ko.card.clerkClose}</p>
+            <p className="text-base font-medium text-neutral-600">{d.card.clerkClose}</p>
             <button
               ref={closeRef}
               type="button"
               onClick={() => setOpen(false)}
-              aria-label={ko.card.clerkCloseButton}
+              aria-label={d.card.clerkCloseButton}
               className="flex size-12 items-center justify-center rounded-full bg-neutral-100 text-black outline-none focus-visible:ring-4 focus-visible:ring-black"
             >
               <X aria-hidden className="size-7" />
@@ -108,7 +109,7 @@ export function ClerkMode({
               </p>
             )}
             <p lang="en" className="mt-2 rounded-2xl bg-black px-6 py-4 text-3xl font-extrabold text-white sm:text-5xl">
-              {ko.card.clerkQuestion}
+              {d.card.clerkQuestion}
             </p>
           </div>
         </div>
