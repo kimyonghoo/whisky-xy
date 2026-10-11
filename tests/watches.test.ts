@@ -34,9 +34,9 @@ describe('suggestExcludes', () => {
 describe('parseWatchForm', () => {
   it('parses the brief example and rejects bad input', () => {
     const fd = new FormData(); fd.set('label', 'Stagg'); fd.set('include', 'Stagg'); fd.set('exclude', 'jr, junior,george'); fd.set('maxPrice', '200');
-    expect(parseWatchForm(fd)).toEqual({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], batch: null, sizeMl: null, maxPriceCents: 20000, regions: ['brooklyn', 'nj'] });
+    expect(parseWatchForm(fd)).toEqual({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], batch: null, sizeMl: null, maxPriceCents: 20000, cities: ['brooklyn', 'nj'] });
     fd.set('include', ' , '); expect(parseWatchForm(fd)).toHaveProperty('error');
-    fd.set('include', 'stagg'); fd.append('regions', 'tx'); expect(parseWatchForm(fd)).toHaveProperty('error');
+    fd.set('include', 'stagg'); fd.append('cities', 'tx'); expect(parseWatchForm(fd)).toHaveProperty('error');
   });
 
   function base(): FormData {
@@ -56,15 +56,21 @@ describe('parseWatchForm', () => {
     expect(r.maxPriceCents).toBeNull();
   });
 
-  it('accepts explicit regions, batch and size', () => {
+  it('rejects a soon city', () => {
     const fd = base();
-    fd.append('regions', 'ca');
-    fd.append('regions', 'nj');
+    fd.append('cities', 'tokyo');
+    expect(parseWatchForm(fd)).toMatchObject({ field: 'cities' });
+  });
+
+  it('accepts explicit cities, batch and size', () => {
+    const fd = base();
+    fd.append('cities', 'la');
+    fd.append('cities', 'nj');
     fd.set('batch', ' B524 ');
     fd.set('sizeMl', '750');
     fd.set('maxPrice', '$1,299.97');
     const r = parseWatchForm(fd) as WatchInput;
-    expect(r.regions).toEqual(['nj', 'ca']);
+    expect(r.cities).toEqual(['nj', 'la']);
     expect(r.batch).toBe('B524');
     expect(r.sizeMl).toBe(750);
     expect(r.maxPriceCents).toBe(129997);
@@ -83,7 +89,7 @@ describe('parseWatchForm', () => {
     fd = base(); fd.set('maxPrice', '0'); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('sizeMl', '75.5'); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('sizeMl', '-1'); expect(parseWatchForm(fd)).toHaveProperty('error');
-    fd = base(); fd.set('regionsSubmitted', '1'); expect(parseWatchForm(fd)).toHaveProperty('error');
+    fd = base(); fd.set('citiesSubmitted', '1'); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('label', 'x'.repeat(200)); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('include', 'stagg'); fd.set('exclude', 'stagg'); expect(parseWatchForm(fd)).toHaveProperty('error');
   });
@@ -106,7 +112,7 @@ describe('parseWatchId', () => {
 describe('watch CRUD', () => {
   it('creates, lists newest first and deletes', async () => {
     const db = await createTestDb();
-    const stagg: WatchInput = { label: 'Stagg', includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], batch: null, sizeMl: null, maxPriceCents: 20000, regions: ['brooklyn', 'nj'] };
+    const stagg: WatchInput = { label: 'Stagg', includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], batch: null, sizeMl: null, maxPriceCents: 20000, cities: ['brooklyn', 'nj'] };
     const a = await createWatch(db, stagg);
     const b = await createWatch(db, { ...stagg, label: 'Weller', includeTerms: ['weller'], excludeTerms: [] });
     expect(a.createdAt).toBeInstanceOf(Date);

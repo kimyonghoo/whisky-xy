@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { watchMatches, selectAlerts, formatAlert, type AlertCandidate } from '@/lib/alerts/match';
 import { getStore } from '@/lib/stores';
-import { cityWatchRegion, watchRegionCity } from '@/lib/watch-form';
 import { normalizeText } from '@/lib/whisky/parse';
 import type { Listing, Watch } from '@/lib/db/schema';
 import type { ChangeEvent } from '@/lib/crawl/ingest';
@@ -12,7 +11,7 @@ const flask = getStore('flask')!;
 function watch(o: Partial<Watch> = {}): Watch {
   return {
     id: 1, label: 'w', includeTerms: [], excludeTerms: [], batch: null, sizeMl: null,
-    maxPriceCents: null, regions: ['brooklyn', 'nj', 'ca'], createdAt: new Date(), ...o,
+    maxPriceCents: null, cities: ['brooklyn', 'nj', 'la'], createdAt: new Date(), ...o,
   } as Watch;
 }
 function listing(title: string, o: Partial<Listing> = {}): Listing {
@@ -22,7 +21,7 @@ function listing(title: string, o: Partial<Listing> = {}): Listing {
     url: 'https://x/p', imageUrl: null, ...o,
   } as unknown as Listing;
 }
-const stagg = watch({ includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], regions: ['brooklyn', 'nj'] });
+const stagg = watch({ includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], cities: ['brooklyn', 'nj'] });
 const byId = new Map<number, Listing>([[1, listing('Stagg Kentucky Straight Bourbon Whiskey')]]);
 function ev(kind: ChangeEvent['kind'], priceCents: number, prev: number | null = null): ChangeEvent {
   return { kind, listingId: 1, prevPriceCents: prev, priceCents, available: kind !== 'sold_out' };
@@ -31,21 +30,12 @@ function cand(o: Partial<Listing> = {}): AlertCandidate {
   return { watch: stagg, listing: listing('Stagg', o), event: ev('restock', 17500) };
 }
 
-describe('legacy watch region boundary', () => {
-  it('maps ca <-> la and leaves other cities as they are', () => {
-    expect(watchRegionCity('ca')).toBe('la');
-    expect(cityWatchRegion('la')).toBe('ca');
-    for (const r of ['brooklyn', 'nj'] as const) {
-      expect(watchRegionCity(r)).toBe(r);
-      expect(cityWatchRegion(r)).toBe(r);
-    }
-  });
-  it('legacy ca watches still match LA stores; east-coast watches do not', () => {
+describe('watch cities', () => {
+  it('matches an LA store for a watch migrated from ca', () => {
     const bnb = getStore('bittersandbottles')!;
-    expect(bnb.city).toBe('la');
     const l = listing('Stagg Bourbon', { storeId: 'bittersandbottles' });
-    expect(watchMatches(watch({ includeTerms: ['stagg'], regions: ['ca'] }), l, bnb)).toBe(true);
-    expect(watchMatches(watch({ includeTerms: ['stagg'], regions: ['brooklyn', 'nj'] }), l, bnb)).toBe(false);
+    expect(watchMatches(watch({ includeTerms: ['stagg'], cities: ['la'] }), l, bnb)).toBe(true);
+    expect(watchMatches(watch({ includeTerms: ['stagg'], cities: ['brooklyn', 'nj'] }), l, bnb)).toBe(false);
   });
 });
 

@@ -1,7 +1,7 @@
 // Pure watch-form logic (no DB imports) so the client form can share it with the server action.
 import { normalizeText } from '@/lib/whisky/parse';
 import { parsePriceToCents } from '@/lib/money';
-import type { CityId } from '@/lib/geo';
+import { isCityId, liveCities, type CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
 
 /**
@@ -28,10 +28,10 @@ export interface WatchInput {
   batch: string | null;
   sizeMl: number | null;
   maxPriceCents: number | null;
-  regions: WatchRegion[];
+  cities: CityId[];
 }
 
-export type WatchField = 'label' | 'include' | 'exclude' | 'batch' | 'sizeMl' | 'maxPrice' | 'regions';
+export type WatchField = 'label' | 'include' | 'exclude' | 'batch' | 'sizeMl' | 'maxPrice' | 'cities';
 export interface WatchFormError {
   error: string;
   field?: WatchField;
@@ -46,15 +46,9 @@ export const WATCH_LIMITS = {
   maxPriceCents: 10_000_000, // $100,000
 } as const;
 
-/**
- * Stored watch region values. The DB still holds the legacy 'ca' for Los Angeles until the
- * watches migration (Task 2); these helpers map at the boundary.
- */
-export type WatchRegion = 'brooklyn' | 'nj' | 'ca';
-export const ALL_REGIONS: readonly WatchRegion[] = ['brooklyn', 'nj', 'ca'];
-export const watchRegionCity = (r: WatchRegion): CityId => (r === 'ca' ? 'la' : r);
-export const cityWatchRegion = (c: CityId): string => (c === 'la' ? 'ca' : c);
-export const DEFAULT_REGIONS: WatchRegion[] = ['brooklyn', 'nj'];
+/** Cities a watch can target: live ones only (soon cities are never selectable). */
+export const WATCH_CITY_IDS: readonly CityId[] = liveCities().map((c) => c.id);
+export const DEFAULT_WATCH_CITIES: CityId[] = ['brooklyn', 'nj'];
 
 function str(fd: FormData, key: string): string {
   const v = fd.get(key);
@@ -121,20 +115,20 @@ export function parseWatchForm(fd: FormData): WatchInput | WatchFormError {
     if (maxPriceCents <= 0 || maxPriceCents > WATCH_LIMITS.maxPriceCents) return { error: e.price, field: 'maxPrice' };
   }
 
-  const picked = fd.getAll('regions').map((v) => (typeof v === 'string' ? v : ''));
-  if (picked.some((r) => !(ALL_REGIONS as readonly string[]).includes(r))) return { error: e.regionInvalid, field: 'regions' };
-  let regions: WatchRegion[];
+  const picked = fd.getAll('cities').map((v) => (typeof v === 'string' ? v : ''));
+  if (picked.some((c) => !isCityId(c) || !WATCH_CITY_IDS.includes(c))) return { error: e.cityInvalid, field: 'cities' };
+  let cities: CityId[];
   if (picked.length > 0) {
     // Canonical order, no duplicates.
-    regions = ALL_REGIONS.filter((r) => picked.includes(r));
-  } else if (fd.has('regionsSubmitted')) {
+    cities = WATCH_CITY_IDS.filter((c) => picked.includes(c));
+  } else if (fd.has('citiesSubmitted')) {
     // The form rendered checkboxes and the user unchecked them all.
-    return { error: e.regionRequired, field: 'regions' };
+    return { error: e.cityRequired, field: 'cities' };
   } else {
-    regions = [...DEFAULT_REGIONS];
+    cities = [...DEFAULT_WATCH_CITIES];
   }
 
-  return { label, includeTerms, excludeTerms, batch, sizeMl, maxPriceCents, regions };
+  return { label, includeTerms, excludeTerms, batch, sizeMl, maxPriceCents, cities };
 }
 
 /** Delete id from a form: a positive 32-bit integer in plain decimal, else null. */

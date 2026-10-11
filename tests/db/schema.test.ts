@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { createTestDb } from '../helpers/db';
 import { listings } from '@/lib/db/schema';
@@ -12,5 +14,22 @@ describe('schema', () => {
     await db.insert(listings).values(row);
     expect((await db.select().from(listings))[0].priceCents).toBe(17500);
     await expect(db.insert(listings).values(row)).rejects.toThrow();
+  });
+
+  it('migration 0003 renames regions to cities and maps ca to la', async () => {
+    const { PGlite } = await import('@electric-sql/pglite');
+    const pg = new PGlite();
+    const sqlOf = (name: string) => readFileSync(join(process.cwd(), 'drizzle', name), 'utf8');
+    const run = async (name: string) => {
+      for (const stmt of sqlOf(name).split('--> statement-breakpoint')) if (stmt.trim()) await pg.exec(stmt);
+    };
+    await run('0000_condemned_charles_xavier.sql');
+    await run('0001_steep_morgan_stark.sql');
+    await run('0002_store_live_budget.sql');
+    await pg.exec(`INSERT INTO watches (label, include_terms, exclude_terms, regions, created_at)
+      VALUES ('w', '{stagg}', '{}', '{brooklyn,ca}', now())`);
+    await run('0003_watch_cities.sql');
+    const res = await pg.query<{ cities: string[] }>('SELECT cities FROM watches');
+    expect(res.rows[0].cities).toEqual(['brooklyn', 'la']);
   });
 });

@@ -59,7 +59,7 @@ describe('runCrawl', () => {
   });
 
   it('sends one notify per alert after a restock', async () => {
-    await db.insert(watches).values({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], regions: ['brooklyn', 'nj'], createdAt: new Date() });
+    await db.insert(watches).values({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: ['jr', 'junior', 'george'], cities: ['brooklyn', 'nj'], createdAt: new Date() });
     const fl = { pages: flaskPages };
     await runCrawl({ ...base, fetchFn: fakeFetch({ [flask.domain]: fl, [cave.domain]: { pages: caveWith(false) } }) });
     const sent: string[] = [];
@@ -73,7 +73,7 @@ describe('runCrawl', () => {
   });
 
   it('a failed notify does not abort the run and is not counted', async () => {
-    await db.insert(watches).values({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: [], regions: ['nj'], createdAt: new Date() });
+    await db.insert(watches).values({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: [], cities: ['nj'], createdAt: new Date() });
     const mk = (a: boolean) => fakeFetch({ [flask.domain]: { pages: flaskPages }, [cave.domain]: { pages: caveWith(a) } });
     await runCrawl({ ...base, fetchFn: mk(false) });
     const r = await runCrawl({ ...base, fetchFn: mk(true), notify: async () => { throw new Error('tg down'); } });

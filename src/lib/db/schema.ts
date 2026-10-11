@@ -52,7 +52,7 @@ export const watches = pgTable('watches', {
   batch: text('batch'),
   sizeMl: integer('size_ml'),
   maxPriceCents: integer('max_price_cents'),
-  regions: text('regions').array().notNull().default(['brooklyn', 'nj']),
+  cities: text('cities').array().notNull().default(['brooklyn', 'nj']),
   createdAt: ts('created_at').notNull(),
 });
 

@@ -4,7 +4,6 @@ import type { ChangeEvent } from '@/lib/crawl/ingest';
 import { getStore } from '@/lib/stores';
 import { normalizeText } from '@/lib/whisky/parse';
 import { formatUsd, withTaxCents } from '@/lib/money';
-import { cityWatchRegion } from '@/lib/watch-form';
 import { ko } from '@/lib/i18n/ko';
 
 function hasPhrase(haystack: string, term: string): boolean {
@@ -19,7 +18,7 @@ export function watchMatches(w: Watch, l: Listing, store: Store): boolean {
   if (w.excludeTerms.some((t) => hasPhrase(hay, t))) return false;
   if (w.batch != null && w.batch !== l.batch) return false;
   if (w.sizeMl != null && w.sizeMl !== l.sizeMl) return false;
-  return w.regions.includes(cityWatchRegion(store.city));
+  return w.cities.includes(store.city);
 }
 
 export interface AlertCandidate {

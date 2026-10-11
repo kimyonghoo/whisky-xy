@@ -6,7 +6,7 @@ import { BadgeCheck, CircleAlert, LoaderCircle, Minus, Plus, Search, Tag, Trash2
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { CityChip } from '@/components/StoreLine';
-import { watchRegionCity, type WatchRegion } from '@/lib/watch-form';
+import type { CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { deleteWatchAction, type DeleteState } from './actions';
@@ -20,7 +20,7 @@ export interface WatchItem {
   batch: string | null;
   sizeMl: number | null;
   target: string | null;
-  regions: WatchRegion[];
+  cities: CityId[];
   created: string;
   searchHref: string;
 }
@@ -127,10 +127,10 @@ function WatchCard({ item }: { item: WatchItem }) {
         <TermList kind="include" terms={item.includeTerms} />
         {item.excludeTerms.length > 0 && <TermList kind="exclude" terms={item.excludeTerms} />}
         <div className="flex flex-wrap items-center gap-1.5">
-          <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{ko.watch.item.regions}</dt>
-          {item.regions.map((r) => (
+          <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{ko.watch.item.cities}</dt>
+          {item.cities.map((r) => (
             <dd key={r}>
-              <CityChip city={watchRegionCity(r)} />
+              <CityChip city={r} />
             </dd>
           ))}
           {item.batch && (

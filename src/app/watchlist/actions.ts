@@ -75,7 +75,7 @@ function rawValues(fd: FormData): Record<string, string | string[]> {
     batch: get('batch'),
     sizeMl: get('sizeMl'),
     maxPrice: get('maxPrice'),
-    regions: fd.getAll('regions').filter((v): v is string => typeof v === 'string'),
+    cities: fd.getAll('cities').filter((v): v is string => typeof v === 'string'),
   };
 }
 

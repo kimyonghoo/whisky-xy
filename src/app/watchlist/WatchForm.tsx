@@ -4,7 +4,8 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { BadgeCheck, Check, ChevronDown, CircleAlert, Info, LoaderCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ALL_REGIONS, LINE_SIBLINGS, splitTerms, suggestExcludes, watchRegionCity, type WatchField, type WatchRegion } from '@/lib/watch-form';
+import { WATCH_CITY_IDS, LINE_SIBLINGS, splitTerms, suggestExcludes, type WatchField } from '@/lib/watch-form';
+import type { CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { createWatchAction, type CreateState } from './actions';
@@ -16,14 +17,14 @@ export interface WatchFormDefaults {
   batch: string;
   sizeMl: string;
   maxPrice: string;
-  regions: WatchRegion[];
+  cities: CityId[];
 }
 
-const EMPTY: WatchFormDefaults = { label: '', include: '', exclude: '', batch: '', sizeMl: '', maxPrice: '', regions: ['brooklyn', 'nj'] };
+const EMPTY: WatchFormDefaults = { label: '', include: '', exclude: '', batch: '', sizeMl: '', maxPrice: '', cities: ['brooklyn', 'nj'] };
 
 function fromState(values: CreateState['values']): WatchFormDefaults {
   const s = (k: string) => (typeof values?.[k] === 'string' ? (values[k] as string) : '');
-  const r = Array.isArray(values?.regions) ? (values.regions as string[]) : [];
+  const r = Array.isArray(values?.cities) ? (values.cities as string[]) : [];
   return {
     label: s('label'),
     include: s('include'),
@@ -31,7 +32,7 @@ function fromState(values: CreateState['values']): WatchFormDefaults {
     batch: s('batch'),
     sizeMl: s('sizeMl'),
     maxPrice: s('maxPrice'),
-    regions: ALL_REGIONS.filter((x) => r.includes(x)),
+    cities: WATCH_CITY_IDS.filter((x) => r.includes(x)),
   };
 }
 
@@ -118,7 +119,7 @@ function FormBody({
 
   return (
     <form ref={formRef} action={action} className="flex flex-col gap-5" noValidate>
-      <input type="hidden" name="regionsSubmitted" value="1" />
+      <input type="hidden" name="citiesSubmitted" value="1" />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${id}-include`} className={labelCls}>
@@ -204,21 +205,21 @@ function FormBody({
         </p>
       </div>
 
-      <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-regions-hint`}>
-        <legend className={cn(labelCls, 'mb-1.5')}>{ko.watch.fields.regions}</legend>
+      <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-cities-hint`}>
+        <legend className={cn(labelCls, 'mb-1.5')}>{ko.watch.fields.cities}</legend>
         <div className="flex flex-wrap gap-2">
-          {ALL_REGIONS.map((r, i) => (
+          {WATCH_CITY_IDS.map((r, i) => (
             <label
               key={r}
               className="group/chk inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-card px-3.5 text-sm font-semibold shadow-card transition-colors select-none hover:bg-muted has-checked:border-primary/60 has-checked:bg-primary-soft has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring pointer-coarse:min-h-11"
             >
               <input
                 type="checkbox"
-                name="regions"
+                name="cities"
                 value={r}
-                defaultChecked={defaults.regions.includes(r)}
+                defaultChecked={defaults.cities.includes(r)}
                 className="peer sr-only"
-                {...(i === 0 ? invalid('regions') : {})}
+                {...(i === 0 ? invalid('cities') : {})}
               />
               <span
                 aria-hidden
@@ -226,13 +227,13 @@ function FormBody({
               >
                 <Check className="size-3 opacity-0 group-has-checked/chk:opacity-100" strokeWidth={3} />
               </span>
-              {ko.city[watchRegionCity(r)]}
+              {ko.city[r]}
             </label>
           ))}
         </div>
-        {fieldError('regions')}
-        <p id={`${id}-regions-hint`} className={hintCls}>
-          {ko.watch.fields.regionsHint}
+        {fieldError('cities')}
+        <p id={`${id}-cities-hint`} className={hintCls}>
+          {ko.watch.fields.citiesHint}
         </p>
       </fieldset>
 
