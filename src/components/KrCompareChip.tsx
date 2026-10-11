@@ -29,7 +29,7 @@ export function diffLabel(c: Pick<KrComparison, 'diffKrw' | 'savingsPct' | 'krCh
 
 /**
  * Korea comparison band inside a search-result group header (design-system §8.9).
- * Uses its own section's best in-stock price (computed in `searchListings`).
+ * Uses the US-wide lowest in-stock price, naming its city (computed in `searchListings`).
  * Admins also get the link/relink action; everyone else sees nothing for unlinked bottles.
  */
 export function KrCompareChip({
@@ -91,16 +91,18 @@ function Verdict({ kr, compare }: { kr: Kr; compare: NonNullable<Kr['compare']> 
   const v = VERDICT_STYLE[compare.verdict];
   const kLine = ko.compare.krLowest(formatKrw(kr.link.lowPriceKrw));
   const uLine = ko.compare.usApprox(formatKrw(compare.usKrw));
+  const base = kr.baseCity ? ko.compare.usBase(ko.city[kr.baseCity]) : null;
   const diff = diffLabel(compare);
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="sr-only">{ko.compare.srSummary(ko.compare.verdict[compare.verdict], kLine, uLine, diff)}</p>
+      <p className="sr-only">{ko.compare.srSummary(ko.compare.verdict[compare.verdict], kLine, base ? `${uLine}, ${base}` : uLine, diff)}</p>
       <div aria-hidden className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
         <PriceCompareChip verdict={compare.verdict} size="md" />
         <span className={cn('text-lg leading-tight font-extrabold tracking-tight tabular sm:text-xl', v.ink)}>{diff}</span>
       </div>
       <p aria-hidden className="text-sm font-medium text-foreground/85 tabular">
         {kLine} <span className="text-muted-foreground">·</span> {uLine}
+        {base && <span className="text-muted-foreground"> ({base})</span>}
       </p>
     </div>
   );

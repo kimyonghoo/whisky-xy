@@ -44,8 +44,8 @@ export interface BottleGroup {
   bestAvailableCents: number | null;
   /**
    * Korea (Dailyshot) comparison, present only when the bottle is linked.
-   * `compare` uses this section's cheapest in-stock tax-included price; it is null
-   * when the section has no in-stock row or no fx rate exists. `fx` is the rate used.
+   * `compare` uses the US-wide cheapest in-stock tax-included price, from `baseCity`; it is null
+   * when no city has an in-stock row or no fx rate exists. `fx` is the rate used.
    */
   kr?: { link: KrLink; compare: ReturnType<typeof compareKr> | null; fx: FxRate | null; baseCity?: CityId | null };
 }
@@ -240,16 +240,25 @@ export async function searchListings(
   return { sections: kept };
 }
 
-/** Fills `group.kr` for linked bottles. Each group compares against its own section's best price. */
+/**
+ * Fills `group.kr` for linked bottles. Every group of a bottle, in any section, compares against the
+ * US-wide lowest confirmed in-stock price; `baseCity` names the city that price is from.
+ */
 async function attachKr(db: Db, sections: CitySection[]): Promise<void> {
   const groups = sections.flatMap((s) => s.groups.map((g) => ({ g, city: s.city })));
   if (groups.length === 0) return;
   const [links, fx] = await Promise.all([getKrLinks(db, [...new Set(groups.map((x) => x.g.bottleKey))]), getLatestFx(db)]);
   if (links.size === 0) return;
+  const national = new Map<string, { cents: number; city: CityId }>();
   for (const { g, city } of groups) {
+    const cur = national.get(g.bottleKey);
+    if (g.bestAvailableCents !== null && (!cur || g.bestAvailableCents < cur.cents)) national.set(g.bottleKey, { cents: g.bestAvailableCents, city });
+  }
+  for (const { g } of groups) {
     const link = links.get(g.bottleKey);
     if (!link) continue;
-    const compare = g.bestAvailableCents !== null && fx ? compareKr(g.bestAvailableCents, fx.usdKrw, link.lowPriceKrw) : null;
-    g.kr = { link, compare, fx, baseCity: city };
+    const base = national.get(g.bottleKey);
+    const compare = base && fx ? compareKr(base.cents, fx.usdKrw, link.lowPriceKrw) : null;
+    g.kr = { link, compare, fx, baseCity: base?.city ?? null };
   }
 }

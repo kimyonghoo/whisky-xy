@@ -92,11 +92,6 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
           {diff}
         </span>
         <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-          {best.store.city === 'la' && (
-            <span className="font-semibold text-muted-foreground" title={ko.ranking.caFallbackHint}>
-              {ko.ranking.caFallback}
-            </span>
-          )}
           {usStale && <FreshnessIndicator checkedAt={best.checkedAt} now={now} prefix={ko.ranking.usStoreStale} />}
           <FreshnessIndicator checkedAt={link.checkedAt} now={now} staleAfterMs={KR_STALE_AFTER_MS} prefix={ko.compare.dailyshot} />
           <a

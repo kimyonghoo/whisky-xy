@@ -156,6 +156,8 @@ export const ko = {
     heading: '한국 가격과 비교',
     krLowest: (krw: string) => `한국 최저 ${krw}`,
     usApprox: (krw: string) => `미국 약 ${krw}`,
+    /** Names the city the US-wide lowest price comes from. */
+    usBase: (city: string) => `${city} 기준 최저가`,
     /** Rounded percent; a non-zero gap that rounds to 0 reads "1% 미만". */
     pct: (n: number) => (n === 0 ? '1% 미만' : `${n}%`),
     gain: (krw: string, pct: string) => `${krw}(${pct}) 이득`,
@@ -182,7 +184,7 @@ export const ko = {
   ranking: {
     eyebrow: '한국 대비',
     title: '미국에서 사 오면 얼마나 이득일까요?',
-    lead: '데일리샷 한국 최저가와 브루클린·뉴저지 매장의 세금 포함 최저가를 원화로 비교했어요. 관세나 면세 한도는 빼고 가격만 비교해요.',
+    lead: '데일리샷 한국 최저가와 미국 매장의 세금 포함 최저가를 원화로 비교했어요. 관세나 면세 한도는 빼고 가격만 비교해요.',
     loading: '비교 목록을 불러오는 중…',
     listHeading: '이득 큰 순서',
     count: (n: number) => `${n}종`,
@@ -192,8 +194,6 @@ export const ko = {
     scaleNote: '모든 막대는 0원부터 같은 눈금이에요.',
     rowKr: '한국',
     rowUs: '미국',
-    caFallback: 'LA 매장 기준',
-    caFallbackHint: '브루클린·뉴저지에 재고가 없어 캘리포니아 매장 가격으로 비교했어요.',
     usStoreLabel: '미국 최저가 매장',
     searchThis: (title: string) => `${title} 검색 결과 보기`,
     notInStock: (n: number) => `연결된 위스키 중 ${n}종은 지금 미국 재고가 없어 목록에서 뺐어요.`,

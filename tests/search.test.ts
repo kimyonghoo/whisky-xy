@@ -225,6 +225,23 @@ describe('searchListings Korea comparison', () => {
     expect(u.sections[0].groups[0].kr).toBeUndefined();
   });
 
+  it('compares every section against the national best', async () => {
+    const d = await createTestDb();
+    const b = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 12000 });
+    const la = seed({ storeId: 'flask', title: 'Stagg Bourbon', priceCents: 9500 });
+    await d.insert(listings).values([b, la]);
+    await upsertKrLink(d, ds(b.bottleKey, 649000), now);
+    await d.insert(fxRates).values({ date: '2026-10-10', usdKrw: 1380, fetchedAt: now });
+    const r = await run(d, { q: 'stagg', city: 'brooklyn' });
+    expect(r.sections.map((s) => s.city)).toEqual(['brooklyn', 'la']);
+    const [g1, g2] = r.sections.map((s) => s.groups[0]);
+    const best = withTaxCents(9500, getStore('flask')!.taxRate);
+    expect(g1.kr?.compare).toEqual(compareKr(best, 1380, 649000));
+    expect(g2.kr?.compare).toEqual(g1.kr?.compare);
+    expect(g1.kr?.baseCity).toBe('la');
+    expect(g2.kr?.baseCity).toBe('la');
+  });
+
   it('compare is null when there is no fx rate', async () => {
     const d = await createTestDb();
     const s = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 10000 });

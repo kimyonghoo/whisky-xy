@@ -2,16 +2,12 @@ import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, type FxRate, type KrLink } from '@/lib/db/schema';
 import { STORES } from '@/lib/stores';
-import type { CityId } from '@/lib/geo';
 import { withTaxCents } from '@/lib/money';
 import { listKrLinks } from '@/lib/krlinks';
 import { getLatestFx } from '@/lib/fx';
 import { compareKr, type KrComparison } from '@/lib/compare';
 import type { ListingRow } from '@/lib/search';
 import { confirmedSince, stockState } from '@/lib/freshness';
-
-// Temporary until city-first search lands (Tasks 3-5 delete this).
-const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
 
 export interface KrRankRow {
   bottleKey: string;
@@ -21,7 +17,7 @@ export interface KrRankRow {
   batch: string | null;
   imageUrl: string | null;
   link: KrLink;
-  /** Cheapest in-stock tax-included US row: Brooklyn + NJ first, California only when main has none. */
+  /** Cheapest in-stock tax-included US row across all public stores. */
   best: ListingRow;
   compare: KrComparison;
 }
@@ -58,14 +54,14 @@ export async function listKrComparisons(db: Db, now: Date = new Date()): Promise
       ),
     );
 
-  const byKey = new Map<string, { main: ListingRow[]; ca: ListingRow[] }>();
+  const byKey = new Map<string, ListingRow[]>();
   for (const l of found) {
     const store = publicStores.find((s) => s.id === l.storeId);
     if (!store) continue;
     const row: ListingRow = { ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate), stock: 'instock' };
-    const bucket = byKey.get(l.bottleKey) ?? { main: [], ca: [] };
-    (MAIN_CITIES.includes(store.city) ? bucket.main : bucket.ca).push(row);
-    byKey.set(l.bottleKey, bucket);
+    const pool = byKey.get(l.bottleKey);
+    if (pool) pool.push(row);
+    else byKey.set(l.bottleKey, [row]);
   }
 
   const notInStock = links.filter((l) => !byKey.has(l.bottleKey)).length;
@@ -73,9 +69,8 @@ export async function listKrComparisons(db: Db, now: Date = new Date()): Promise
 
   const rows: KrRankRow[] = [];
   for (const link of links) {
-    const bucket = byKey.get(link.bottleKey);
-    if (!bucket) continue;
-    const pool = bucket.main.length > 0 ? bucket.main : bucket.ca;
+    const pool = byKey.get(link.bottleKey);
+    if (!pool) continue;
     const best = [...pool].sort(cheaper)[0];
     rows.push({
       bottleKey: link.bottleKey,
@@ -105,7 +100,7 @@ export interface BottleSummary {
   storeCount: number;
   /** Stores with a confirmed (checked within 48 h) in-stock row. */
   inStockCount: number;
-  /** Cheapest confirmed in-stock tax-included price: Brooklyn + NJ first, California only when main has none. */
+  /** Cheapest confirmed in-stock tax-included price across all public stores. */
   bestTaxIncludedCents: number | null;
 }
 
@@ -122,18 +117,15 @@ export async function getBottleSummary(db: Db, bottleKey: string, now: Date = ne
   const first = found[0];
   const stores = new Set<string>();
   const inStock = new Set<string>();
-  let bestMain: number | null = null;
-  let bestCa: number | null = null;
+  let best: number | null = null;
   for (const l of found) {
     const store = publicStores.find((s) => s.id === l.storeId)!;
     stores.add(l.storeId);
     if (stockState(l, now) !== 'instock') continue;
     inStock.add(l.storeId);
     const t = withTaxCents(l.priceCents, store.taxRate);
-    if (MAIN_CITIES.includes(store.city)) bestMain = bestMain === null ? t : Math.min(bestMain, t);
-    else bestCa = bestCa === null ? t : Math.min(bestCa, t);
+    best = best === null ? t : Math.min(best, t);
   }
-  const best = bestMain ?? bestCa;
   return {
     bottleKey,
     title: first.title,
