@@ -1,7 +1,7 @@
 // Pure watch-form logic (no DB imports) so the client form can share it with the server action.
 import { normalizeText } from '@/lib/whisky/parse';
 import { parsePriceToCents } from '@/lib/money';
-import type { Region } from '@/lib/stores';
+import type { CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
 
 /**
@@ -28,7 +28,7 @@ export interface WatchInput {
   batch: string | null;
   sizeMl: number | null;
   maxPriceCents: number | null;
-  regions: Region[];
+  regions: WatchRegion[];
 }
 
 export type WatchField = 'label' | 'include' | 'exclude' | 'batch' | 'sizeMl' | 'maxPrice' | 'regions';
@@ -46,8 +46,15 @@ export const WATCH_LIMITS = {
   maxPriceCents: 10_000_000, // $100,000
 } as const;
 
-const ALL_REGIONS: readonly Region[] = ['brooklyn', 'nj', 'ca'];
-const DEFAULT_REGIONS: Region[] = ['brooklyn', 'nj'];
+/**
+ * Stored watch region values. The DB still holds the legacy 'ca' for Los Angeles until the
+ * watches migration (Task 2); these helpers map at the boundary.
+ */
+export type WatchRegion = 'brooklyn' | 'nj' | 'ca';
+export const ALL_REGIONS: readonly WatchRegion[] = ['brooklyn', 'nj', 'ca'];
+export const watchRegionCity = (r: WatchRegion): CityId => (r === 'ca' ? 'la' : r);
+export const cityWatchRegion = (c: CityId): string => (c === 'la' ? 'ca' : c);
+export const DEFAULT_REGIONS: WatchRegion[] = ['brooklyn', 'nj'];
 
 function str(fd: FormData, key: string): string {
   const v = fd.get(key);
@@ -116,7 +123,7 @@ export function parseWatchForm(fd: FormData): WatchInput | WatchFormError {
 
   const picked = fd.getAll('regions').map((v) => (typeof v === 'string' ? v : ''));
   if (picked.some((r) => !(ALL_REGIONS as readonly string[]).includes(r))) return { error: e.regionInvalid, field: 'regions' };
-  let regions: Region[];
+  let regions: WatchRegion[];
   if (picked.length > 0) {
     // Canonical order, no duplicates.
     regions = ALL_REGIONS.filter((r) => picked.includes(r));

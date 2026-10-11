@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Check, LoaderCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { searchHref } from '@/lib/search-view';
 import { SIZE_OPTIONS, sizeLabel } from '@/lib/search-form';
-import { REGION_LABEL } from '@/lib/stores';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -170,9 +169,9 @@ export function SearchForm({
                   {ko.search.regionLabel}
                   <NativeSelect name="region" defaultValue={values.region}>
                     <option value="">{ko.search.regionAll}</option>
-                    <option value="brooklyn">{REGION_LABEL.brooklyn}</option>
-                    <option value="nj">{REGION_LABEL.nj}</option>
-                    <option value="ca">{REGION_LABEL.ca}</option>
+                    <option value="brooklyn">{ko.city.brooklyn}</option>
+                    <option value="nj">{ko.city.nj}</option>
+                    <option value="la">{ko.city.la}</option>
                   </NativeSelect>
                 </label>
                 <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">

@@ -4,6 +4,8 @@ import type { ChangeEvent } from '@/lib/crawl/ingest';
 import { getStore } from '@/lib/stores';
 import { normalizeText } from '@/lib/whisky/parse';
 import { formatUsd, withTaxCents } from '@/lib/money';
+import { cityWatchRegion } from '@/lib/watch-form';
+import { ko } from '@/lib/i18n/ko';
 
 function hasPhrase(haystack: string, term: string): boolean {
   const t = normalizeText(term);
@@ -17,7 +19,7 @@ export function watchMatches(w: Watch, l: Listing, store: Store): boolean {
   if (w.excludeTerms.some((t) => hasPhrase(hay, t))) return false;
   if (w.batch != null && w.batch !== l.batch) return false;
   if (w.sizeMl != null && w.sizeMl !== l.sizeMl) return false;
-  return w.regions.includes(store.region);
+  return w.regions.includes(cityWatchRegion(store.city));
 }
 
 export interface AlertCandidate {
@@ -70,7 +72,7 @@ export function formatAlert(c: AlertCandidate, store: Store, siteUrl: string): s
     `<b>${escapeHtml(KIND_LABEL[event.kind] ?? event.kind)}</b>`,
     escapeHtml(listing.title),
     `${formatUsd(price)} (세금 포함 ${formatUsd(withTaxCents(price, store.taxRate))})`,
-    `${escapeHtml(store.name)} · ${escapeHtml(store.region)}`,
+    `${escapeHtml(store.name)} · ${escapeHtml(ko.city[store.city])}`,
   ];
   if (store.stockReliability === 'low') {
     lines.push('⚠️ 재고 표시 부정확 — 방문 전 전화 확인');

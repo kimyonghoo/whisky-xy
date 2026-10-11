@@ -8,7 +8,7 @@ import { ko } from '@/lib/i18n/ko';
 import { Card } from '@/components/ui/card';
 import { BottleHeader } from '@/components/BottleHeader';
 import { StatusBadge } from '@/components/StatusBadge';
-import { RegionChip, StoreLine } from '@/components/StoreLine';
+import { CityChip, StoreLine } from '@/components/StoreLine';
 import { KrCompareChip } from '@/components/KrCompareChip';
 
 /**
@@ -47,7 +47,7 @@ export function BottleResult({
         <BottleHeader title={group.displayTitle} subtitle={group.displayVariant} imageUrl={group.imageUrl} spec={group}>
           <div className="flex flex-wrap items-center gap-1.5">
             {s.regions.map((r) => (
-              <RegionChip key={r} region={r} />
+              <CityChip key={r} city={r} />
             ))}
             <span className="text-xs font-medium text-muted-foreground tabular">{ko.group.stores(s.inStockCount, s.storeCount)}</span>
           </div>

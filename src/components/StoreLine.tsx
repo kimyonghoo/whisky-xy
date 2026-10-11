@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight, Map as MapIcon, Star } from 'lucide-react';
 import type { ListingRow } from '@/lib/search';
-import { REGION_LABEL, type Region } from '@/lib/stores';
+import type { CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -11,10 +11,10 @@ import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceBlock } from '@/components/PriceBlock';
 import { CopyLinkButton } from '@/components/CopyLinkButton';
 
-export function RegionChip({ region, className }: { region: Region; className?: string }) {
+export function CityChip({ city, className }: { city: CityId; className?: string }) {
   return (
     <Badge variant="secondary" size="sm" className={cn('font-medium text-muted-foreground', className)}>
-      {REGION_LABEL[region]}
+      {ko.city[city]}
     </Badge>
   );
 }
@@ -56,7 +56,7 @@ export function StoreLine({ row, rank, bottleKey, q, now }: { row: ListingRow; r
         <span className="flex min-w-0 flex-1 flex-col gap-1.5">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-semibold underline-offset-4 group-hover:underline">{row.store.name}</span>
-            <RegionChip region={row.store.region} />
+            <CityChip city={row.store.city} />
             {row.store.onlineOnly && (
               <Badge variant="outline" size="sm">
                 {ko.row.onlineOnly}

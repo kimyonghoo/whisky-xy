@@ -13,13 +13,14 @@ import type { FxRate } from '@/lib/db/schema';
 import { activeFilterCount, capGroups, nextShowCount, parseShowCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
-import { MAIN_REGIONS, REGION_LABEL, STORES, getStore, type Region, type Store } from '@/lib/stores';
+import { STORES, getStore, type Store } from '@/lib/stores';
+import { liveCities, type CityId } from '@/lib/geo';
 import { buttonVariants } from '@/components/ui/button';
 import { BottleResult } from '@/components/BottleResult';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatusBadge } from '@/components/StatusBadge';
-import { RegionChip } from '@/components/StoreLine';
+import { CityChip } from '@/components/StoreLine';
 import { ResultsRegion, SearchShell } from '@/components/search/SearchShell';
 import { SearchForm, type SearchFormValues } from '@/components/search/SearchForm';
 import { ShowMoreLink } from '@/components/search/ShowMoreLink';
@@ -35,6 +36,9 @@ export default function Home({ searchParams }: { searchParams: Promise<RawParams
     </Suspense>
   );
 }
+
+// Temporary until city-first search lands (Tasks 3-5 delete this).
+const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
 
 const EMPTY_VALUES: SearchFormValues = { q: '', region: '', size: '', min: '', max: '', inStock: false };
 
@@ -64,7 +68,7 @@ function Examples({ className }: { className?: string }) {
 
 function Hero({ values }: { values: SearchFormValues }) {
   const stores = STORES.filter((s) => s.publicAllowed);
-  const regions: Region[] = ['brooklyn', 'nj', 'ca'];
+  const cities = liveCities();
   return (
     <main id="main" className="flex-1">
       <section className="border-b bg-[radial-gradient(120%_80%_at_50%_0%,var(--primary-soft)_0%,transparent_70%)]">
@@ -100,10 +104,10 @@ function Hero({ values }: { values: SearchFormValues }) {
         <div className="sm:w-52">
           <h2 className="text-lg font-bold tracking-tight">{ko.search.coverageTitle}</h2>
           <ul className="mt-4 flex flex-col gap-2 text-sm">
-            {regions.map((r) => (
-              <li key={r} className="flex items-center gap-2">
+            {cities.map((c) => (
+              <li key={c.id} className="flex items-center gap-2">
                 <MapPin aria-hidden className="size-4 text-primary" />
-                {ko.search.coverageRegion(REGION_LABEL[r], stores.filter((s) => s.region === r).length)}
+                {ko.search.coverageRegion(ko.city[c.id], stores.filter((s) => s.city === c.id).length)}
               </li>
             ))}
           </ul>
@@ -175,12 +179,12 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   const caShow = parseShowCount(raw.ca);
   const mainCap = capGroups(main, mainShow);
   const caCap = capGroups(ca, caShow);
-  const storeInMain = store ? MAIN_REGIONS.includes(store.region) : null;
-  const showMain = main.length > 0 || (storeInMain ?? params.region !== 'ca');
-  const caOpen = main.length === 0 || params.region === 'ca' || storeInMain === false || raw.ca !== undefined;
+  const storeInMain = store ? MAIN_CITIES.includes(store.city) : null;
+  const showMain = main.length > 0 || (storeInMain ?? params.region !== 'la');
+  const caOpen = main.length === 0 || params.region === 'la' || storeInMain === false || raw.ca !== undefined;
 
   const chips: { label: string; href: string }[] = [];
-  if (params.region) chips.push({ label: REGION_LABEL[params.region], href: searchHref(raw, { region: undefined, main: undefined, ca: undefined }) });
+  if (params.region) chips.push({ label: ko.city[params.region], href: searchHref(raw, { region: undefined, main: undefined, ca: undefined }) });
   if (params.sizeMl != null) chips.push({ label: sizeLabel(params.sizeMl), href: searchHref(raw, { size: undefined, main: undefined, ca: undefined }) });
   if (params.minCents != null) chips.push({ label: ko.search.priceMin(formatUsd(params.minCents)), href: searchHref(raw, { min: undefined, main: undefined, ca: undefined }) });
   if (params.maxCents != null) chips.push({ label: ko.search.priceMax(formatUsd(params.maxCents)), href: searchHref(raw, { max: undefined, main: undefined, ca: undefined }) });
@@ -350,7 +354,7 @@ function StoreScopeHeader({ store, clearHref }: { store: Store; clearHref: strin
             <span lang="en">{store.name}</span> {ko.store.headingSuffix}
           </h1>
           <div className="flex flex-wrap items-center gap-1.5">
-            <RegionChip region={store.region} />
+            <CityChip city={store.city} />
             {store.onlineOnly && <span className="text-xs font-medium text-muted-foreground">{ko.row.onlineOnly}</span>}
             {store.stockReliability === 'low' && <StatusBadge kind="unreliable" />}
           </div>

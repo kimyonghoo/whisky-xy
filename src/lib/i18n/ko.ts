@@ -1,6 +1,7 @@
 // All UI copy lives here. Tone: 해요체, short, concrete — see docs/design-system.md "Korean copy".
 export const ko = {
-  region: { brooklyn: '브루클린', nj: '뉴저지', ca: '캘리포니아' },
+  city: { brooklyn: '브루클린', nj: '뉴저지', la: '로스앤젤레스', tokyo: '도쿄', osaka: '오사카', sapporo: '삿포로', taipei: '타이베이' },
+  country: { us: '미국', jp: '일본', tw: '대만' },
   freshness: {
     justNow: '방금 확인',
     minutesAgo: (n: number) => `${n}분 전 확인`,

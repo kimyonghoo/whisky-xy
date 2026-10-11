@@ -9,7 +9,7 @@ import { listWatches, splitTerms, suggestExcludes } from '@/lib/watches';
 import { formatUsd } from '@/lib/money';
 import { nyDate } from '@/lib/card';
 import { searchHref } from '@/lib/search-view';
-import { MAIN_REGIONS, type Region } from '@/lib/stores';
+import { DEFAULT_REGIONS, ALL_REGIONS, type WatchRegion } from '@/lib/watch-form';
 import type { Watch } from '@/lib/db/schema';
 import { ko } from '@/lib/i18n/ko';
 import { PageHeader } from '@/components/PageHeader';
@@ -64,7 +64,7 @@ function prefill(raw: RawParams): WatchFormDefaults {
     batch: '',
     sizeMl: '',
     maxPrice: '',
-    regions: [...MAIN_REGIONS],
+    regions: [...DEFAULT_REGIONS],
   };
 }
 
@@ -77,7 +77,7 @@ function toItem(w: Watch): WatchItem {
     batch: w.batch,
     sizeMl: w.sizeMl,
     target: w.maxPriceCents != null ? ko.watch.item.targetValue(formatUsd(w.maxPriceCents)) : null,
-    regions: w.regions.filter((r): r is Region => r === 'brooklyn' || r === 'nj' || r === 'ca'),
+    regions: w.regions.filter((r): r is WatchRegion => (ALL_REGIONS as readonly string[]).includes(r)),
     created: nyDate(w.createdAt),
     searchHref: searchHref({ q: w.includeTerms.join(' ') }),
   };

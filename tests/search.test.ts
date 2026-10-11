@@ -33,8 +33,8 @@ describe('searchListings', () => {
     expect(r.main[0].rows.map((x) => x.storeId)).toEqual(['liquorcave', 'dewinespot', 'winechateau']);
     expect(r.main[0].bestAvailableCents).toBe(Math.round(7000 * 1.06625));
     expect(r.ca.length).toBeGreaterThan(0);
-    expect(r.main.flatMap((g) => g.rows).every((x) => x.store.region !== 'ca')).toBe(true);
-    expect(r.ca.flatMap((g) => g.rows).every((x) => x.store.region === 'ca')).toBe(true);
+    expect(r.main.flatMap((g) => g.rows).every((x) => x.store.city !== 'la')).toBe(true);
+    expect(r.ca.flatMap((g) => g.rows).every((x) => x.store.city === 'la')).toBe(true);
   });
 
   it('inStockOnly, region, price filters', async () => {
@@ -43,7 +43,7 @@ describe('searchListings', () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((x) => x.available)).toBe(true);
     const nj = await searchListings(db, { q: 'jack', region: 'nj' });
-    expect(nj.main.flatMap((g) => g.rows).every((x) => x.store.region === 'nj')).toBe(true);
+    expect(nj.main.flatMap((g) => g.rows).every((x) => x.store.city === 'nj')).toBe(true);
     expect(nj.ca).toEqual([]);
     const pr = await searchListings(db, { q: 'jack', minCents: 6000, maxCents: 7500 });
     expect(pr.main.flatMap((g) => g.rows).every((x) => x.priceCents >= 6000 && x.priceCents <= 7500)).toBe(true);

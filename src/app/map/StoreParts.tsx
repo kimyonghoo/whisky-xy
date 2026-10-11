@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { PriceBlock } from '@/components/PriceBlock';
-import { RegionChip } from '@/components/StoreLine';
+import { CityChip } from '@/components/StoreLine';
 
 /**
  * Shared pieces of the store list rows and the map popups, so both always say the same thing.
@@ -42,7 +42,7 @@ export function storeStateText(store: MapStore): string {
 export function StoreBadges({ store }: { store: MapStore }) {
   return (
     <span className="flex flex-wrap items-center gap-1.5">
-      <RegionChip region={store.region} />
+      <CityChip city={store.city} />
       {store.onlineOnly && (
         <Badge variant="outline" size="sm">
           {ko.row.onlineOnly}

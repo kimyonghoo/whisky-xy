@@ -2,7 +2,12 @@ import type { BottleOffers } from '@/lib/listings';
 import { mapsUrl, telHref } from '@/lib/card';
 import { withTaxCents } from '@/lib/money';
 import { searchHref } from '@/lib/search-view';
-import { MAIN_REGIONS, REGION_LABEL, type Region, type Store } from '@/lib/stores';
+import type { Store } from '@/lib/stores';
+import type { CityId } from '@/lib/geo';
+import { ko } from '@/lib/i18n/ko';
+
+// Temporary until the per-city map lands (Tasks 3-5 delete this).
+const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
 
 /** Plain, serialisable store data for the client map + list. */
 export interface MapStore {
@@ -10,8 +15,8 @@ export interface MapStore {
   /** 1-based number shared by the marker and the list row. */
   n: number;
   name: string;
-  region: Region;
-  regionLabel: string;
+  city: CityId;
+  cityLabel: string;
   address: string;
   lat: number;
   lng: number;
@@ -96,8 +101,8 @@ export function buildMapStores(stores: Store[], availability: Map<string, number
     id: s.id,
     n: idx + 1,
     name: s.name,
-    region: s.region,
-    regionLabel: REGION_LABEL[s.region],
+    city: s.city,
+    cityLabel: ko.city[s.city],
     address: s.address,
     lat: s.lat,
     lng: s.lng,
@@ -116,13 +121,13 @@ export function buildMapStores(stores: Store[], availability: Map<string, number
 /** Which region the map opens on: the east coast, unless only CA stores carry the bottle. */
 export function initialView(stores: MapStore[]): MapViewId {
   const carrying = stores.filter((s) => !s.dimmed);
-  if (carrying.length > 0 && carrying.every((s) => !MAIN_REGIONS.includes(s.region))) return 'la';
+  if (carrying.length > 0 && carrying.every((s) => !MAIN_CITIES.includes(s.city))) return 'la';
   return 'east';
 }
 
 /** [[south, west], [north, east]] around the Brooklyn + NJ stores, or null if there are none. */
-export function eastBounds(stores: Pick<MapStore, 'lat' | 'lng' | 'region'>[]): [[number, number], [number, number]] | null {
-  const east = stores.filter((s) => MAIN_REGIONS.includes(s.region));
+export function eastBounds(stores: Pick<MapStore, 'lat' | 'lng' | 'city'>[]): [[number, number], [number, number]] | null {
+  const east = stores.filter((s) => MAIN_CITIES.includes(s.city));
   if (east.length === 0) return null;
   const lats = east.map((s) => s.lat);
   const lngs = east.map((s) => s.lng);

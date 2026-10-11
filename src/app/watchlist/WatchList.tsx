@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { BadgeCheck, CircleAlert, LoaderCircle, Minus, Plus, Search, Tag, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { RegionChip } from '@/components/StoreLine';
-import type { Region } from '@/lib/stores';
+import { CityChip } from '@/components/StoreLine';
+import { watchRegionCity, type WatchRegion } from '@/lib/watch-form';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { deleteWatchAction, type DeleteState } from './actions';
@@ -20,7 +20,7 @@ export interface WatchItem {
   batch: string | null;
   sizeMl: number | null;
   target: string | null;
-  regions: Region[];
+  regions: WatchRegion[];
   created: string;
   searchHref: string;
 }
@@ -130,7 +130,7 @@ function WatchCard({ item }: { item: WatchItem }) {
           <dt className="w-9 shrink-0 text-xs font-semibold text-muted-foreground">{ko.watch.item.regions}</dt>
           {item.regions.map((r) => (
             <dd key={r}>
-              <RegionChip region={r} />
+              <CityChip city={watchRegionCity(r)} />
             </dd>
           ))}
           {item.batch && (

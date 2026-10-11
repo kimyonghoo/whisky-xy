@@ -6,7 +6,6 @@ import { KR_STALE_AFTER_MS, barPct, formatKrw } from '@/lib/kr-view';
 import { searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { freshness } from '@/lib/freshness';
-import { REGION_LABEL } from '@/lib/stores';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { BottleImage } from '@/components/BottleImage';
@@ -14,7 +13,7 @@ import { SpecChips } from '@/components/BottleHeader';
 import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceCompareChip, VERDICT_STYLE } from '@/components/PriceCompareChip';
 import { diffLabel } from '@/components/KrCompareChip';
-import { RankMarker, RegionChip } from '@/components/StoreLine';
+import { RankMarker, CityChip } from '@/components/StoreLine';
 import { StatusBadge } from '@/components/StatusBadge';
 
 /**
@@ -41,7 +40,7 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
   const diff = diffLabel(compare);
   // M6: a low-reliability store's stock flag can't be trusted; say so next to the price base.
   const lowReliability = best.store.stockReliability === 'low';
-  const store = `${best.store.name} · ${REGION_LABEL[best.store.region]}${lowReliability ? ` · ${ko.stock.unreliable}` : ''}`;
+  const store = `${best.store.name} · ${ko.city[best.store.city]}${lowReliability ? ` · ${ko.stock.unreliable}` : ''}`;
   const titleId = `cmp-${rank}-t`;
   const usStale = freshness(best.checkedAt, now).stale;
   return (
@@ -74,7 +73,7 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
             <span lang="en" className="font-semibold text-foreground/85">
               {best.store.name}
             </span>
-            <RegionChip region={best.store.region} />
+            <CityChip city={best.store.city} />
             {lowReliability && <StatusBadge kind="unreliable" size="sm" />}
             <span className="tabular">{ko.row.taxIncluded(formatUsd(best.taxIncludedCents))}</span>
           </p>
@@ -93,7 +92,7 @@ function SavingsRow({ row, rank, max, now }: { row: KrRankRow; rank: number; max
           {diff}
         </span>
         <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-          {best.store.region === 'ca' && (
+          {best.store.city === 'la' && (
             <span className="font-semibold text-muted-foreground" title={ko.ranking.caFallbackHint}>
               {ko.ranking.caFallback}
             </span>

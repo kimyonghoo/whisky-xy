@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { fetchCatalog, fetchLiveProduct, CurrencyMismatchError, storeHeaders } from '@/lib/shopify/client';
 import type { Store } from '@/lib/stores';
 
-const store = { id: 'dewinespot', name: 'De Wine Spot', domain: 'dewinespot.co', region: 'brooklyn' } as Store;
+const store = { id: 'dewinespot', name: 'De Wine Spot', domain: 'dewinespot.co', city: 'brooklyn' } as Store;
 const HOST = 'https://dewinespot.co';
 
 interface Call { url: string; headers: Record<string, string> }

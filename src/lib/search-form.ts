@@ -1,4 +1,5 @@
-import { getStore, type Region } from '@/lib/stores';
+import { getStore } from '@/lib/stores';
+import { isCityId } from '@/lib/geo';
 import type { SearchParams } from '@/lib/search';
 import { WATCH_LIMITS } from '@/lib/watch-form';
 
@@ -13,8 +14,6 @@ export function parseDollarsToCents(s: string | undefined): number | undefined {
   const cents = parseInt(whole, 10) * 100 + parseInt((frac + '00').slice(0, 2), 10);
   return cents <= WATCH_LIMITS.maxPriceCents ? cents : undefined;
 }
-
-const REGIONS: Region[] = ['brooklyn', 'nj', 'ca'];
 
 /** Bottle sizes offered by the 용량 filter (ml). Anything else in `?size=` is ignored. */
 export const SIZE_OPTIONS = [375, 700, 750, 1000, 1750] as const;
@@ -34,7 +33,7 @@ export function parseSearchForm(raw: Raw): SearchParams {
   const q = (first(raw.q) ?? '').trim().slice(0, 200);
   const region = first(raw.region);
   const params: SearchParams = { q };
-  if (region && (REGIONS as string[]).includes(region)) params.region = region as Region;
+  if (isCityId(region)) params.region = region;
   const store = getStore(first(raw.store) ?? '');
   if (store?.publicAllowed) params.storeId = store.id;
   if (first(raw.inStock)) params.inStockOnly = true;

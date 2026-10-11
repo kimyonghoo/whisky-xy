@@ -4,8 +4,7 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { BadgeCheck, Check, ChevronDown, CircleAlert, Info, LoaderCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { REGION_LABEL, type Region } from '@/lib/stores';
-import { LINE_SIBLINGS, splitTerms, suggestExcludes, type WatchField } from '@/lib/watch-form';
+import { ALL_REGIONS, LINE_SIBLINGS, splitTerms, suggestExcludes, watchRegionCity, type WatchField, type WatchRegion } from '@/lib/watch-form';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
 import { createWatchAction, type CreateState } from './actions';
@@ -17,10 +16,9 @@ export interface WatchFormDefaults {
   batch: string;
   sizeMl: string;
   maxPrice: string;
-  regions: Region[];
+  regions: WatchRegion[];
 }
 
-const REGIONS: Region[] = ['brooklyn', 'nj', 'ca'];
 const EMPTY: WatchFormDefaults = { label: '', include: '', exclude: '', batch: '', sizeMl: '', maxPrice: '', regions: ['brooklyn', 'nj'] };
 
 function fromState(values: CreateState['values']): WatchFormDefaults {
@@ -33,7 +31,7 @@ function fromState(values: CreateState['values']): WatchFormDefaults {
     batch: s('batch'),
     sizeMl: s('sizeMl'),
     maxPrice: s('maxPrice'),
-    regions: REGIONS.filter((x) => r.includes(x)),
+    regions: ALL_REGIONS.filter((x) => r.includes(x)),
   };
 }
 
@@ -209,7 +207,7 @@ function FormBody({
       <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-regions-hint`}>
         <legend className={cn(labelCls, 'mb-1.5')}>{ko.watch.fields.regions}</legend>
         <div className="flex flex-wrap gap-2">
-          {REGIONS.map((r, i) => (
+          {ALL_REGIONS.map((r, i) => (
             <label
               key={r}
               className="group/chk inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-card px-3.5 text-sm font-semibold shadow-card transition-colors select-none hover:bg-muted has-checked:border-primary/60 has-checked:bg-primary-soft has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring pointer-coarse:min-h-11"
@@ -228,7 +226,7 @@ function FormBody({
               >
                 <Check className="size-3 opacity-0 group-has-checked/chk:opacity-100" strokeWidth={3} />
               </span>
-              {REGION_LABEL[r]}
+              {ko.city[watchRegionCity(r)]}
             </label>
           ))}
         </div>

@@ -22,8 +22,8 @@ describe('parseDollarsToCents', () => {
 
 describe('parseSearchForm', () => {
   it('maps fields', () => {
-    expect(parseSearchForm({ q: ' stagg ', region: 'ca', inStock: 'on', min: '10', max: '99.99' })).toEqual({
-      q: 'stagg', region: 'ca', inStockOnly: true, minCents: 1000, maxCents: 9999,
+    expect(parseSearchForm({ q: ' stagg ', region: 'la', inStock: 'on', min: '10', max: '99.99' })).toEqual({
+      q: 'stagg', region: 'la', inStockOnly: true, minCents: 1000, maxCents: 9999,
     });
   });
   it('accepts only known store ids', () => {

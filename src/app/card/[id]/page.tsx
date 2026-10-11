@@ -19,7 +19,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceBlock } from '@/components/PriceBlock';
 import { Notice } from '@/components/Notice';
-import { RegionChip } from '@/components/StoreLine';
+import { CityChip } from '@/components/StoreLine';
 import { CardSkeleton } from '@/components/Skeletons';
 import { ShareCardButton } from '@/components/CopyLinkButton';
 import { RecheckButton } from './RecheckButton';
@@ -152,7 +152,7 @@ async function CardView({ params }: Props) {
           <p className="text-sm font-semibold text-muted-foreground">{ko.card.storeHeading}</p>
           <h2 id="store-h" className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight">
             {store.name}
-            <RegionChip region={store.region} />
+            <CityChip city={store.city} />
           </h2>
           <p className="flex gap-2 text-base leading-snug">
             <MapPin aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />

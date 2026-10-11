@@ -1,6 +1,6 @@
 import type { BottleGroup, ListingRow } from '@/lib/search';
 import type { SearchParams } from '@/lib/search';
-import type { Region } from '@/lib/stores';
+import type { CityId } from '@/lib/geo';
 
 /** Bottle groups rendered per section before "더 보기". */
 export const SECTION_PAGE_SIZE = 20;
@@ -9,7 +9,7 @@ export const MAX_SECTION_SHOW = 500;
 /** Store rows shown per bottle before the rest collapse. */
 export const ROWS_PER_GROUP = 3;
 
-const REGION_ORDER: Region[] = ['brooklyn', 'nj', 'ca'];
+const CITY_ORDER: CityId[] = ['brooklyn', 'nj', 'la'];
 
 type RawValue = string | string[] | undefined;
 
@@ -40,7 +40,7 @@ export interface GroupSummary {
   inStockCount: number;
   /** Stores whose only "available" rows are older than 48 h ("재고 확인 필요"). */
   unverifiedCount: number;
-  regions: Region[];
+  regions: CityId[];
   /** Cheapest confirmed in-stock row; never an unverified one. */
   cheapest: ListingRow | null;
 }
@@ -49,10 +49,10 @@ export function summarizeGroup(group: BottleGroup): GroupSummary {
   const stores = new Set<string>();
   const inStock = new Set<string>();
   const unverified = new Set<string>();
-  const regions = new Set<Region>();
+  const regions = new Set<CityId>();
   for (const r of group.rows) {
     stores.add(r.storeId);
-    regions.add(r.store.region);
+    regions.add(r.store.city);
     if (r.stock === 'instock') inStock.add(r.storeId);
     else if (r.stock === 'unverified') unverified.add(r.storeId);
   }
@@ -65,7 +65,7 @@ export function summarizeGroup(group: BottleGroup): GroupSummary {
     storeCount: stores.size,
     inStockCount: inStock.size,
     unverifiedCount: unverified.size,
-    regions: REGION_ORDER.filter((r) => regions.has(r)),
+    regions: CITY_ORDER.filter((r) => regions.has(r)),
     cheapest,
   };
 }

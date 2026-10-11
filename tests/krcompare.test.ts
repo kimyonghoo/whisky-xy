@@ -32,7 +32,7 @@ describe('listKrComparisons', () => {
     // main (dewinespot) wins over the cheaper CA row
     expect(alpha.best.storeId).toBe('dewinespot');
     expect(alpha.compare).toEqual(compareKr(10888, 1380, 150000));
-    expect(r.rows[2].best.store.region).toBe('ca');
+    expect(r.rows[2].best.store.city).toBe('la');
     expect(r.rows[2].compare.verdict).toBe('worse');
     expect(r.notInStock).toBe(2);
     expect(r.linked).toBe(5);

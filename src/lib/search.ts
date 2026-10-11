@@ -1,7 +1,8 @@
 import { and, asc, desc, gte, ilike, inArray, lte, eq, or, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, type FxRate, type KrLink, type Listing } from '@/lib/db/schema';
-import { STORES, getStore, MAIN_REGIONS, type Region, type Store } from '@/lib/stores';
+import { STORES, getStore, type Store } from '@/lib/stores';
+import type { CityId } from '@/lib/geo';
 import { withTaxCents } from '@/lib/money';
 import { normalizeText } from '@/lib/whisky/parse';
 import { matchesPhrase, parseQuery, queryPhrase, type QueryTerm, type Vocab } from '@/lib/search-query';
@@ -10,9 +11,12 @@ import { getLatestFx } from '@/lib/fx';
 import { compareKr } from '@/lib/compare';
 import { confirmedSince, stockState, type StockState } from '@/lib/freshness';
 
+// Temporary until city-first search lands (Tasks 3-5 delete this).
+const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
+
 export interface SearchParams {
   q: string;
-  region?: Region;
+  region?: CityId;
   storeId?: string;
   inStockOnly?: boolean;
   /** Bottle size in ml; one of SIZE_OPTIONS. */
@@ -174,7 +178,7 @@ export async function searchListings(
   const now = opts.now ?? new Date();
 
   let stores = STORES.filter((s) => s.publicAllowed);
-  if (p.region) stores = stores.filter((s) => s.region === p.region);
+  if (p.region) stores = stores.filter((s) => s.city === p.region);
   if (p.storeId) stores = stores.filter((s) => s.id === p.storeId);
 
   // Each section is queried separately so one region can never crowd out the other.
@@ -202,8 +206,8 @@ export async function searchListings(
   };
 
   const [main, ca] = await Promise.all([
-    section(stores.filter((s) => MAIN_REGIONS.includes(s.region))),
-    section(stores.filter((s) => !MAIN_REGIONS.includes(s.region))),
+    section(stores.filter((s) => MAIN_CITIES.includes(s.city))),
+    section(stores.filter((s) => !MAIN_CITIES.includes(s.city))),
   ]);
   await attachKr(db, [...main, ...ca]);
   return { main, ca };

@@ -1,13 +1,17 @@
 import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, type FxRate, type KrLink } from '@/lib/db/schema';
-import { STORES, MAIN_REGIONS } from '@/lib/stores';
+import { STORES } from '@/lib/stores';
+import type { CityId } from '@/lib/geo';
 import { withTaxCents } from '@/lib/money';
 import { listKrLinks } from '@/lib/krlinks';
 import { getLatestFx } from '@/lib/fx';
 import { compareKr, type KrComparison } from '@/lib/compare';
 import type { ListingRow } from '@/lib/search';
 import { confirmedSince, stockState } from '@/lib/freshness';
+
+// Temporary until city-first search lands (Tasks 3-5 delete this).
+const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
 
 export interface KrRankRow {
   bottleKey: string;
@@ -60,7 +64,7 @@ export async function listKrComparisons(db: Db, now: Date = new Date()): Promise
     if (!store) continue;
     const row: ListingRow = { ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate), stock: 'instock' };
     const bucket = byKey.get(l.bottleKey) ?? { main: [], ca: [] };
-    (MAIN_REGIONS.includes(store.region) ? bucket.main : bucket.ca).push(row);
+    (MAIN_CITIES.includes(store.city) ? bucket.main : bucket.ca).push(row);
     byKey.set(l.bottleKey, bucket);
   }
 
@@ -126,7 +130,7 @@ export async function getBottleSummary(db: Db, bottleKey: string, now: Date = ne
     if (stockState(l, now) !== 'instock') continue;
     inStock.add(l.storeId);
     const t = withTaxCents(l.priceCents, store.taxRate);
-    if (MAIN_REGIONS.includes(store.region)) bestMain = bestMain === null ? t : Math.min(bestMain, t);
+    if (MAIN_CITIES.includes(store.city)) bestMain = bestMain === null ? t : Math.min(bestMain, t);
     else bestCa = bestCa === null ? t : Math.min(bestCa, t);
   }
   const best = bestMain ?? bestCa;
