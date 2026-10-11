@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildMapStores, cityBounds, escapeHtml, initialView, mapTileConfig, parseBottleParam, OSM_ATTRIBUTION, OSM_TILE_URL,
+  buildMapStores, cityBounds, cityView, escapeHtml, initialView, mapTileConfig, parseBottleParam, OSM_ATTRIBUTION, OSM_TILE_URL, NYC_CENTER, NYC_ZOOM, LA_CENTER, LA_ZOOM,
 } from '@/lib/map-view';
 import type { BottleOffers } from '@/lib/listings';
 import { STORES } from '@/lib/stores';
@@ -87,6 +87,21 @@ describe('initialView / cityBounds', () => {
     expect(brooklyn[1][1]).toBeCloseTo(-73.9485132);
     expect(cityBounds(stores, 'tokyo')).toBeNull();
     expect(cityBounds([], 'nj')).toBeNull();
+  });
+});
+
+describe('cityView', () => {
+  const stores = buildMapStores(STORES, avail, null);
+  it('frames LA on its physical store, not the online-only SF store', () => {
+    const v = cityView(stores, 'la');
+    expect(v).not.toHaveProperty('bounds');
+    expect('center' in v && v.center[0]).toBeCloseTo(34.1432209);
+    expect('center' in v && v.center[1]).toBeCloseTo(-118.3982);
+  });
+  it('fits bounds for several stores, falls back to fixed centres when none', () => {
+    expect(cityView(stores, 'nj')).toHaveProperty('bounds');
+    expect(cityView(stores, 'tokyo')).toEqual({ center: NYC_CENTER, zoom: NYC_ZOOM });
+    expect(cityView(stores.filter((s) => s.id !== 'flask'), 'la')).toEqual({ center: LA_CENTER, zoom: LA_ZOOM });
   });
 });
 

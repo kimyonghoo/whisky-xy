@@ -123,9 +123,11 @@ export function initialView(stores: MapStore[], selected: CityId): MapViewId {
   return first ? first.id : selected;
 }
 
-/** [[south, west], [north, east]] around the given city's stores, or null if it has none. */
-export function cityBounds(stores: Pick<MapStore, 'lat' | 'lng' | 'city'>[], city: CityId): [[number, number], [number, number]] | null {
-  const inCity = stores.filter((s) => s.city === city);
+type Framed = Pick<MapStore, 'lat' | 'lng' | 'city' | 'onlineOnly'>;
+
+/** [[south, west], [north, east]] around the given city's physical stores (online-only ones don't count), or null if it has none. */
+export function cityBounds(stores: Framed[], city: CityId): [[number, number], [number, number]] | null {
+  const inCity = stores.filter((s) => s.city === city && !s.onlineOnly);
   if (inCity.length === 0) return null;
   const lats = inCity.map((s) => s.lat);
   const lngs = inCity.map((s) => s.lng);
@@ -141,7 +143,7 @@ export const SINGLE_STORE_ZOOM = 13;
 export type CityView = { bounds: [[number, number], [number, number]] } | { center: [number, number]; zoom: number };
 
 /** How to frame a city: fit its stores, or centre on the lone store, or fall back to the NYC/LA constants. */
-export function cityView(stores: Pick<MapStore, 'lat' | 'lng' | 'city'>[], city: CityId): CityView {
+export function cityView(stores: Framed[], city: CityId): CityView {
   const bounds = cityBounds(stores, city);
   if (bounds && (bounds[0][0] !== bounds[1][0] || bounds[0][1] !== bounds[1][1])) return { bounds };
   if (bounds) return { center: bounds[0], zoom: SINGLE_STORE_ZOOM };
