@@ -36,8 +36,8 @@ export function SavingsChart({ rows, now, d }: { rows: KrRankRow[]; now: Date; d
 function SavingsRow({ row, rank, max, now, d }: { row: KrRankRow; rank: number; max: number; now: Date; d: Dict }) {
   const { compare, link, best } = row;
   const v = VERDICT_STYLE[compare.verdict];
-  const kr = formatKrw(link.lowPriceKrw);
-  const us = formatKrw(compare.usKrw);
+  const kr = formatKrw(link.lowPriceKrw, d);
+  const us = formatKrw(compare.usKrw, d);
   const diff = diffLabel(compare, d);
   // M6: a low-reliability store's stock flag can't be trusted; say so next to the price base.
   const lowReliability = best.store.stockReliability === 'low';

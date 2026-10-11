@@ -185,7 +185,7 @@ function CurrentLink({ link, bottleKey, now, d }: { link: KrLink | null; bottleK
                   {link.nameEn}
                 </p>
               )}
-              <p className="text-base font-bold tabular">{d.compare.krLowest(formatKrw(link.lowPriceKrw))}</p>
+              <p className="text-base font-bold tabular">{d.compare.krLowest(formatKrw(link.lowPriceKrw, d))}</p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 <FreshnessIndicator checkedAt={link.checkedAt} now={now} staleAfterMs={KR_STALE_AFTER_MS} prefix={d.compare.dailyshot} />
                 <a
@@ -272,7 +272,7 @@ async function DailyshotResults({ q, bottle, from, currentId, d }: { q: string; 
                       {c.nameEn}
                     </p>
                   )}
-                  <p className="text-base font-bold tabular">{d.linkKr.from(formatKrw(c.priceKrw))}</p>
+                  <p className="text-base font-bold tabular">{d.linkKr.from(formatKrw(c.priceKrw, d))}</p>
                 </div>
               </div>
               <ConnectForm bottle={bottle} from={from} candidate={c} current={current} />

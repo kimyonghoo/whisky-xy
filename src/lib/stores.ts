@@ -13,7 +13,6 @@ export interface Store {
   stockReliability: 'high' | 'low';
   onlineOnly: boolean;
   publicAllowed: boolean;
-  note?: string;
   /**
    * Shopify products.json path to crawl instead of the whole catalog, e.g. a whisky collection's
    * `/collections/<handle>/products.json`. Same public endpoint, same headers and pacing. Use it
@@ -50,7 +49,6 @@ export const STORES: Store[] = [
     id: 'liquorcave', name: 'Liquor Cave', domain: 'www.liquorcave.com', city: 'nj',
     address: '775 US-1, Edison, NJ 08817', lat: 40.5125877, lng: -74.3837563,
     phone: '732-662-4699', taxRate: 0.06625, stockReliability: 'low', onlineOnly: false, publicAllowed: true,
-    note: '여러 지점 있음 — 방문 전 전화 확인',
   },
   {
     id: 'winechateau', name: 'Wine Chateau', domain: 'winechateau.com', city: 'nj',

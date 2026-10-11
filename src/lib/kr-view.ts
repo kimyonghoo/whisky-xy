@@ -1,5 +1,7 @@
 // Pure helpers for the Korea (Dailyshot) comparison UI. No DB, no network.
 import { normalizeText } from '@/lib/whisky/parse';
+import { ko } from '@/lib/i18n/ko';
+import type { Dict } from '@/lib/i18n';
 
 /** Dailyshot prices older than this are flagged on the chip and on /compare. */
 export const KR_STALE_AFTER_MS = 7 * 86_400_000;
@@ -8,9 +10,10 @@ export const FX_STALE_AFTER_DAYS = 3;
 
 const krwFmt = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
 
-/** 649000 → "649,000원" (ko-KR grouping, whole won). */
-export function formatKrw(krw: number): string {
-  return `${krwFmt.format(Math.round(krw))}원`;
+/** 649000 → "649,000원" (ko) / "₩649,000" (en): ko-KR grouping, whole won, sign outside the unit. */
+export function formatKrw(krw: number, d: Dict = ko): string {
+  const n = Math.round(krw);
+  return `${n < 0 ? '-' : ''}${d.krw(krwFmt.format(Math.abs(n)))}`;
 }
 
 /** USD cents → KRW rounded to the nearest 1,000원: a ballpark next to a dollar price, not a quote. */

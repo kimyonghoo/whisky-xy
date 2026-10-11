@@ -79,6 +79,8 @@ async function CardView({ params, d }: Props & { d: Dict }) {
   const live = status === 'updated' || status === 'cached';
   const lowReliability = store.stockReliability === 'low';
   const tel = telHref(store.phone);
+  // Store notes are copy, so they live in the dictionaries keyed by store id.
+  const storeNote = Object.hasOwn(d.storeNote, store.id) ? d.storeNote[store.id] : null;
 
   return (
     <main id="main" className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-8 sm:pt-6">
@@ -168,10 +170,10 @@ async function CardView({ params, d }: Props & { d: Dict }) {
             </a>
           </p>
         </div>
-        {(store.onlineOnly || store.note) && (
+        {(store.onlineOnly || storeNote) && (
           <div className="flex flex-col gap-2">
             {store.onlineOnly && <Notice tone="info">{d.card.onlineOnlyNote}</Notice>}
-            {store.note && <Notice tone="info">{store.note}</Notice>}
+            {storeNote && <Notice tone="info">{storeNote}</Notice>}
           </div>
         )}
         <div

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ko } from '@/lib/i18n/ko';
 import { en } from '@/lib/i18n/en';
+import { STORES } from '@/lib/stores';
 import { DEFAULT_LOCALE, LOCALES, dictFor, isLocale, localizePath } from '@/lib/i18n';
 
 /** Key paths of a dictionary; functions count as leaves (compared by presence), arrays by length. */
@@ -41,6 +42,19 @@ describe('dictionaries', () => {
     expect(en.search.examples).toEqual(ko.search.examples);
     expect(en.city.brooklyn).toBe('Brooklyn');
     expect(en.country.us).toBe('United States');
+  });
+
+  it('store notes are keyed by real store ids, in both locales', () => {
+    const ids = new Set(STORES.map((s) => s.id));
+    expect(Object.keys(ko.storeNote).length).toBeGreaterThan(0);
+    expect(Object.keys(en.storeNote).sort()).toEqual(Object.keys(ko.storeNote).sort());
+    for (const id of Object.keys(ko.storeNote)) expect(ids.has(id)).toBe(true);
+    expect(en.storeNote.liquorcave).not.toMatch(/[가-힣]/);
+  });
+
+  it('formats won per locale', () => {
+    expect(ko.krw('126,000')).toBe('126,000원');
+    expect(en.krw('126,000')).toBe('₩126,000');
   });
 
   it('dictFor picks the locale dictionary', () => {

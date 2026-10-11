@@ -19,11 +19,11 @@ type Kr = NonNullable<BottleGroup['kr']>;
  * The sign decides the wording; a loss is measured against the US price (never > 100 %).
  */
 export function diffLabel(c: Pick<KrComparison, 'diffKrw' | 'savingsPct' | 'krCheaperPct' | 'usKrw'>, d: Dict = ko): string {
-  if (c.diffKrw > 0) return d.compare.gain(formatKrw(c.diffKrw), d.compare.pct(c.savingsPct));
+  if (c.diffKrw > 0) return d.compare.gain(formatKrw(c.diffKrw, d), d.compare.pct(c.savingsPct));
   if (c.diffKrw < 0) {
     const pct = c.krCheaperPct ?? 0;
-    if (pct >= 50) return d.compare.krCheaperTimes(krCheaperRatio(c), formatKrw(-c.diffKrw));
-    return d.compare.krCheaper(formatKrw(-c.diffKrw), d.compare.pct(pct));
+    if (pct >= 50) return d.compare.krCheaperTimes(krCheaperRatio(c), formatKrw(-c.diffKrw, d));
+    return d.compare.krCheaper(formatKrw(-c.diffKrw, d), d.compare.pct(pct));
   }
   return d.compare.same;
 }
@@ -92,8 +92,8 @@ export function KrCompareChip({
 
 function Verdict({ kr, compare, d }: { kr: Kr; compare: NonNullable<Kr['compare']>; d: Dict }) {
   const v = VERDICT_STYLE[compare.verdict];
-  const kLine = d.compare.krLowest(formatKrw(kr.link.lowPriceKrw));
-  const uLine = d.compare.usApprox(formatKrw(compare.usKrw));
+  const kLine = d.compare.krLowest(formatKrw(kr.link.lowPriceKrw, d));
+  const uLine = d.compare.usApprox(formatKrw(compare.usKrw, d));
   const base = kr.baseCity ? d.compare.usBase(d.city[kr.baseCity]) : null;
   const diff = diffLabel(compare, d);
   return (
@@ -119,7 +119,7 @@ function Unavailable({ kr, d }: { kr: Kr; d: Dict }) {
         {kr.fx ? d.compare.noStock : d.compare.noFx}
       </p>
       <p className="text-sm text-muted-foreground tabular">
-        {d.compare.krLowest(formatKrw(kr.link.lowPriceKrw))}
+        {d.compare.krLowest(formatKrw(kr.link.lowPriceKrw, d))}
         {!kr.fx && <span className="sr-only">. {d.compare.noFxHint}</span>}
       </p>
     </div>

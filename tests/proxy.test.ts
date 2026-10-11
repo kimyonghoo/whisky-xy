@@ -11,7 +11,10 @@ function target(path: string, headers?: Record<string, string>): string | null {
   const res = proxy(req(path, headers));
   const loc = res.headers.get('location');
   if (!loc) return null;
-  expect(res.status).toBe(308);
+  expect(res.status).toBe(307);
+  // Cookie-dependent target: never cacheable by the browser or a CDN.
+  expect(res.headers.get('cache-control')).toBe('private, no-store');
+  expect(res.headers.get('vary')).toContain('Cookie');
   const url = new URL(loc);
   return url.pathname + url.search;
 }

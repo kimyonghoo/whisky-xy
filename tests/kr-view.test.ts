@@ -11,6 +11,8 @@ import {
   linkKrHref,
   KR_STALE_AFTER_MS,
 } from '@/lib/kr-view';
+import { ko } from '@/lib/i18n/ko';
+import { en } from '@/lib/i18n/en';
 
 describe('kr-view', () => {
   it('formats KRW with ko-KR grouping and 원', () => {
@@ -18,6 +20,15 @@ describe('kr-view', () => {
     expect(formatKrw(0)).toBe('0원');
     expect(formatKrw(-50000)).toBe('-50,000원');
     expect(formatKrw(1234.6)).toBe('1,235원');
+  });
+
+  it('formats KRW per locale dictionary, sign outside the unit', () => {
+    expect(formatKrw(649000, ko)).toBe('649,000원');
+    expect(formatKrw(649000, en)).toBe('₩649,000');
+    expect(formatKrw(-50000, en)).toBe('-₩50,000');
+    expect(formatKrw(1234.6, en)).toBe('₩1,235');
+    expect(formatKrw(0, en)).toBe('₩0');
+    expect(formatKrw(649000, en)).not.toMatch(/[가-힣]/);
   });
 
   it('approximates USD cents in KRW to the nearest 1,000원', () => {

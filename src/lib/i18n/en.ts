@@ -269,6 +269,12 @@ export const en: Dict = {
   stock: { inStock: 'In stock', unverified: 'Stock unconfirmed', soldOut: 'Sold out', unreliable: 'Stock display unreliable' },
   stale: { warning: 'Out of date' },
   copy: { copied: 'Copied', failed: 'Copy failed' },
+  /** Won amount around a grouped number ("649,000" → "₩649,000"); the sign is added outside. */
+  krw: (amount: string) => `₩${amount}`,
+  /** Per-store notes shown on the buy card, keyed by store id (src/lib/stores.ts). */
+  storeNote: {
+    liquorcave: 'Several branches share this name; please call before visiting.',
+  } as Record<string, string>,
   loading: 'Searching…',
   loadingCard: 'Loading the card…',
   notFound: {

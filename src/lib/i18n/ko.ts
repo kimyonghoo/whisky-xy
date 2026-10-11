@@ -266,6 +266,12 @@ export const ko = {
   stock: { inStock: '재고 있음', unverified: '재고 확인 필요', soldOut: '품절', unreliable: '재고 표시 부정확' },
   stale: { warning: '오래된 정보' },
   copy: { copied: '복사됨', failed: '복사 실패' },
+  /** Won amount around a grouped number ("649,000" → "649,000원"); the sign is added outside. */
+  krw: (amount: string) => `${amount}원`,
+  /** Per-store notes shown on the buy card, keyed by store id (src/lib/stores.ts). */
+  storeNote: {
+    liquorcave: '여러 지점이 있으니 방문 전 전화로 확인하시기 바랍니다.',
+  } as Record<string, string>,
   loading: '검색 중…',
   loadingCard: '카드를 불러오는 중…',
   notFound: {

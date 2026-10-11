@@ -34,7 +34,7 @@ export function BottleResult({
   d: Dict;
 }) {
   const s = summarizeGroup(group);
-  const krw = s.cheapest && fx ? formatKrw(approxKrw(s.cheapest.taxIncludedCents, fx.usdKrw)) : null;
+  const krw = s.cheapest && fx ? formatKrw(approxKrw(s.cheapest.taxIncludedCents, fx.usdKrw), d) : null;
   const ranks = new Map<number, number>();
   let n = 0;
   // Rank only confirmed in-stock offers; "재고 확인 필요" and sold-out rows get a dash.
