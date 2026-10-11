@@ -70,6 +70,11 @@ export function summarizeGroup(group: BottleGroup): GroupSummary {
   };
 }
 
+/** Distinct bottles across all city sections: one bottle sold in several cities counts once. */
+export function distinctBottleCount(sections: { groups: { bottleKey: string }[] }[]): number {
+  return new Set(sections.flatMap((s) => s.groups.map((g) => g.bottleKey))).size;
+}
+
 /** Store-scoped search (`?store=`) never counts as a filter: it has its own header. */
 export function activeFilterCount(p: SearchFilters | SearchParams): number {
   return (

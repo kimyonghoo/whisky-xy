@@ -39,10 +39,10 @@ describe('stale "available" rows (I2)', () => {
     db = await createTestDb();
     await db.insert(listings).values([
       // 3 weeks old and cheapest: must not rank, must not be the price base.
-      at({ storeId: 'winechateau', title: T, priceCents: 5000 }, hoursAgo(24 * 21)),
+      at({ storeId: 'theliquorstore', title: T, priceCents: 5000 }, hoursAgo(24 * 21)),
       at({ storeId: 'dewinespot', title: T, priceCents: 9000 }, hoursAgo(2)),
       at({ storeId: 'grainvine', title: T, priceCents: 9500, available: false }, hoursAgo(2)),
-      at({ storeId: 'liquorcave', title: ONLY_STALE, priceCents: 12000 }, hoursAgo(72)),
+      at({ storeId: 'slopecellars', title: ONLY_STALE, priceCents: 12000 }, hoursAgo(72)),
     ]);
     await db.insert(fxRates).values({ date: '2026-10-11', usdKrw: 1400, fetchedAt: now });
   });
@@ -52,22 +52,19 @@ describe('stale "available" rows (I2)', () => {
     const g = r.sections[0].groups[0];
     expect(g.rows.map((x) => [x.storeId, x.stock])).toEqual([
       ['dewinespot', 'instock'],
+      ['theliquorstore', 'unverified'],
       ['grainvine', 'soldout'],
     ]);
     expect(g.bestAvailableCents).toBe(withTaxCents(9000, getStore('dewinespot')!.taxRate));
-    // the stale NJ row stays in its own section: unverified, no best price
-    const nj = r.sections.find((x) => x.city === 'nj')!;
-    expect(nj.groups[0].rows.map((x) => [x.storeId, x.stock])).toEqual([['winechateau', 'unverified']]);
-    expect(nj.bestAvailableCents).toBeNull();
+    expect(r.sections[0].bestAvailableCents).toBe(g.bestAvailableCents);
   });
 
   it('search: a bottle whose only available row is unverified has no best price and sorts after priced groups', async () => {
     const r = await searchListings(db, { q: 'bourbon', city: 'brooklyn' }, { now });
-    expect(r.sections[0].groups.map((g) => g.displayTitle)).toEqual([T]);
-    const nj = r.sections.find((x) => x.city === 'nj')!;
-    const stale = nj.groups.find((g) => g.displayTitle === ONLY_STALE)!;
-    expect(stale.bestAvailableCents).toBeNull();
-    expect(stale.rows[0].stock).toBe('unverified');
+    const groups = r.sections[0].groups;
+    expect(groups.map((g) => g.displayTitle)).toEqual([T, ONLY_STALE]);
+    expect(groups[1].bestAvailableCents).toBeNull();
+    expect(groups[1].rows[0].stock).toBe('unverified');
   });
 
   it('search: "in stock only" leaves unverified rows out', async () => {
@@ -77,7 +74,7 @@ describe('stale "available" rows (I2)', () => {
 
   it('Korea compare in search uses only confirmed rows', async () => {
     const key = (await searchListings(db, { q: 'weller', city: 'brooklyn' }, { now })).sections[0].groups[0].bottleKey;
-    const staleKey = (await searchListings(db, { q: 'blantons', city: 'nj' }, { now })).sections[0].groups[0].bottleKey;
+    const staleKey = (await searchListings(db, { q: 'blantons', city: 'brooklyn' }, { now })).sections[0].groups[0].bottleKey;
     const price = { lowPriceKrw: 300000, highPriceKrw: null, offerCount: null };
     await upsertKrLink(db, { bottleKey: key, productId: '1', nameKo: '웰러', nameEn: null, imageUrl: null, price }, now);
     await upsertKrLink(db, { bottleKey: staleKey, productId: '2', nameKo: '블랑톤', nameEn: null, imageUrl: null, price }, now);
@@ -103,11 +100,11 @@ describe('stale "available" rows (I2)', () => {
   it('map: unverified rows are not counted as in stock', async () => {
     const key = (await searchListings(db, { q: 'weller', city: 'brooklyn' }, { now })).sections[0].groups[0].bottleKey;
     const offers = (await bottleStoreOffers(db, key, now))!;
-    expect(offers.offers.get('winechateau')).toMatchObject({ listed: 1, inStock: 0, minAvailablePriceCents: null });
+    expect(offers.offers.get('theliquorstore')).toMatchObject({ listed: 1, inStock: 0, minAvailablePriceCents: null });
     expect(offers.offers.get('dewinespot')).toMatchObject({ inStock: 1, minAvailablePriceCents: 9000 });
     const avail = await storeAvailability(db, undefined, now);
-    expect(avail.get('winechateau')).toBeUndefined();
-    expect(avail.get('liquorcave')).toBeUndefined();
+    expect(avail.get('theliquorstore')).toBeUndefined();
+    expect(avail.get('slopecellars')).toBeUndefined();
     expect(avail.get('dewinespot')).toBe(1);
   });
 

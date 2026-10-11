@@ -21,6 +21,7 @@ describe('geo', () => {
     it('maps the legacy region param (ca -> la)', () => {
       expect(resolveCity({ region: 'ca' })).toEqual({ city: getCity('la'), soon: false });
       expect(resolveCity({ region: 'nj' }).city.id).toBe('nj');
+      expect(resolveCity({ region: 'la' }).city.id).toBe('la');
     });
     it('honours a soon city from the param over the cookie', () => {
       const r = resolveCity({ city: 'tokyo', cookie: 'nj' });

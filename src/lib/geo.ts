@@ -51,7 +51,7 @@ export function storesIn(city: CityId): Store[] {
 }
 
 /** Pre-city URLs (`?region=`) keep working: `ca` became `la`. */
-const LEGACY_REGION: Record<string, CityId> = { brooklyn: 'brooklyn', nj: 'nj', ca: 'la' };
+const LEGACY_REGION: Record<string, CityId> = { brooklyn: 'brooklyn', nj: 'nj', la: 'la', ca: 'la' };
 
 /**
  * The city a request is about. Precedence: the store's own city, a valid `city` param (any status),

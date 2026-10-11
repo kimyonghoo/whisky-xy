@@ -7,6 +7,7 @@ import {
   nextShowCount,
   summarizeGroup,
   activeFilterCount,
+  distinctBottleCount,
   searchHref,
 } from '@/lib/search-view';
 import { identifyingVariant, type BottleGroup, type ListingRow } from '@/lib/search';
@@ -112,6 +113,14 @@ describe('activeFilterCount', () => {
   it('counts each applied filter', () => {
     expect(activeFilterCount({ q: 'x' })).toBe(0);
     expect(activeFilterCount({ q: 'x', city: 'nj', inStockOnly: true, minCents: 0, maxCents: 100 })).toBe(3);
+  });
+});
+
+describe('distinctBottleCount', () => {
+  it('counts a bottle sold in several cities once', () => {
+    const g = (k: string) => ({ bottleKey: k });
+    expect(distinctBottleCount([{ groups: [g('a'), g('b')] }, { groups: [g('a')] }, { groups: [g('a')] }])).toBe(2);
+    expect(distinctBottleCount([])).toBe(0);
   });
 });
 

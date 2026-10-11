@@ -41,6 +41,23 @@ describe('searchListings', () => {
     for (const sec of r.sections) expect(rowsOf(sec).every((x) => x.store.city === sec.city)).toBe(true);
   });
 
+  it('orders in-stock rows by tax-included price, not shelf price, within one city', async () => {
+    const d = await createTestDb();
+    await d.insert(listings).values([
+      seed({ storeId: 'liquorcave', title: 'Tax Order Rye', priceCents: 7000 }),
+      // cheaper shelf price but sold out: last despite the lower number
+      seed({ storeId: 'winechateau', title: 'Tax Order Rye', priceCents: 5000, available: false }),
+      seed({ storeId: 'coolvines', title: 'Tax Order Rye', priceCents: 6900 }),
+    ]);
+    const nj = (await run(d, { q: 'tax order rye', city: 'nj' })).sections[0];
+    const rows = nj.groups[0].rows;
+    const inStock = rows.filter((x) => x.available);
+    expect(inStock.map((x) => x.taxIncludedCents)).toEqual([...inStock.map((x) => x.taxIncludedCents)].sort((a, b) => a - b));
+    expect(inStock.map((x) => x.storeId)).toEqual(['coolvines', 'liquorcave']);
+    expect(rows[rows.length - 1].storeId).toBe('winechateau');
+    expect(nj.bestAvailableCents).toBe(Math.min(...inStock.map((x) => x.taxIncludedCents)));
+  });
+
   it('puts the selected city first, then same-country cities', async () => {
     const r = await run(db, { q: 'jack', city: 'nj' });
     expect(r.sections.map((s) => s.city)).toEqual(['nj', 'brooklyn', 'la']);

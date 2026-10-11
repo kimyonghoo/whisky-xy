@@ -9,7 +9,7 @@ import { SECTION_ROW_LIMIT, interpretQuery, searchListings, type SearchParams } 
 import { literalPhrase, queryPhrase } from '@/lib/search-query';
 import { parseSearchForm, sizeLabel } from '@/lib/search-form';
 import { getLatestFx } from '@/lib/fx';
-import { activeFilterCount, searchHref } from '@/lib/search-view';
+import { activeFilterCount, distinctBottleCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
 import { STORES, getStore, type Store } from '@/lib/stores';
@@ -177,7 +177,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   const searchedAs = params.q && queryPhrase(terms) !== literalPhrase(params.q) ? queryPhrase(terms) : null;
   // Admins see the "한국 가격 연결" action on each group; the cookie is re-checked by every action.
   const admin = isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY);
-  const bottleTotal = sections.reduce((n, s) => n + s.groups.length, 0);
+  const bottleTotal = distinctBottleCount(sections);
   const none = bottleTotal === 0;
   // A whole-store list can exceed the per-city query limit: say so instead of implying that's everything.
   const truncated = sections.some((sec) => sec.groups.reduce((n, g) => n + g.rows.length, 0) >= SECTION_ROW_LIMIT);
