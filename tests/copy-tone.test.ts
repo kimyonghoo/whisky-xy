@@ -38,6 +38,10 @@ describe('Korean copy tone (합니다체)', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('suggests rather than orders: no "~해 보십시오" imperatives', () => {
+    expect(strings.filter((s) => /보십시오/.test(s.text))).toEqual([]);
+  });
+
   it('uses no exclamation marks', () => {
     expect(strings.filter((s) => s.text.includes('!'))).toEqual([]);
   });

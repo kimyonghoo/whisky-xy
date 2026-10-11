@@ -28,6 +28,18 @@ function TriggerFace({ city, d }: { city: City; d: Dict }) {
   );
 }
 
+/**
+ * The small English line under a city name in the menu ("New York", "California"), or null when it
+ * would only repeat what is already shown: the city's own name, or its country (Tokyo · Japan).
+ */
+export function citySubLabel(city: City, d: Dict): string | null {
+  const sub = city.subEn.trim();
+  if (!sub) return null;
+  const same = (a: string) => a.trim().toLowerCase() === sub.toLowerCase();
+  if (same(d.city[city.id]) || same(d.countryEn[city.country]) || same(d.country[city.country])) return null;
+  return sub;
+}
+
 /** Up/Down/Home/End move focus between the city buttons of one list (Tab still works too). */
 function onListKeyDown(e: React.KeyboardEvent<HTMLUListElement>) {
   const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
@@ -76,7 +88,7 @@ export function CityMenuContent({ current, onPick }: { current: CityId; onPick: 
           <ul className="flex flex-col gap-0.5" onKeyDown={onListKeyDown}>
             {citiesOf(id).map((c) => {
               const on = c.id === current;
-              const sub = c.subEn !== d.city[c.id] ? c.subEn : null;
+              const sub = citySubLabel(c, d);
               return (
                 <li key={c.id}>
                   <button

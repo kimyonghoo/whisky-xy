@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CITIES, type CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
-import { CityMenuContent } from '@/components/CitySelect';
+import { en } from '@/lib/i18n/en';
+import { CityMenuContent, citySubLabel } from '@/components/CitySelect';
 
 // The closed popover renders no list on the server, so the exported list body is rendered directly.
 const render = (current: CityId) => renderToStaticMarkup(<CityMenuContent current={current} onPick={() => {}} />);
@@ -32,5 +33,32 @@ describe('CityMenuContent', () => {
 
   it('marks a coming-soon city as current when it is the one shown', () => {
     expect(render('tokyo')).toMatch(currentIs('tokyo'));
+  });
+});
+
+describe('citySubLabel', () => {
+  const city = (id: CityId) => CITIES.find((c) => c.id === id)!;
+
+  it('keeps a region that adds information', () => {
+    expect(citySubLabel(city('brooklyn'), ko)).toBe('New York');
+    expect(citySubLabel(city('la'), en)).toBe('California');
+    expect(citySubLabel(city('nj'), ko)).toBe('New Jersey');
+  });
+
+  it('hides a sub-name that only repeats the country, in both locales', () => {
+    for (const d of [ko, en]) {
+      for (const id of ['tokyo', 'osaka', 'sapporo', 'taipei'] as const) expect(citySubLabel(city(id), d)).toBeNull();
+    }
+  });
+
+  it('hides a sub-name equal to the displayed city name', () => {
+    expect(citySubLabel(city('nj'), en)).toBeNull();
+  });
+
+  it('leaves no country echo in the rendered menu', () => {
+    const html = render('tokyo');
+    expect(html).not.toContain('>Japan<');
+    expect(html).not.toContain('>Taiwan<');
+    expect(html).toContain('>New York<');
   });
 });

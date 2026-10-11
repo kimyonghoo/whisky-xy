@@ -50,6 +50,8 @@ export const en: Dict = {
     submit: 'Search',
     /** The hero's underline search button, a tracked English caps label as in the mockup. */
     submitCaps: 'SEARCH',
+    /** Accessible name of that button: contains the visible caps (label in name). */
+    submitCapsLabel: 'Search',
     curatedLabel: 'CURATED',
     /** One per style: Islay, Speyside, Japanese, Campbeltown, bourbon. Each must return results. */
     examples: ['Lagavulin 16', 'Macallan 18', 'Yamazaki 12', 'Springbank 15', "Blanton's"],
@@ -84,7 +86,7 @@ export const en: Dict = {
     emptyHint: "e.g. Lagavulin 16, Yamazaki 12, Blanton's",
     noResults: 'No results',
     noResultsHint: (q: string) => `Nothing matched ‘${q}’.`,
-    noResultsTips: ['Check the spelling, or try a shorter search (e.g. “stagg jr” → “stagg”)', 'Try the English name as well'],
+    noResultsTips: ['Check the spelling, or search with a shorter name (e.g. “stagg jr” → “stagg”)', 'Korean spellings are recognised as well'],
     noResultsFiltered: 'Clearing the filters will show more results',
     sectionEmpty: 'No results in this city',
     showMore: (n: number) => `Show more (${n} remaining)`,
@@ -95,8 +97,9 @@ export const en: Dict = {
   },
   store: {
     eyebrow: 'By store',
-    /** Rendered after the store name: "<store> — whisky". */
-    headingSuffix: '— whisky',
+    /** Around the store name: "<prefix> <store> <suffix>" → "Whisky at <store>". Either may be empty. */
+    headingPrefix: 'Whisky at',
+    headingSuffix: '',
     summary: (bottles: number, more: boolean) => `${bottles}${more ? '+' : ''} ${bottles === 1 && !more ? 'bottle' : 'bottles'} · in stock first, by tax-included price`,
     truncatedHint: 'This store lists a great many bottles, so only a selection is shown, in-stock first. Searching by name is more precise.',
     summaryQuery: (q: string, bottles: number) => `Results for ‘${q}’ at this store · ${bottles} ${bottles === 1 ? 'bottle' : 'bottles'}`,
@@ -104,7 +107,7 @@ export const en: Dict = {
     clearLabel: (name: string) => `Leave ${name} and show all stores`,
     onMap: 'View on map',
     empty: 'No whisky recorded at this store',
-    emptyHint: 'It has not been checked yet, or no listings are public at the moment. Prices at other stores are available.',
+    emptyHint: 'It has not been checked yet, or no listings are public at the moment. Prices at other stores are available in the full search.',
     emptyQuery: (q: string) => `Nothing at this store matches ‘${q}’.`,
     searchAll: 'Search all stores',
     placeholder: 'Search whisky at this store',
@@ -268,6 +271,8 @@ export const en: Dict = {
     backToSearch: 'Back to search',
     backToResults: 'Back to results',
   },
+  /** Bottle facts as printed on the label (also shown to the clerk), so they read the same in both locales. */
+  spec: { size: (ml: number) => `${ml} ml`, proof: (proof: number) => `${proof} proof` },
   stock: { inStock: 'In stock', unverified: 'Stock unconfirmed', soldOut: 'Sold out', unreliable: 'Stock display unreliable' },
   stale: { warning: 'Out of date' },
   copy: { copied: 'Copied', failed: 'Copy failed' },

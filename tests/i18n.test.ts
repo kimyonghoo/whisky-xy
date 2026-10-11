@@ -52,6 +52,24 @@ describe('dictionaries', () => {
     expect(en.storeNote.liquorcave).not.toMatch(/[가-힣]/);
   });
 
+  it('gives the caps SEARCH button an accessible name that contains its visible label', () => {
+    for (const d of [ko, en]) expect(d.search.submitCapsLabel.toUpperCase()).toContain(d.search.submitCaps);
+    expect(ko.search.submitCapsLabel).toMatch(/검색/);
+  });
+
+  it('formats bottle specs from the dictionary, identically in both locales', () => {
+    for (const d of [ko, en]) {
+      expect(d.spec.size(750)).toBe('750 ml');
+      expect(d.spec.proof(101)).toBe('101 proof');
+    }
+  });
+
+  it('wraps the store name in a natural heading', () => {
+    const heading = (d: typeof ko | typeof en) => [d.store.headingPrefix, 'Astor Wines', d.store.headingSuffix].filter(Boolean).join(' ');
+    expect(heading(ko)).toBe('Astor Wines 매장의 위스키');
+    expect(heading(en)).toBe('Whisky at Astor Wines');
+  });
+
   it('formats won per locale', () => {
     expect(ko.krw('126,000')).toBe('126,000원');
     expect(en.krw('126,000')).toBe('₩126,000');

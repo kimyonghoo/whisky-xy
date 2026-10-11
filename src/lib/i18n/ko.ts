@@ -1,5 +1,5 @@
 // All UI copy lives here. Tone: 합니다체 — refined, calm, specific; no exclamation marks.
-// See docs/design-system.md §11 "Korean copy guidelines".
+// See docs/design-system.md §11 "Copy guidelines".
 export const ko = {
   city: { brooklyn: '브루클린', nj: '뉴저지', la: '로스앤젤레스', tokyo: '도쿄', osaka: '오사카', sapporo: '삿포로', taipei: '타이베이' },
   country: { us: '미국', jp: '일본', tw: '대만' },
@@ -47,6 +47,8 @@ export const ko = {
     submit: '검색',
     /** The hero's underline search button, a tracked English caps label as in the mockup. */
     submitCaps: 'SEARCH',
+    /** Accessible name of that button: contains the visible caps (label in name), then the Korean word. */
+    submitCapsLabel: 'SEARCH 검색',
     curatedLabel: 'CURATED',
     /** One per style: Islay, Speyside, Japanese, Campbeltown, bourbon. Each must return results. */
     examples: ['Lagavulin 16', 'Macallan 18', 'Yamazaki 12', 'Springbank 15', "Blanton's"],
@@ -63,7 +65,7 @@ export const ko = {
     priceMin: (v: string) => `세전 ${v} 이상`,
     priceMax: (v: string) => `세전 ${v} 이하`,
     removeFilter: (label: string) => `${label} 필터 해제`,
-    coverageTitle: '확인 중인 매장',
+    coverageTitle: '가격을 확인하는 매장',
     coverageRegion: (region: string, n: number) => `${region} ${n}곳`,
     yourCity: 'YOUR CITY',
     /** Takes the English country name in capitals (ko.countryEn). */
@@ -81,7 +83,7 @@ export const ko = {
     emptyHint: "예: Lagavulin 16, Yamazaki 12, Blanton's",
     noResults: '검색 결과가 없습니다',
     noResultsHint: (q: string) => `‘${q}’와 일치하는 상품을 찾지 못했습니다.`,
-    noResultsTips: ['철자를 확인하시거나 더 짧게 검색해 보십시오 (예: “stagg jr” → “stagg”)', '영문 이름으로도 검색해 보십시오'],
+    noResultsTips: ['철자를 확인하시거나 더 짧은 이름으로 검색하시기 바랍니다 (예: “stagg jr” → “stagg”)', '영문 이름으로도 찾으실 수 있습니다'],
     noResultsFiltered: '필터를 해제하면 더 많은 결과를 보실 수 있습니다',
     sectionEmpty: '이 도시에는 검색 결과가 없습니다',
     showMore: (n: number) => `더 보기 (${n}종 남음)`,
@@ -92,7 +94,8 @@ export const ko = {
   },
   store: {
     eyebrow: '매장별 보기',
-    /** Rendered after the (English) store name: "<store> 매장의 위스키". */
+    /** Around the (English) store name: "<prefix> <store> <suffix>" → "<store> 매장의 위스키". Either may be empty. */
+    headingPrefix: '',
     headingSuffix: '매장의 위스키',
     summary: (bottles: number, more: boolean) => `${bottles}종${more ? ' 이상' : ''} · 재고 있는 상품 우선, 세금 포함 가격순`,
     truncatedHint: '상품이 많아 재고가 있는 상품 위주로 일부만 표시합니다. 이름으로 검색하시면 더 정확합니다.',
@@ -101,7 +104,7 @@ export const ko = {
     clearLabel: (name: string) => `${name} 매장 선택을 해제하고 전체 매장 보기`,
     onMap: '지도에서 보기',
     empty: '이 매장에서 확인된 위스키가 없습니다',
-    emptyHint: '아직 확인 전이거나 현재 공개된 상품이 없습니다. 다른 매장의 시세를 확인해 보십시오.',
+    emptyHint: '아직 확인 전이거나 현재 공개된 상품이 없습니다. 다른 매장의 시세는 전체 검색에서 확인하실 수 있습니다.',
     emptyQuery: (q: string) => `이 매장에는 ‘${q}’와 일치하는 상품이 없습니다.`,
     searchAll: '전체 매장에서 검색',
     placeholder: '이 매장에서 위스키 검색',
@@ -241,7 +244,7 @@ export const ko = {
     searchSubmit: '찾기',
     searching: '찾는 중…',
     resultsCount: (q: string, n: number) => `‘${q}’ 데일리샷 검색 결과 · ${n}개`,
-    noResults: (q: string) => `데일리샷에서 ‘${q}’ 상품을 찾지 못했습니다. 한글 이름이나 더 짧은 이름으로 검색해 보십시오.`,
+    noResults: (q: string) => `데일리샷에서 ‘${q}’ 상품을 찾지 못했습니다. 한글 이름이나 더 짧은 이름으로 검색하시기 바랍니다.`,
     searchFailed: '데일리샷 검색에 실패했습니다. 잠시 후 다시 시도해 주십시오.',
     from: (krw: string) => `${krw}부터`,
     connect: '이 상품으로 연결',
@@ -265,6 +268,8 @@ export const ko = {
     backToSearch: '검색으로',
     backToResults: '검색 결과로 돌아가기',
   },
+  /** Bottle facts as printed on the label (also shown to the clerk), so they read the same in both locales. */
+  spec: { size: (ml: number) => `${ml} ml`, proof: (proof: number) => `${proof} proof` },
   stock: { inStock: '재고 있음', unverified: '재고 확인 필요', soldOut: '품절', unreliable: '재고 표시 부정확' },
   stale: { warning: '오래된 정보' },
   copy: { copied: '복사됨', failed: '복사 실패' },
@@ -297,7 +302,7 @@ export const ko = {
     lowReliability: '이 매장은 재고 표시가 정확하지 않습니다. 방문 전 전화로 확인하시기 바랍니다',
     lowReliabilityTitle: '방문 전 전화로 확인하시기 바랍니다',
     lowReliabilityBody: '이 매장은 웹사이트의 재고 표시가 실제와 다른 경우가 많습니다.',
-    staleHint: '하루 넘게 확인되지 않은 정보입니다. ‘다시 확인’을 눌러 최신 정보를 받아 보십시오.',
+    staleHint: '하루 넘게 확인되지 않은 정보입니다. ‘다시 확인’을 누르시면 최신 정보를 받으실 수 있습니다.',
     recheck: '다시 확인',
     rechecking: '확인 중…',
     recheckUpdated: '방금 확인했습니다',
