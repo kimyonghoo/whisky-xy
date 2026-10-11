@@ -60,6 +60,10 @@ const TEXT_PAIRS: [string, string][] = [
   ['muted-foreground', 'muted'],
   ['faint', 'background'],
   ['faint', 'card'],
+  // Faint labels (준비 중, English sub-names) also sit on selected (gold-tint) and hovered rows.
+  ['faint', 'primary-soft'],
+  ['faint', 'muted'],
+  ['faint', 'popover'],
   ['primary', 'background'],
   ['primary', 'card'],
   ['primary', 'primary-soft'],

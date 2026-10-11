@@ -24,7 +24,6 @@ function Switch({ href }: { href: (locale: Locale) => string }) {
             href={href(l)}
             hrefLang={l}
             lang={l}
-            aria-label={d.lang.names[l]}
             aria-current={l === locale ? 'true' : undefined}
             prefetch={false}
             onClick={() => {
@@ -35,7 +34,9 @@ function Switch({ href }: { href: (locale: Locale) => string }) {
               l === locale ? 'text-foreground' : 'text-muted-foreground hover:text-primary',
             )}
           >
+            {/* Visible code first, so the accessible name ("EN English") contains the visible label (WCAG 2.5.3). */}
             {d.lang[l]}
+            <span className="sr-only"> {d.lang.names[l]}</span>
           </Link>
         </span>
       ))}
