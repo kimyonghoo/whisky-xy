@@ -11,10 +11,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-card hover:bg-primary-hover",
-        dark: "bg-foreground text-background shadow-card hover:bg-foreground/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
+        dark: "bg-foreground text-background hover:bg-foreground/90",
         outline:
-          "border-border-strong bg-card text-foreground shadow-card hover:border-foreground/30 hover:bg-muted",
+          "border-border-strong bg-card text-foreground hover:border-foreground/30 hover:bg-muted",
         secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklab,var(--secondary),var(--foreground)_6%)]",
         ghost: "text-foreground hover:bg-muted",
         destructive: "bg-danger-bg text-danger-fg hover:bg-[color-mix(in_oklab,var(--danger-bg),var(--danger-fg)_8%)]",
@@ -25,7 +25,7 @@ const buttonVariants = cva(
         xs: "h-7 gap-1 rounded-md px-2 text-xs",
         sm: "h-9 gap-1.5 rounded-md px-3 text-sm",
         lg: "h-12 px-5 text-base",
-        xl: "h-14 rounded-xl px-6 text-lg",
+        xl: "h-14 px-6 text-lg",
         icon: "size-10 pointer-coarse:min-w-11",
         "icon-sm": "size-9 rounded-md pointer-coarse:min-w-11",
       },

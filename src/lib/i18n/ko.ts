@@ -28,7 +28,6 @@ export const ko = {
   site: {
     title: 'Whisky Index',
     titleKo: '위스키 인덱스',
-    wordmarkSub: 'NY · NJ · LA',
     description: '브루클린·뉴저지·로스앤젤레스 리테일러의 위스키 시세를 세금 포함 기준으로 비교합니다.',
     skipToContent: '본문으로 건너뛰기',
   },

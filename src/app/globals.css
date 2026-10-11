@@ -4,16 +4,17 @@
 
 /*
  * Design tokens — see docs/design-system.md.
- * Direction: "Cask & Paper" — warm paper surfaces, ink text, one copper accent.
- * Light mode only for now (dark mode is deliberately deferred; see the doc).
+ * Direction: "Whisky Index" — deep black, warm off-white ink, one gold accent, thin lines.
+ * Dark is the only theme (no light/dark switch).
  */
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
     "Malgun Gothic", "Noto Sans KR", sans-serif;
   --font-heading: var(--font-sans);
+  /* Loaded with next/font in app/[lang]/layout.tsx. */
+  --font-serif: var(--font-noto-serif-kr), "Noto Serif KR", "Apple SD Gothic Neo", serif;
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -29,6 +30,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -92,103 +94,105 @@
   --radius-3xl: calc(var(--radius) * 2);
   --radius-4xl: calc(var(--radius) * 2.667);
 
-  --shadow-card: 0 1px 2px rgb(61 42 24 / 0.06), 0 1px 1px rgb(61 42 24 / 0.04);
-  --shadow-raised: 0 10px 30px -12px rgb(61 42 24 / 0.22), 0 2px 6px -2px rgb(61 42 24 / 0.08);
-  --shadow-overlay: 0 24px 64px -16px rgb(31 26 21 / 0.35);
+  /* Lines do the separating; shadows only lift overlays off the black. */
+  --shadow-card: 0 0 #0000;
+  --shadow-raised: 0 12px 32px -16px rgb(0 0 0 / 0.8);
+  --shadow-overlay: 0 24px 64px -16px rgb(0 0 0 / 0.9);
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* Neutrals: warm paper + ink */
-  --background: #fbf8f3;
-  --foreground: #1f1a15;
-  --card: #ffffff;
-  --card-foreground: #1f1a15;
-  --popover: #ffffff;
-  --popover-foreground: #1f1a15;
-  --muted: #f3eee6;
-  --muted-foreground: #6b6157;
-  --secondary: #f3eee6;
-  --secondary-foreground: #2b241d;
-  --accent: #f3eee6;
-  --accent-foreground: #2b241d;
-  --border: #e7dfd3;
-  --border-strong: #d3c7b6;
-  --input: #d3c7b6;
+  /* Neutrals: deep black, warm off-white ink, warm dark hairlines */
+  --background: #0a0a0a;
+  --foreground: #f2efe8;
+  --card: #141414;
+  --card-foreground: #f2efe8;
+  --popover: #161616;
+  --popover-foreground: #f2efe8;
+  --muted: #1a1917;
+  --muted-foreground: #a39c90;
+  --faint: #868074;
+  --secondary: #1a1917;
+  --secondary-foreground: #e6e1d7;
+  --accent: #1f1d1a;
+  --accent-foreground: #f2efe8;
+  --border: #1f1c18;
+  --border-strong: #2c2720;
+  --input: #3a342b;
 
-  /* Brand: cask copper (AA 6.2:1 with white text) + honey (decorative only) */
-  --primary: #9a4a12;
-  --primary-hover: #7f3c0d;
-  --primary-foreground: #ffffff;
-  --primary-soft: #f7eadb;
-  --honey: #d9962b;
-  --ring: #b0601a;
+  /* Brand: one gold accent (links, labels, selected states; never large fills) */
+  --primary: #d4af6a;
+  --primary-hover: #e0c084;
+  --primary-foreground: #0a0a0a;
+  --primary-soft: #1d1912;
+  --honey: #b8924f;
+  --ring: #d4af6a;
 
-  /* Status */
+  /* Status (dark): light -fg text on a low-chroma dark tint, mid-tone -line */
   --instock: #1e7a42;
-  --instock-fg: #1a6638;
-  --instock-bg: #e8f4ec;
-  --instock-line: #b5dbc2;
-  --soldout-fg: #5f574f;
-  --soldout-bg: #efebe5;
-  --soldout-line: #dcd3c7;
-  --caution-fg: #6f4600;
-  --caution-bg: #fff4d6;
-  --caution-line: #ecc96a;
-  --caution-icon: #a86c00;
-  --stale-fg: #8f3110;
-  --stale-bg: #fdede4;
-  --stale-line: #f1bfa3;
-  --danger-fg: #a11c1c;
-  --danger-bg: #fdecec;
-  --danger-line: #f1b8b8;
-  --info-fg: #1d4f7a;
-  --info-bg: #e9f1f9;
-  --info-line: #bcd3ea;
-  --destructive: #b42318;
+  --instock-fg: #7fcc9c;
+  --instock-bg: #0f1c14;
+  --instock-line: #24533a;
+  --soldout-fg: #a39c90;
+  --soldout-bg: #1a1917;
+  --soldout-line: #2c2720;
+  --caution-fg: #e9bd62;
+  --caution-bg: #211a0c;
+  --caution-line: #5a4519;
+  --caution-icon: #d9a23a;
+  --stale-fg: #f0a37f;
+  --stale-bg: #24150e;
+  --stale-line: #5e3420;
+  --danger-fg: #f2908a;
+  --danger-bg: #261212;
+  --danger-line: #6a2a28;
+  --info-fg: #8fbbe6;
+  --info-bg: #0f1823;
+  --info-line: #26476a;
+  --destructive: #f07167;
 
-  /* Korea comparison verdicts (docs/design-system.md §3a). All text pairs ≥ 4.5:1, bars ≥ 3:1 on white. */
-  --verdict-must: #0f5130;
-  --verdict-must-bg: #fff4d9;
-  --verdict-must-line: #d9962b;
-  --verdict-must-ink: #0f5130;
+  /* Korea comparison verdicts (docs/design-system.md §3a). Ink ≥ 4.5:1 on its band and on card; bars ≥ 3:1 on card. */
+  --verdict-must: #137347;
+  --verdict-must-bg: #1b1810;
+  --verdict-must-line: #b8924f;
+  --verdict-must-ink: #9ad9b0;
   --verdict-must-glow: #ffe7a8;
   --verdict-big: #1e7a42;
-  --verdict-big-bg: #e8f4ec;
-  --verdict-big-line: #8fc7a3;
-  --verdict-big-ink: #1a6638;
+  --verdict-big-bg: #0f1c14;
+  --verdict-big-line: #2e6645;
+  --verdict-big-ink: #7fcc9c;
   --verdict-good: #4a9466;
-  --verdict-good-bg: #f3f9f5;
-  --verdict-good-line: #b5dbc2;
-  --verdict-good-ink: #1a6638;
+  --verdict-good-bg: #111813;
+  --verdict-good-line: #24442f;
+  --verdict-good-ink: #a3d4b2;
   --verdict-small: #8c8178;
-  --verdict-small-bg: #f5f1eb;
-  --verdict-small-line: #dcd3c7;
-  --verdict-small-ink: #5f574f;
-  --verdict-worse: #b42318;
-  --verdict-worse-bg: #fdecec;
-  --verdict-worse-line: #f1b8b8;
-  --verdict-worse-ink: #a11c1c;
+  --verdict-small-bg: #181715;
+  --verdict-small-line: #2c2720;
+  --verdict-small-ink: #b3ab9f;
+  --verdict-worse: #c0392b;
+  --verdict-worse-bg: #261212;
+  --verdict-worse-line: #6a2a28;
+  --verdict-worse-ink: #f2908a;
   /* Korea reference bar on /compare: slate, a different hue from every verdict. */
-  --kr-bar: #55718f;
+  --kr-bar: #6f8cab;
 
-  --radius: 0.75rem;
+  --radius: 0.375rem;
 
   /* Kept for vendored shadcn utilities that reference them. */
-  --chart-1: #d9962b;
-  --chart-2: #9a4a12;
-  --chart-3: #1e7a42;
-  --chart-4: #1d4f7a;
-  --chart-5: #6b6157;
-  --sidebar: #fbf8f3;
-  --sidebar-foreground: #1f1a15;
-  --sidebar-primary: #9a4a12;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3eee6;
-  --sidebar-accent-foreground: #2b241d;
-  --sidebar-border: #e7dfd3;
-  --sidebar-ring: #b0601a;
+  --chart-1: #d4af6a;
+  --chart-2: #b8924f;
+  --chart-3: #4a9466;
+  --chart-4: #6f8cab;
+  --chart-5: #a39c90;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #f2efe8;
+  --sidebar-primary: #d4af6a;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #1a1917;
+  --sidebar-accent-foreground: #f2efe8;
+  --sidebar-border: #1f1c18;
+  --sidebar-ring: #d4af6a;
 }
 
 @layer base {
@@ -246,9 +250,15 @@ div.leaflet-container {
 .leaflet-container .map-popup a {
   color: revert-layer;
 }
-.leaflet-container .leaflet-popup-content-wrapper {
-  border-radius: 1rem;
+.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .leaflet-popup-tip {
+  background: var(--popover);
+  color: var(--popover-foreground);
   box-shadow: var(--shadow-raised);
+}
+.leaflet-container .leaflet-popup-content-wrapper {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
 }
 .leaflet-container .leaflet-popup-content {
   margin: 1rem;
@@ -267,6 +277,30 @@ div.leaflet-container {
 .leaflet-container .leaflet-control-attribution {
   font-size: 0.75rem;
   color: var(--muted-foreground);
+  background: rgb(10 10 10 / 0.85);
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: var(--primary);
+}
+/* Zoom buttons: dark chrome with thin lines instead of Leaflet's white tiles. */
+div.leaflet-container .leaflet-bar {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.leaflet-container .leaflet-bar a {
+  background: var(--card);
+  color: var(--foreground);
+  border-bottom-color: var(--border-strong);
+}
+.leaflet-container .leaflet-bar a:hover,
+.leaflet-container .leaflet-bar a:focus {
+  background: var(--muted);
+  color: var(--primary);
+}
+.leaflet-container .leaflet-bar a.leaflet-disabled {
+  background: var(--card);
+  color: var(--faint);
 }
 
 @media (prefers-reduced-motion: reduce) {

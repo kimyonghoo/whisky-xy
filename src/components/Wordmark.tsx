@@ -1,34 +1,39 @@
 import type { Dict } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-/** Brand mark: a copper tile with a rocks glass holding a honey pour. Same art as app/icon.svg. */
+/**
+ * Brand mark: a pot still inside a two-ring compass, drawn in thin lines.
+ * Strokes use currentColor, so the colour comes from a text token (gold `text-primary` by default).
+ * src/app/icon.svg is the same art on black, simplified for 16px (no inner ring, heavier strokes).
+ */
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden className={cn('size-8 shrink-0', className)}>
-      <rect width="32" height="32" rx="8" fill="var(--primary)" />
-      <path d="M11.4 17h9.2l-.7 6.1a1.2 1.2 0 0 1-1.2 1.1h-5.4a1.2 1.2 0 0 1-1.2-1.1z" fill="var(--honey)" />
-      <path
-        d="M9.5 8.5h13l-1.7 15.1a2.4 2.4 0 0 1-2.4 2.1h-4.8a2.4 2.4 0 0 1-2.4-2.1z"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn('size-8 shrink-0 text-primary', className)}
+    >
+      <circle cx="16" cy="16" r="14.5" />
+      <circle cx="16" cy="16" r="12" strokeOpacity=".4" />
+      <path d="M12 23h8M13 23c-2-2-2.5-5-1-7.5 1-1.6 2.5-2.3 4-2.3s3 .7 4 2.3c1.5 2.5 1 5.5-1 7.5" />
+      <path d="M16 13.2V9.5l4-2.5M20 7v3.2" />
     </svg>
   );
 }
 
-export function Wordmark({ d, compact = false }: { d: Dict; compact?: boolean }) {
+/** Mark + `WHISKY INDEX` in tracked Cormorant Garamond capitals. The name comes from the dictionary. */
+export function Wordmark({ d }: { d: Dict }) {
   return (
-    <span className="flex items-center gap-2 sm:gap-2.5">
-      <BrandMark className="max-sm:size-7" />
-      <span className="flex flex-col leading-none">
-        <span className="text-[0.875rem] font-extrabold tracking-tight whitespace-nowrap sm:text-base">{d.site.title}</span>
-        {!compact && (
-          <span className="mt-1 hidden text-[0.6875rem] font-semibold tracking-[0.14em] text-muted-foreground sm:block">
-            {d.site.wordmarkSub}
-          </span>
-        )}
+    <span className="flex items-center gap-2 sm:gap-3">
+      <BrandMark className="max-sm:size-6" />
+      {/* The header link carries an aria-label, so on the narrowest phones the mark stands alone. */}
+      <span className="font-display text-[0.8125rem] leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-foreground uppercase max-[24rem]:hidden sm:text-[1.0625rem] sm:tracking-[0.2em]">
+        {d.site.title}
       </span>
     </span>
   );

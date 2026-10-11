@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
  * text + icon, never from color alone (see docs/design-system.md).
  */
 const badgeVariants = cva(
-  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border whitespace-nowrap font-semibold [&>svg]:pointer-events-none [&>svg]:shrink-0",
+  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border whitespace-nowrap font-semibold [&>svg]:pointer-events-none [&>svg]:shrink-0",
   {
     variants: {
       variant: {

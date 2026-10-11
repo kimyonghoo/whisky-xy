@@ -31,7 +31,6 @@ export const en: Dict = {
   site: {
     title: 'Whisky Index',
     titleKo: '위스키 인덱스',
-    wordmarkSub: 'NY · NJ · LA',
     description: 'Whisky prices from retailers in Brooklyn, New Jersey and Los Angeles, compared with sales tax included.',
     skipToContent: 'Skip to content',
   },
