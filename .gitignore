@@ -46,3 +46,6 @@ next-env.d.ts
 
 # claude code local settings
 .claude/settings.local.json
+
+# brainstorm mockups and agent working files
+.superpowers/
