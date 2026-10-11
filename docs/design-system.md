@@ -183,7 +183,7 @@ Five **ordinal** tiers computed by `compareKr()` in `src/lib/compare.ts` (`savin
 | **Incremental load** ("더 보기") | Link-level spinner via `useLinkStatus`; scroll position is kept. |
 | **Action in progress** (recheck) | Button disabled with a spinning icon and the verb "확인 중…". Result line in `role="status"`. |
 | **Empty, no query** | Hero with a strong prompt, example chips and how-it-works. |
-| **No results** | `EmptyState`: SearchX icon, "검색 결과가 없어요", the query echoed back, 3 concrete tips, a "필터 초기화" button when filters are active, and example chips. |
+| **No results** | `EmptyState`: SearchX icon, "검색 결과가 없습니다", the query echoed back, 3 concrete tips, a "필터 초기화" button when filters are active, and example chips. |
 | **Section empty** | Dashed inline box, one line. |
 | **Not found** | `EmptyState` as `h1` with a single big "검색으로" action. The route soft-404s (200), which is accepted. |
 | **Error** | `app/error.tsx`: `EmptyState` with **다시 시도** (`retry()`) and **검색으로**. Never show error messages or stack traces to users. |
@@ -253,7 +253,7 @@ Five **ordinal** tiers computed by `compareKr()` in `src/lib/compare.ts` (`savin
   - Line 2: `한국 최저 649,000원 · 미국 약 262,821원`. KRW is `Intl ko-KR` grouping + "원" (`formatKrw`).
   - Meta row: `데일리샷에서 보기 ↗` (built only via `dailyshotUrl(productId)`, new tab), Dailyshot freshness (`FreshnessIndicator` with `staleAfterMs` = 7 days and prefix "데일리샷"), and the fx used (`환율 1,380원 · 10/10`; > 3 days old → stale badge).
   - Screen readers get one sentence (`ko.compare.srSummary`); the visual lines are `aria-hidden` to avoid reading numbers twice.
-  - Fallbacks: no fx → neutral band "환율 정보 없음" + Korea price; no in-stock row → "재고 있는 매장이 없어 지금은 비교할 수 없어요". Unlinked bottles show nothing to the public.
+  - Fallbacks: no fx → neutral band "환율 정보 없음" + Korea price; no in-stock row → "재고가 있는 매장이 없어 지금은 비교할 수 없습니다". Unlinked bottles show nothing to the public.
   - Admins see `한국 가격 연결` (dashed outline) or `연결 변경` (xs outline) → `/link-kr?bottle=…&q=<brand words>&from=<search>`.
 - **Pure price comparison only.** No duty, customs or bottle-limit maths. **Never shown on the buy card.**
 - It sits below the tax-included price, never in place of it.
@@ -314,17 +314,21 @@ Five **ordinal** tiers computed by `compareKr()` in `src/lib/compare.ts` (`savin
 ---
 
 ## 11. Korean copy guidelines
-- Use **해요체**, short and concrete: "재고 있어요", "방금 확인했어요". Don't use 합니다체 anywhere in the UI.
-- **Say what to do next:** "가기 전에 전화로 확인하세요", not just "재고 정보 부정확".
-- **Warnings are calm and specific.** No exclamation marks or ALL-CAPS. State the cause, then the action.
+- Use **합니다체** throughout: refined, calm and natural, in the voice of a private lounge or a luxury retailer. "재고가 있습니다", "방금 확인했습니다". Don't use 해요체 anywhere in the UI.
+- **Never bureaucratic or translationese.** 합니다체 should not read like a government notice. Prefer short, plain sentences ("가격 동일", "세금 포함 가격순") over stacked nouns and stiff formulas.
+- **Labels, chips and headings may be noun phrases** ("재고 있음", "최저가", "크게 유리"). Full sentences end in 합니다체.
+- **Requests and next steps:** "~해 주십시오" for actions ("잠시 후 다시 시도해 주십시오"), "~하시기 바랍니다" for advice ("방문 전 매장에 재고를 확인하시기 바랍니다"). Questions use "~하시겠습니까?".
+- **Say what to do next:** "방문 전 전화로 확인하시기 바랍니다", not just "재고 정보 부정확".
+- **Warnings are calm and specific.** No exclamation marks. State the cause, then the action.
+- **Latin capitals are labels, not sentences:** `CURATED`, `YOUR CITY`, `ELSEWHERE IN UNITED STATES`, `01 · SEARCH`, `COMING SOON`.
 - **Numbers and units:**
   - `$129.00`; `세금 포함 약 $140.45` ("약" because tax is an estimate),
   - `세전` for pre-tax,
   - `N곳` for stores, `N종` for bottles,
   - `N분/시간/일 전 확인` for freshness.
-- **Never translate product or store names.** Region names are in Korean (브루클린, 뉴저지, 캘리포니아).
-- **ClerkMode** is in English for the clerk: "Do you have this bottle?". Its Korean helper line is for the sister.
-- Every string lives in `src/lib/i18n/ko.ts`. No literals in components.
+- **Never translate product or store names.** City names are in Korean (브루클린, 뉴저지, 로스앤젤레스, 도쿄); the name is `Whisky Index` (Korean: 위스키 인덱스).
+- **ClerkMode** is in English for the clerk: "Do you have this bottle?". Its Korean helper line is for the user.
+- Every string lives in `src/lib/i18n/ko.ts`. No literals in components. `tests/copy-tone.test.ts` fails on 해요체 endings or `!`.
 
 ---
 

@@ -18,7 +18,7 @@ const TONE = {
 
 /**
  * Live recheck: idle → pending ("확인 중…", spinning icon) → result line
- * ("방금 확인했어요" / cached / gone / failed), then the page refreshes with the new data.
+ * ("방금 확인했습니다" / cached / gone / failed), then the page refreshes with the new data.
  */
 export function RecheckButton({ id, className }: { id: number; className?: string }) {
   const router = useRouter();

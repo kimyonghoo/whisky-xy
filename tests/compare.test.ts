@@ -33,20 +33,20 @@ describe('compareKr', () => {
     const r = compareKr(50200, 1000, 500000);
     expect(r).toMatchObject({ usKrw: 502000, diffKrw: -2000, verdict: 'worse', krCheaperPct: 0 });
     expect(Object.is(r.savingsPct, -0)).toBe(false);
-    expect(diffLabel(r)).toBe('한국이 2,000원(1% 미만) 더 싸요');
+    expect(diffLabel(r)).toBe('한국이 2,000원(1% 미만) 더 저렴');
   });
 
-  it('+0.4 %: a small gain stays "small" and reads "1% 미만 이득"', () => {
+  it('+0.4 %: a small gain stays "small" and reads "1% 미만 절약"', () => {
     const r = compareKr(49800, 1000, 500000);
     expect(r).toMatchObject({ diffKrw: 2000, savingsPct: 0, verdict: 'small', krCheaperPct: null });
-    expect(diffLabel(r)).toBe('2,000원(1% 미만) 이득');
+    expect(diffLabel(r)).toBe('2,000원(1% 미만) 절약');
   });
 
   it('a modest loss is measured against the US price', () => {
     // US 600,000 vs Korea 550,000: Korea is 50,000원 (8 % of the US price) cheaper.
     const r = compareKr(60000, 1000, 550000);
     expect(r.krCheaperPct).toBe(8);
-    expect(diffLabel(r)).toBe('한국이 50,000원(8%) 더 싸요');
+    expect(diffLabel(r)).toBe('한국이 50,000원(8%) 더 저렴');
   });
 
   it('a large loss (US 2.7× Korea) never reads over 100 %; it reads as a multiple', () => {
@@ -57,13 +57,13 @@ describe('compareKr', () => {
     expect(r.krCheaperPct).toBe(63);
     expect(r.krCheaperPct!).toBeLessThanOrEqual(100);
     expect(krCheaperRatio(r)).toBe('2.7');
-    expect(diffLabel(r)).toBe('한국이 2.7배 싸요 · 1,026,000원 차이');
+    expect(diffLabel(r)).toBe('한국이 2.7배 저렴 · 1,026,000원 차이');
     expect(diffLabel(r)).not.toMatch(/\d{3,}%/);
   });
 
   it('equal prices', () => {
     const r = compareKr(50000, 1000, 500000);
     expect(r).toMatchObject({ diffKrw: 0, savingsPct: 0, verdict: 'small' });
-    expect(diffLabel(r)).toBe('가격이 같아요');
+    expect(diffLabel(r)).toBe('가격 동일');
   });
 });

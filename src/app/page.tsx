@@ -47,7 +47,7 @@ const exampleChip =
 function Examples({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <p className="mb-2.5 text-sm font-semibold text-muted-foreground">{ko.search.tryLabel}</p>
+      <p className="mb-2.5 text-sm font-semibold text-muted-foreground">{ko.search.curatedLabel}</p>
       <ul className="flex flex-wrap justify-center gap-2">
         {ko.search.examples.map((ex) => (
           <li key={ex}>
@@ -83,12 +83,10 @@ function Hero({ values }: { values: SearchFormValues }) {
         <div>
           <h2 className="text-lg font-bold tracking-tight">{ko.search.howTitle}</h2>
           <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-            {ko.search.how.map((step, i) => (
-              <li key={step.title} className="flex gap-3 rounded-2xl border bg-card p-4 shadow-card">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground tabular">
-                  {i + 1}
-                </span>
+            {ko.search.how.map((step) => (
+              <li key={step.kicker} className="flex gap-3 rounded-2xl border bg-card p-4 shadow-card">
                 <span className="flex flex-col gap-0.5">
+                  <span className="text-xs font-bold tracking-[0.12em] text-primary tabular">{step.kicker}</span>
                   <span className="font-semibold">{step.title}</span>
                   <span className="text-sm text-muted-foreground">{step.body}</span>
                 </span>

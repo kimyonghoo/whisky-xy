@@ -14,7 +14,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 type Kr = NonNullable<BottleGroup['kr']>;
 
 /**
- * "386,179원(60%) 이득" / "한국이 50,000원(8%) 더 싸요" / "한국이 2.7배 싸요 · 1,066,000원 차이" / "가격이 같아요".
+ * "386,179원(60%) 절약" / "한국이 50,000원(8%) 더 저렴" / "한국이 2.7배 저렴 · 1,066,000원 차이" / "가격 동일".
  * The sign decides the wording; a loss is measured against the US price (never > 100 %).
  */
 export function diffLabel(c: Pick<KrComparison, 'diffKrw' | 'savingsPct' | 'krCheaperPct' | 'usKrw'>): string {

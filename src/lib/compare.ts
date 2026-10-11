@@ -34,7 +34,7 @@ export function compareKr(usTaxIncludedCents: number, usdKrw: number, krLowKrw: 
   return { usKrw, diffKrw, savingsPct, krCheaperPct, verdict };
 }
 
-/** US price / Korea price, one decimal ("2.7"), for "한국이 2.7배 싸요". */
+/** US price / Korea price, one decimal ("2.7"), for "한국이 2.7배 저렴". */
 export function krCheaperRatio(c: Pick<KrComparison, 'usKrw' | 'diffKrw'>): string {
   const kr = c.usKrw + c.diffKrw;
   return kr > 0 ? (Math.round((c.usKrw / kr) * 10) / 10).toFixed(1) : '∞';

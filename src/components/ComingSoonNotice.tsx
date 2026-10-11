@@ -9,9 +9,9 @@ export function ComingSoonNotice({ city, backCity }: { city: City; backCity: Cit
     <section aria-labelledby="soon-h" className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-4 py-10 text-center">
       <p className="text-sm font-semibold text-primary">{ko.soon.eyebrow}</p>
       <h2 id="soon-h" className="text-xl font-bold tracking-tight">
-        {ko.soon.title(ko.city[city.id])}
+        {ko.soon.title}
       </h2>
-      <p className="text-muted-foreground">{ko.soon.body}</p>
+      <p className="text-muted-foreground">{ko.soon.body(ko.city[city.id])}</p>
       <Link href={searchHref({}, { city: backCity.id })} className="font-semibold text-primary underline underline-offset-4">
         {ko.soon.back(ko.city[backCity.id])}
       </Link>
