@@ -14,7 +14,8 @@ import { useSearchNav } from '@/components/search/SearchShell';
 
 export interface SearchFormValues {
   q: string;
-  region: string;
+  /** Explicit `?city=` from the URL, kept as a hidden field so a new query stays in that city. */
+  city?: string;
   /** Bottle size in ml as a string, '' = any. */
   size: string;
   min: string;
@@ -90,7 +91,7 @@ export function SearchForm({
     }
     if (detailsRef.current?.open) closeFilters(true);
     // A new search always starts from the first page of each section.
-    nav.navigate(searchHref({ q, store, region: get('region'), size: get('size'), min: get('min'), max: get('max'), inStock: get('inStock') }));
+    nav.navigate(searchHref({ q, store, city: get('city'), size: get('size'), min: get('min'), max: get('max'), inStock: get('inStock') }));
   }
 
   function onChange(e: React.ChangeEvent<HTMLFormElement>) {
@@ -112,6 +113,7 @@ export function SearchForm({
       className="relative flex flex-col gap-3"
     >
       {values.store && <input type="hidden" name="store" value={values.store} />}
+      {values.city && <input type="hidden" name="city" value={values.city} />}
       <div className="flex gap-2">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">{ko.search.inputLabel}</span>
@@ -164,16 +166,7 @@ export function SearchForm({
               )}
             </summary>
             <div className="absolute inset-x-0 top-full z-30 mt-2 flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-raised sm:p-5">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
-                <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">
-                  {ko.search.regionLabel}
-                  <NativeSelect name="region" defaultValue={values.region}>
-                    <option value="">{ko.search.regionAll}</option>
-                    <option value="brooklyn">{ko.city.brooklyn}</option>
-                    <option value="nj">{ko.city.nj}</option>
-                    <option value="la">{ko.city.la}</option>
-                  </NativeSelect>
-                </label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(2,minmax(0,1fr))]">
                 <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">
                   {ko.search.sizeLabel}
                   <NativeSelect name="size" defaultValue={values.size}>
@@ -195,7 +188,7 @@ export function SearchForm({
                 </label>
               </div>
               <div className="flex items-center justify-end gap-2">
-                <Link href={searchHref({ q: values.q, store: values.store })} className={buttonVariants({ variant: 'ghost' })}>
+                <Link href={searchHref({ q: values.q, store: values.store, city: values.city })} className={buttonVariants({ variant: 'ghost' })}>
                   {ko.search.filtersReset}
                 </Link>
                 <Button type="submit">{ko.search.filtersApply}</Button>

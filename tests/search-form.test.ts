@@ -22,8 +22,8 @@ describe('parseDollarsToCents', () => {
 
 describe('parseSearchForm', () => {
   it('maps fields', () => {
-    expect(parseSearchForm({ q: ' stagg ', region: 'la', inStock: 'on', min: '10', max: '99.99' })).toEqual({
-      q: 'stagg', region: 'la', inStockOnly: true, minCents: 1000, maxCents: 9999,
+    expect(parseSearchForm({ q: ' stagg ', inStock: 'on', min: '10', max: '99.99' })).toEqual({
+      q: 'stagg', inStockOnly: true, minCents: 1000, maxCents: 9999,
     });
   });
   it('accepts only known store ids', () => {
@@ -45,7 +45,7 @@ describe('parseSearchForm', () => {
     expect(sizeLabel(1000)).toBe('1L');
     expect(sizeLabel(1750)).toBe('1.75L');
   });
-  it('ignores invalid region and handles arrays', () => {
-    expect(parseSearchForm({ q: ['a', 'b'], region: 'zz' })).toEqual({ q: 'a' });
+  it('handles arrays and no longer reads region or city', () => {
+    expect(parseSearchForm({ q: ['a', 'b'], region: 'la', city: 'nj' })).toEqual({ q: 'a' });
   });
 });

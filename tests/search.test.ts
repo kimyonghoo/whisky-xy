@@ -4,9 +4,14 @@ import { listings, fxRates } from '@/lib/db/schema';
 import { upsertKrLink } from '@/lib/krlinks';
 import { compareKr } from '@/lib/compare';
 import { ilike } from 'drizzle-orm';
-import { searchListings, escapeLike, SECTION_ROW_LIMIT } from '@/lib/search';
+import { searchListings, escapeLike, SECTION_ROW_LIMIT, type CitySection, type SearchOptions, type SearchParams } from '@/lib/search';
+import { getStore } from '@/lib/stores';
+import { withTaxCents } from '@/lib/money';
 import { seed } from './helpers/seed';
 import type { Db } from '@/lib/db/client';
+
+const run = (db: Db, p: SearchParams, opts?: SearchOptions) => searchListings(db, p, opts);
+const rowsOf = (s: CitySection) => s.groups.flatMap((g) => g.rows);
 
 describe('searchListings', () => {
   let db: Db;
@@ -27,71 +32,98 @@ describe('searchListings', () => {
     ]);
   });
 
-  it('orders rows in-stock first then tax-included; CA in separate section', async () => {
-    const r = await searchListings(db, { q: "jack daniel's barrel proof" });
-    // same price: NJ 6.625% tax is cheaper than NY 8.875%; sold-out winechateau last
-    expect(r.main[0].rows.map((x) => x.storeId)).toEqual(['liquorcave', 'dewinespot', 'winechateau']);
-    expect(r.main[0].bestAvailableCents).toBe(Math.round(7000 * 1.06625));
-    expect(r.ca.length).toBeGreaterThan(0);
-    expect(r.main.flatMap((g) => g.rows).every((x) => x.store.city !== 'la')).toBe(true);
-    expect(r.ca.flatMap((g) => g.rows).every((x) => x.store.city === 'la')).toBe(true);
+  it('orders rows in-stock first then tax-included within a city section', async () => {
+    const r = await run(db, { q: "jack daniel's barrel proof", city: 'nj' });
+    const nj = r.sections[0];
+    expect(nj.city).toBe('nj');
+    expect(nj.groups[0].rows.map((x) => x.storeId)).toEqual(['liquorcave', 'winechateau']);
+    expect(nj.groups[0].bestAvailableCents).toBe(Math.round(7000 * 1.06625));
+    for (const sec of r.sections) expect(rowsOf(sec).every((x) => x.store.city === sec.city)).toBe(true);
   });
 
-  it('inStockOnly, region, price filters', async () => {
-    const r = await searchListings(db, { q: 'stagg', inStockOnly: true });
-    const rows = r.main.flatMap((g) => g.rows);
+  it('puts the selected city first, then same-country cities', async () => {
+    const r = await run(db, { q: 'jack', city: 'nj' });
+    expect(r.sections.map((s) => s.city)).toEqual(['nj', 'brooklyn', 'la']);
+    expect((await run(db, { q: 'jack', city: 'la' })).sections.map((s) => s.city)).toEqual(['la', 'brooklyn', 'nj']);
+  });
+
+  it('drops empty other-city sections but keeps the selected one', async () => {
+    const r = await run(db, { q: 'stagg jr', city: 'la' });
+    expect(r.sections.map((s) => [s.city, s.groups.length])).toEqual([['la', 0], ['brooklyn', 1]]);
+    expect(r.sections[0]).toMatchObject({ bestAvailableCents: null, storeCount: 0 });
+  });
+
+  it('reports each section best in-stock price and store count', async () => {
+    const r = await run(db, { q: 'jack', city: 'brooklyn' });
+    const by = Object.fromEntries(r.sections.map((s) => [s.city, s]));
+    expect(by.brooklyn).toMatchObject({ storeCount: 1, bestAvailableCents: Math.round(7000 * 1.08875) });
+    // winechateau is sold out; liquorcave is the only in-stock NJ store, but both count as stores
+    expect(by.nj).toMatchObject({ storeCount: 2, bestAvailableCents: Math.round(7000 * 1.06625) });
+    expect(by.la.storeCount).toBe(1);
+    expect(by.la.bestAvailableCents).toBe(withTaxCents(6500, getStore('flask')!.taxRate));
+  });
+
+  it('returns no sections for a soon city', async () => {
+    expect(await run(db, { q: 'jack', city: 'tokyo' })).toEqual({ sections: [] });
+  });
+
+  it('inStockOnly, price and size filters', async () => {
+    const r = await run(db, { q: 'stagg', inStockOnly: true, city: 'brooklyn' });
+    const rows = r.sections.flatMap(rowsOf);
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((x) => x.available)).toBe(true);
-    const nj = await searchListings(db, { q: 'jack', region: 'nj' });
-    expect(nj.main.flatMap((g) => g.rows).every((x) => x.store.city === 'nj')).toBe(true);
-    expect(nj.ca).toEqual([]);
-    const pr = await searchListings(db, { q: 'jack', minCents: 6000, maxCents: 7500 });
-    expect(pr.main.flatMap((g) => g.rows).every((x) => x.priceCents >= 6000 && x.priceCents <= 7500)).toBe(true);
+    const pr = await run(db, { q: 'jack', minCents: 6000, maxCents: 7500, city: 'brooklyn' });
+    expect(pr.sections.flatMap(rowsOf).every((x) => x.priceCents >= 6000 && x.priceCents <= 7500)).toBe(true);
     // seeded rows are all 750 ml
-    expect((await searchListings(db, { q: 'jack', sizeMl: 750 })).main.length).toBeGreaterThan(0);
-    expect(await searchListings(db, { q: 'jack', sizeMl: 1750 })).toEqual({ main: [], ca: [] });
+    expect((await run(db, { q: 'jack', sizeMl: 750, city: 'brooklyn' })).sections[0].groups.length).toBeGreaterThan(0);
+    expect((await run(db, { q: 'jack', sizeMl: 1750, city: 'brooklyn' })).sections.flatMap((s) => s.groups)).toEqual([]);
   });
 
   it('understands Korean spellings, abbreviations-style typos and ranks phrase matches first', async () => {
-    expect((await searchListings(db, { q: '스태그' })).main.length).toBe(2);
-    expect((await searchListings(db, { q: 'stagg bourbn' })).main.length).toBe(2);
-    expect((await searchListings(db, { q: 'jack daniel barel proof' })).main.length).toBe(1);
+    expect((await run(db, { q: '스태그', city: 'brooklyn' })).sections[0].groups.length).toBe(2);
+    expect((await run(db, { q: 'stagg bourbn', city: 'brooklyn' })).sections[0].groups.length).toBe(2);
+    expect((await run(db, { q: 'jack daniel barel proof', city: 'brooklyn' })).sections[0].groups.length).toBe(1);
     // "stagg jr" phrase: Stagg Jr first even though plain Stagg is in stock and Jr is sold out
-    expect((await searchListings(db, { q: 'stagg jr' })).main[0].displayTitle).toBe('Stagg Jr Bourbon');
+    expect((await run(db, { q: 'stagg jr', city: 'brooklyn' })).sections[0].groups[0].displayTitle).toBe('Stagg Jr Bourbon');
   });
 
   it('does not group Stagg with Stagg Jr', async () => {
-    const r = await searchListings(db, { q: 'stagg' });
-    expect(r.main.length).toBe(2);
+    const r = await run(db, { q: 'stagg', city: 'brooklyn' });
+    expect(r.sections[0].groups.length).toBe(2);
   });
 
   it('empty query behaviour', async () => {
-    expect(await searchListings(db, { q: '' })).toEqual({ main: [], ca: [] });
-    expect((await searchListings(db, { q: '', storeId: 'flask' })).ca.length).toBeGreaterThan(0);
+    expect(await run(db, { q: '', city: 'brooklyn' })).toEqual({ sections: [] });
+    const store = await run(db, { q: '', storeId: 'flask', city: 'la' });
+    expect(store.sections.map((s) => s.city)).toEqual(['la']);
+    expect(store.sections[0].groups.length).toBeGreaterThan(0);
   });
 
   it('storeId scopes results to one store, with or without a query', async () => {
-    const all = await searchListings(db, { q: '', storeId: 'dewinespot' });
-    const rows = all.main.flatMap((g) => g.rows);
+    const all = await run(db, { q: '', storeId: 'dewinespot', city: 'brooklyn' });
+    const rows = all.sections.flatMap(rowsOf);
     expect(rows.length).toBe(6);
     expect(rows.every((x) => x.storeId === 'dewinespot')).toBe(true);
-    expect(all.ca).toEqual([]);
-    const q = await searchListings(db, { q: 'stagg', storeId: 'liquorcave' });
-    expect(q.main.flatMap((g) => g.rows).map((x) => x.storeId)).toEqual(['liquorcave']);
-    expect(await searchListings(db, { q: '', storeId: 'coolvines' })).toEqual({ main: [], ca: [] });
+    expect(all.sections.map((s) => s.city)).toEqual(['brooklyn']);
+    const q = await run(db, { q: 'stagg', storeId: 'liquorcave', city: 'nj' });
+    expect(q.sections.flatMap(rowsOf).map((x) => x.storeId)).toEqual(['liquorcave']);
+    // coolvines has no listings: the selected city's section stays, empty
+    const none = await run(db, { q: '', storeId: 'coolvines', city: 'nj' });
+    expect(none.sections.flatMap((s) => s.groups)).toEqual([]);
   });
 
   it('special characters are safe and literal', async () => {
-    await expect(searchListings(db, { q: "100% o'brien _ 위스키" })).resolves.toEqual({ main: [], ca: [] });
-    expect(await searchListings(db, { q: '%' })).toEqual({ main: [], ca: [] });
+    const groups = (r: { sections: CitySection[] }) => r.sections.flatMap((s) => s.groups);
+    expect(groups(await run(db, { q: "100% o'brien _ 위스키", city: 'brooklyn' }))).toEqual([]);
+    expect(groups(await run(db, { q: '%', city: 'brooklyn' }))).toEqual([]);
     expect(escapeLike('a%b_c\\d')).toBe('a\\%b\\_c\\\\d');
   });
 
   it('groups with in-stock rows sort before all-sold-out groups', async () => {
-    const r = await searchListings(db, { q: 'whiskey' });
-    const titles = r.main.map((g) => g.displayTitle);
+    const r = await run(db, { q: 'whiskey', city: 'brooklyn' });
+    const titles = r.sections[0].groups.map((g) => g.displayTitle);
     expect(titles.indexOf('Sold Out Only Whiskey')).toBeGreaterThan(titles.indexOf('Zeta Whiskey'));
-    const g = r.main.find((x) => x.displayTitle === 'Sold Out Only Whiskey')!;
+    const g = r.sections[0].groups.find((x) => x.displayTitle === 'Sold Out Only Whiskey')!;
     expect(g.bestAvailableCents).toBeNull();
   });
 
@@ -99,7 +131,7 @@ describe('searchListings', () => {
     expect(SECTION_ROW_LIMIT).toBe(500);
   });
 
-  it('CA rows cannot crowd main rows out of the limit', async () => {
+  it('one city cannot crowd another out of the row limit', async () => {
     const d = await createTestDb();
     await d.insert(listings).values([
       seed({ storeId: 'flask', title: 'Crowd Rye A', priceCents: 100 }),
@@ -108,9 +140,11 @@ describe('searchListings', () => {
       seed({ storeId: 'dewinespot', title: 'Crowd Rye D', priceCents: 9000 }),
       seed({ storeId: 'liquorcave', title: 'Crowd Rye E', priceCents: 9500 }),
     ]);
-    const r = await searchListings(d, { q: 'crowd rye' }, { rowLimit: 2 });
-    expect(r.main.flatMap((g) => g.rows).map((x) => x.storeId).sort()).toEqual(['dewinespot', 'liquorcave']);
-    expect(r.ca.flatMap((g) => g.rows).length).toBe(2);
+    const r = await run(d, { q: 'crowd rye', city: 'brooklyn' }, { rowLimit: 2 });
+    const by = Object.fromEntries(r.sections.map((s) => [s.city, rowsOf(s)]));
+    expect(by.brooklyn.map((x) => x.storeId)).toEqual(['dewinespot']);
+    expect(by.nj.map((x) => x.storeId)).toEqual(['liquorcave']);
+    expect(by.la.length).toBe(2);
   });
 
   it('percent and underscore in input never act as wildcards', async () => {
@@ -124,11 +158,11 @@ describe('searchListings', () => {
       seed({ storeId: 'dewinespot', title: 'Und2', priceCents: 1000, searchText: 'und axb' }),
     ]);
     // normalization strips % so the token is just '100' (substring semantics, no wildcard)
-    const r = await searchListings(d, { q: '100%' });
-    const titles = r.main.flatMap((g) => g.rows).map((x) => x.title).sort();
+    const r = await run(d, { q: '100%', city: 'brooklyn' });
+    const titles = r.sections.flatMap(rowsOf).map((x) => x.title).sort();
     expect(titles).toEqual(['Foo 100 Proof', 'Foo 1000', 'Raw', 'Raw2']);
     // '%' alone never matches everything
-    expect(await searchListings(d, { q: '%' })).toEqual({ main: [], ca: [] });
+    expect(await run(d, { q: '%', city: 'brooklyn' })).toEqual({ sections: [] });
     // escapeLike through the same ilike builder against raw searchText containing % and _
     const hit = async (pat: string) =>
       (await d.select({ t: listings.title }).from(listings).where(ilike(listings.searchText, `%${escapeLike(pat)}%`))).map((x) => x.t);
@@ -160,18 +194,18 @@ describe('searchListings Korea comparison', () => {
     await upsertKrLink(d, ds(jr.bottleKey, 300000), now);
     await d.insert(fxRates).values({ date: '2026-10-10', usdKrw: 1380, fetchedAt: now });
 
-    const r = await searchListings(d, { q: 'stagg' });
-    const g = r.main.find((x) => x.bottleKey === stagg.bottleKey)!;
+    const r = await run(d, { q: 'stagg', city: 'brooklyn' });
+    const g = r.sections[0].groups.find((x) => x.bottleKey === stagg.bottleKey)!;
     expect(g.kr?.link.lowPriceKrw).toBe(649000);
     // cheapest in-stock = dewinespot $100 + NY tax = 10888 cents (sold-out liquorcave $90 ignored)
     expect(g.kr?.compare).toEqual(compareKr(10888, 1380, 649000));
     expect(g.kr?.compare?.verdict).toBe('must');
     expect(g.kr?.fx?.usdKrw).toBe(1380);
-    const j = r.main.find((x) => x.bottleKey === jr.bottleKey)!;
+    const j = r.sections[0].groups.find((x) => x.bottleKey === jr.bottleKey)!;
     expect(j.kr?.link).toBeDefined();
     expect(j.kr?.compare).toBeNull();
-    const u = await searchListings(d, { q: 'unlinked' });
-    expect(u.main[0].kr).toBeUndefined();
+    const u = await run(d, { q: 'unlinked', city: 'brooklyn' });
+    expect(u.sections[0].groups[0].kr).toBeUndefined();
   });
 
   it('compare is null when there is no fx rate', async () => {
@@ -179,9 +213,11 @@ describe('searchListings Korea comparison', () => {
     const s = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 10000 });
     await d.insert(listings).values([s]);
     await upsertKrLink(d, ds(s.bottleKey, 649000), now);
-    const r = await searchListings(d, { q: 'stagg' });
-    expect(r.main[0].kr?.link).toBeDefined();
-    expect(r.main[0].kr?.compare).toBeNull();
-    expect(r.main[0].kr?.fx).toBeNull();
+    const r = await run(d, { q: 'stagg', city: 'brooklyn' });
+    const g = r.sections[0].groups[0];
+    expect(g.kr?.link).toBeDefined();
+    expect(g.kr?.compare).toBeNull();
+    expect(g.kr?.fx).toBeNull();
+    expect(g.kr?.baseCity).toBe('brooklyn');
   });
 });

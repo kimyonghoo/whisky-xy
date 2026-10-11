@@ -48,41 +48,46 @@ describe('stale "available" rows (I2)', () => {
   });
 
   it('search: sorts unverified after confirmed in-stock and before sold out; never the best price', async () => {
-    const r = await searchListings(db, { q: 'weller full proof' }, { now });
-    const g = r.main[0];
+    const r = await searchListings(db, { q: 'weller full proof', city: 'brooklyn' }, { now });
+    const g = r.sections[0].groups[0];
     expect(g.rows.map((x) => [x.storeId, x.stock])).toEqual([
       ['dewinespot', 'instock'],
-      ['winechateau', 'unverified'],
       ['grainvine', 'soldout'],
     ]);
     expect(g.bestAvailableCents).toBe(withTaxCents(9000, getStore('dewinespot')!.taxRate));
+    // the stale NJ row stays in its own section: unverified, no best price
+    const nj = r.sections.find((x) => x.city === 'nj')!;
+    expect(nj.groups[0].rows.map((x) => [x.storeId, x.stock])).toEqual([['winechateau', 'unverified']]);
+    expect(nj.bestAvailableCents).toBeNull();
   });
 
   it('search: a bottle whose only available row is unverified has no best price and sorts after priced groups', async () => {
-    const r = await searchListings(db, { q: 'bourbon' }, { now });
-    const titles = r.main.map((g) => g.displayTitle);
-    expect(titles).toEqual([T, ONLY_STALE]);
-    expect(r.main[1].bestAvailableCents).toBeNull();
-    expect(r.main[1].rows[0].stock).toBe('unverified');
+    const r = await searchListings(db, { q: 'bourbon', city: 'brooklyn' }, { now });
+    expect(r.sections[0].groups.map((g) => g.displayTitle)).toEqual([T]);
+    const nj = r.sections.find((x) => x.city === 'nj')!;
+    const stale = nj.groups.find((g) => g.displayTitle === ONLY_STALE)!;
+    expect(stale.bestAvailableCents).toBeNull();
+    expect(stale.rows[0].stock).toBe('unverified');
   });
 
   it('search: "in stock only" leaves unverified rows out', async () => {
-    const r = await searchListings(db, { q: 'bourbon', inStockOnly: true }, { now });
-    expect(r.main.flatMap((g) => g.rows).map((x) => x.storeId)).toEqual(['dewinespot']);
+    const r = await searchListings(db, { q: 'bourbon', inStockOnly: true, city: 'brooklyn' }, { now });
+    expect(r.sections.flatMap((x) => x.groups).flatMap((g) => g.rows).map((x) => x.storeId)).toEqual(['dewinespot']);
   });
 
   it('Korea compare in search uses only confirmed rows', async () => {
-    const key = (await searchListings(db, { q: 'weller' }, { now })).main[0].bottleKey;
-    const staleKey = (await searchListings(db, { q: 'blantons' }, { now })).main[0].bottleKey;
+    const key = (await searchListings(db, { q: 'weller', city: 'brooklyn' }, { now })).sections[0].groups[0].bottleKey;
+    const staleKey = (await searchListings(db, { q: 'blantons', city: 'nj' }, { now })).sections[0].groups[0].bottleKey;
     const price = { lowPriceKrw: 300000, highPriceKrw: null, offerCount: null };
     await upsertKrLink(db, { bottleKey: key, productId: '1', nameKo: '웰러', nameEn: null, imageUrl: null, price }, now);
     await upsertKrLink(db, { bottleKey: staleKey, productId: '2', nameKo: '블랑톤', nameEn: null, imageUrl: null, price }, now);
 
-    const r = await searchListings(db, { q: 'bourbon' }, { now });
-    const weller = r.main.find((g) => g.bottleKey === key)!;
+    const r = await searchListings(db, { q: 'bourbon', city: 'brooklyn' }, { now });
+    const all = r.sections.flatMap((x) => x.groups);
+    const weller = r.sections[0].groups.find((g) => g.bottleKey === key)!;
     const usd = withTaxCents(9000, getStore('dewinespot')!.taxRate);
     expect(weller.kr?.compare?.usKrw).toBe(Math.round((usd / 100) * 1400));
-    expect(r.main.find((g) => g.bottleKey === staleKey)!.kr?.compare).toBeNull();
+    expect(all.find((g) => g.bottleKey === staleKey)!.kr?.compare).toBeNull();
 
     // /compare: same base; the stale-only bottle counts as "not in stock".
     const c = await listKrComparisons(db, now);
@@ -96,7 +101,7 @@ describe('stale "available" rows (I2)', () => {
   });
 
   it('map: unverified rows are not counted as in stock', async () => {
-    const key = (await searchListings(db, { q: 'weller' }, { now })).main[0].bottleKey;
+    const key = (await searchListings(db, { q: 'weller', city: 'brooklyn' }, { now })).sections[0].groups[0].bottleKey;
     const offers = (await bottleStoreOffers(db, key, now))!;
     expect(offers.offers.get('winechateau')).toMatchObject({ listed: 1, inStock: 0, minAvailablePriceCents: null });
     expect(offers.offers.get('dewinespot')).toMatchObject({ inStock: 1, minAvailablePriceCents: 9000 });

@@ -2,7 +2,7 @@ import { and, asc, desc, gte, ilike, inArray, lte, eq, or, sql, type SQL } from 
 import type { Db } from '@/lib/db/client';
 import { listings, type FxRate, type KrLink, type Listing } from '@/lib/db/schema';
 import { STORES, getStore, type Store } from '@/lib/stores';
-import type { CityId } from '@/lib/geo';
+import { CITIES, getCity, type CityId } from '@/lib/geo';
 import { withTaxCents } from '@/lib/money';
 import { normalizeText } from '@/lib/whisky/parse';
 import { matchesPhrase, parseQuery, queryPhrase, type QueryTerm, type Vocab } from '@/lib/search-query';
@@ -11,12 +11,10 @@ import { getLatestFx } from '@/lib/fx';
 import { compareKr } from '@/lib/compare';
 import { confirmedSince, stockState, type StockState } from '@/lib/freshness';
 
-// Temporary until city-first search lands (Tasks 3-5 delete this).
-const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
-
 export interface SearchParams {
   q: string;
-  region?: CityId;
+  /** The selected city; it is listed first and other live cities of its country follow. */
+  city: CityId;
   storeId?: string;
   inStockOnly?: boolean;
   /** Bottle size in ml; one of SIZE_OPTIONS. */
@@ -49,8 +47,20 @@ export interface BottleGroup {
    * `compare` uses this section's cheapest in-stock tax-included price; it is null
    * when the section has no in-stock row or no fx rate exists. `fx` is the rate used.
    */
-  kr?: { link: KrLink; compare: ReturnType<typeof compareKr> | null; fx: FxRate | null };
+  kr?: { link: KrLink; compare: ReturnType<typeof compareKr> | null; fx: FxRate | null; baseCity?: CityId | null };
 }
+
+export interface CitySection {
+  city: CityId;
+  groups: BottleGroup[];
+  /** Cheapest confirmed in-stock tax-included price in this city. */
+  bestAvailableCents: number | null;
+  /** Distinct stores with at least one row. */
+  storeCount: number;
+}
+
+/** What the search form and URL carry; the page resolves `city` separately (cookie, store, legacy region). */
+export type SearchFilters = Omit<SearchParams, 'city'>
 
 export const SECTION_ROW_LIMIT = 500;
 
@@ -170,18 +180,24 @@ export async function searchListings(
   db: Db,
   p: SearchParams,
   opts: SearchOptions = {},
-): Promise<{ main: BottleGroup[]; ca: BottleGroup[] }> {
+): Promise<{ sections: CitySection[] }> {
+  const selected = getCity(p.city);
+  if (!selected || selected.status === 'soon') return { sections: [] };
   const terms = opts.terms ?? (await interpretQuery(db, p.q ?? ''));
-  if (terms.length === 0 && !p.storeId) return { main: [], ca: [] };
+  if (terms.length === 0 && !p.storeId) return { sections: [] };
   const phrase = queryPhrase(terms);
   const limit = opts.rowLimit ?? SECTION_ROW_LIMIT;
   const now = opts.now ?? new Date();
 
   let stores = STORES.filter((s) => s.publicAllowed);
-  if (p.region) stores = stores.filter((s) => s.city === p.region);
   if (p.storeId) stores = stores.filter((s) => s.id === p.storeId);
+  // Selected city first, then the other live cities of its country in CITIES order.
+  const cityIds = [
+    selected.id,
+    ...CITIES.filter((c) => c.country === selected.country && c.status === 'live' && c.id !== selected.id).map((c) => c.id),
+  ];
 
-  // Each section is queried separately so one region can never crowd out the other.
+  // Each city is queried separately so one city can never crowd out another.
   const section = async (sectionStores: Store[]): Promise<BottleGroup[]> => {
     if (sectionStores.length === 0) return [];
     const conds = [inArray(listings.storeId, sectionStores.map((s) => s.id)), ...terms.map(termCond)];
@@ -205,23 +221,35 @@ export async function searchListings(
     return buildGroups(rows, phrase);
   };
 
-  const [main, ca] = await Promise.all([
-    section(stores.filter((s) => MAIN_CITIES.includes(s.city))),
-    section(stores.filter((s) => !MAIN_CITIES.includes(s.city))),
-  ]);
-  await attachKr(db, [...main, ...ca]);
-  return { main, ca };
+  const sections = await Promise.all(
+    cityIds.map(async (id): Promise<CitySection> => {
+      const groups = await section(stores.filter((s) => s.city === id));
+      const rows = groups.flatMap((g) => g.rows);
+      const avail = groups.map((g) => g.bestAvailableCents).filter((c): c is number => c !== null);
+      return {
+        city: id,
+        groups,
+        bestAvailableCents: avail.length ? Math.min(...avail) : null,
+        storeCount: new Set(rows.map((r) => r.storeId)).size,
+      };
+    }),
+  );
+  // The selected city always stays (the page explains an empty one); other cities only when they have results.
+  const kept = sections.filter((s) => s.city === p.city || s.groups.length > 0);
+  await attachKr(db, kept);
+  return { sections: kept };
 }
 
 /** Fills `group.kr` for linked bottles. Each group compares against its own section's best price. */
-async function attachKr(db: Db, groups: BottleGroup[]): Promise<void> {
+async function attachKr(db: Db, sections: CitySection[]): Promise<void> {
+  const groups = sections.flatMap((s) => s.groups.map((g) => ({ g, city: s.city })));
   if (groups.length === 0) return;
-  const [links, fx] = await Promise.all([getKrLinks(db, [...new Set(groups.map((g) => g.bottleKey))]), getLatestFx(db)]);
+  const [links, fx] = await Promise.all([getKrLinks(db, [...new Set(groups.map((x) => x.g.bottleKey))]), getLatestFx(db)]);
   if (links.size === 0) return;
-  for (const g of groups) {
+  for (const { g, city } of groups) {
     const link = links.get(g.bottleKey);
     if (!link) continue;
     const compare = g.bestAvailableCents !== null && fx ? compareKr(g.bestAvailableCents, fx.usdKrw, link.lowPriceKrw) : null;
-    g.kr = { link, compare, fx };
+    g.kr = { link, compare, fx, baseCity: city };
   }
 }

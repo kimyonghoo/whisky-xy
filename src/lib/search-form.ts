@@ -1,6 +1,5 @@
 import { getStore } from '@/lib/stores';
-import { isCityId } from '@/lib/geo';
-import type { SearchParams } from '@/lib/search';
+import type { SearchFilters } from '@/lib/search';
 import { WATCH_LIMITS } from '@/lib/watch-form';
 
 /** Parse a dollar string like "64.5" or "1,299.97" into integer cents without float math. */
@@ -29,11 +28,10 @@ function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export function parseSearchForm(raw: Raw): SearchParams {
+/** The city is not parsed here: the page resolves it (`resolveCity`) from the URL, a store and the cookie. */
+export function parseSearchForm(raw: Raw): SearchFilters {
   const q = (first(raw.q) ?? '').trim().slice(0, 200);
-  const region = first(raw.region);
-  const params: SearchParams = { q };
-  if (isCityId(region)) params.region = region;
+  const params: SearchFilters = { q };
   const store = getStore(first(raw.store) ?? '');
   if (store?.publicAllowed) params.storeId = store.id;
   if (first(raw.inStock)) params.inStockOnly = true;

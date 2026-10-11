@@ -66,7 +66,7 @@ describe('summarizeGroup', () => {
     const s = summarizeGroup(g);
     expect(s.storeCount).toBe(3);
     expect(s.inStockCount).toBe(2);
-    expect(s.regions).toEqual(['brooklyn', 'nj']);
+    expect(s.cities).toEqual(['brooklyn', 'nj']);
     expect(s.cheapest?.id).toBe(1);
   });
   it('has no cheapest when everything is sold out', () => {
@@ -111,21 +111,25 @@ describe('identifyingVariant', () => {
 describe('activeFilterCount', () => {
   it('counts each applied filter', () => {
     expect(activeFilterCount({ q: 'x' })).toBe(0);
-    expect(activeFilterCount({ q: 'x', region: 'nj', inStockOnly: true, minCents: 0, maxCents: 100 })).toBe(4);
+    expect(activeFilterCount({ q: 'x', city: 'nj', inStockOnly: true, minCents: 0, maxCents: 100 })).toBe(3);
   });
 });
 
 describe('searchHref', () => {
   it('keeps known params, drops unknown/empty ones, applies overrides', () => {
-    const href = searchHref({ q: 'jack & coke', region: 'nj', min: '', evil: 'x', main: '20' }, { main: '40' });
-    expect(href).toBe('/?q=jack+%26+coke&region=nj&main=40');
+    const href = searchHref({ q: 'jack & coke', city: 'nj', min: '', evil: 'x', show: '20' }, { show: '40' });
+    expect(href).toBe('/?q=jack+%26+coke&city=nj&show=40');
+  });
+  it('drops the legacy region, main and ca keys', () => {
+    expect(searchHref({ q: 'x', region: 'ca', main: '40', ca: '40' })).toBe('/?q=x');
+    expect(searchHref({ q: 'x', others: '40' })).toBe('/?q=x&others=40');
   });
   it('can remove a param with undefined', () => {
     expect(searchHref({ q: 'a', inStock: '1' }, { inStock: undefined })).toBe('/?q=a');
   });
   it('keeps store scope in canonical position', () => {
     expect(searchHref({ store: 'flask' })).toBe('/?store=flask');
-    expect(searchHref({ main: '40', store: 'flask', q: 'stagg' }, { main: undefined })).toBe('/?q=stagg&store=flask');
+    expect(searchHref({ show: '40', store: 'flask', q: 'stagg' }, { show: undefined })).toBe('/?q=stagg&store=flask');
     expect(searchHref({ q: 'a', store: 'flask' }, { store: undefined })).toBe('/?q=a');
   });
   it('returns / with no params', () => {

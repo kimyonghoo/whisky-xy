@@ -26,6 +26,9 @@ export const CITIES: readonly City[] = [
 
 export const DEFAULT_CITY: CityId = 'brooklyn';
 
+/** Remembers the last live city a visitor picked. */
+export const CITY_COOKIE = 'wi_city';
+
 export function getCity(id: string): City | undefined {
   return CITIES.find((c) => c.id === id);
 }
@@ -45,4 +48,29 @@ export function liveCities(): City[] {
 /** Public stores in a city. */
 export function storesIn(city: CityId): Store[] {
   return STORES.filter((s) => s.city === city && s.publicAllowed);
+}
+
+/** Pre-city URLs (`?region=`) keep working: `ca` became `la`. */
+const LEGACY_REGION: Record<string, CityId> = { brooklyn: 'brooklyn', nj: 'nj', ca: 'la' };
+
+/**
+ * The city a request is about. Precedence: the store's own city, a valid `city` param (any status),
+ * the legacy `region` param, a cookie naming a live city, then the default.
+ */
+export function resolveCity(input: { city?: string; region?: string; cookie?: string; storeCity?: CityId }): {
+  city: City;
+  soon: boolean;
+} {
+  const liveCity = (id: string | undefined) => {
+    const c = id ? getCity(id) : undefined;
+    return c?.status === 'live' ? c : undefined;
+  };
+  const legacy = input.region && Object.hasOwn(LEGACY_REGION, input.region) ? getCity(LEGACY_REGION[input.region]) : undefined;
+  const city =
+    (input.storeCity ? getCity(input.storeCity) : undefined) ??
+    (input.city ? getCity(input.city) : undefined) ??
+    legacy ??
+    liveCity(input.cookie) ??
+    getCity(DEFAULT_CITY)!;
+  return { city, soon: city.status === 'soon' };
 }

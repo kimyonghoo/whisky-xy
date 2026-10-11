@@ -2,28 +2,26 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { cookies } from 'next/headers';
-import { ChevronDown, MapPin, Plane, SearchX, Store as StoreIcon, X } from 'lucide-react';
+import { MapPin, SearchX, Store as StoreIcon, X } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
 import { ADMIN_COOKIE, isAdmin } from '@/lib/admin';
-import { SECTION_ROW_LIMIT, interpretQuery, searchListings, type BottleGroup } from '@/lib/search';
+import { SECTION_ROW_LIMIT, interpretQuery, searchListings, type SearchParams } from '@/lib/search';
 import { literalPhrase, queryPhrase } from '@/lib/search-query';
 import { parseSearchForm, sizeLabel } from '@/lib/search-form';
 import { getLatestFx } from '@/lib/fx';
-import type { FxRate } from '@/lib/db/schema';
-import { activeFilterCount, capGroups, nextShowCount, parseShowCount, searchHref } from '@/lib/search-view';
+import { activeFilterCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
 import { STORES, getStore, type Store } from '@/lib/stores';
-import { liveCities, type CityId } from '@/lib/geo';
+import { CITY_COOKIE, isCityId, liveCities, resolveCity } from '@/lib/geo';
 import { buttonVariants } from '@/components/ui/button';
-import { BottleResult } from '@/components/BottleResult';
+import { ComingSoonNotice } from '@/components/ComingSoonNotice';
 import { EmptyState } from '@/components/EmptyState';
-import { SectionHeader } from '@/components/SectionHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { CityChip } from '@/components/StoreLine';
+import { CitySections } from '@/components/search/CitySections';
 import { ResultsRegion, SearchShell } from '@/components/search/SearchShell';
 import { SearchForm, type SearchFormValues } from '@/components/search/SearchForm';
-import { ShowMoreLink } from '@/components/search/ShowMoreLink';
 
 type RawParams = Record<string, string | string[] | undefined>;
 
@@ -37,10 +35,7 @@ export default function Home({ searchParams }: { searchParams: Promise<RawParams
   );
 }
 
-// Temporary until city-first search lands (Tasks 3-5 delete this).
-const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
-
-const EMPTY_VALUES: SearchFormValues = { q: '', region: '', size: '', min: '', max: '', inStock: false };
+const EMPTY_VALUES: SearchFormValues = { q: '', size: '', min: '', max: '', inStock: false };
 
 function firstString(v: string | string[] | undefined): string {
   return (Array.isArray(v) ? v[0] : v) ?? '';
@@ -130,70 +125,74 @@ function FilterChip({ href, label }: { href: string; label: string }) {
   );
 }
 
-function GroupList({ groups, q, admin, now, fx }: { groups: BottleGroup[]; q: string; admin: boolean; now: Date; fx: FxRate | null }) {
-  return (
-    <div className="flex flex-col gap-4">
-      {groups.map((g) => (
-        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} fx={fx} />
-      ))}
-    </div>
-  );
-}
-
 async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }) {
   const raw = await searchParams;
-  const params = parseSearchForm(raw);
+  const filters = parseSearchForm(raw);
+  const store = filters.storeId ? getStore(filters.storeId) : undefined;
+  const cityParam = firstString(raw.city);
+  const urlCity = resolveCity({ city: cityParam, region: firstString(raw.region), storeCity: store?.city });
   const values: SearchFormValues = {
-    q: params.q,
-    region: params.region ?? '',
-    size: params.sizeMl != null ? String(params.sizeMl) : '',
+    q: filters.q,
+    city: isCityId(cityParam) ? cityParam : undefined,
+    size: filters.sizeMl != null ? String(filters.sizeMl) : '',
     min: firstString(raw.min),
     max: firstString(raw.max),
-    inStock: Boolean(params.inStockOnly),
-    store: params.storeId,
+    inStock: Boolean(filters.inStockOnly),
+    store: filters.storeId,
   };
-  const store = params.storeId ? getStore(params.storeId) : undefined;
 
   // `?store=` without a query lists that store's whole catalogue (capped per section like any search).
-  if (!params.q && !store) return <Hero values={values} />;
+  // A coming-soon city never reaches the cookie: only live cities are ever stored there.
+  if (!filters.q && !store && !urlCity.soon) return <Hero values={values} />;
   // Results show relative times ("3시간 전 확인"), so they must render per request.
   await connection();
+
+  const jar = await cookies();
+  const cookieCity = jar.get(CITY_COOKIE)?.value;
+  const { city, soon } = resolveCity({ city: cityParam, region: firstString(raw.region), storeCity: store?.city, cookie: cookieCity });
+  const params: SearchParams = { ...filters, city: city.id };
+  // Links keep the city only when the URL already named one (a legacy ?region= is upgraded to ?city=).
+  const keepCity = cityParam || raw.region ? city.id : undefined;
+  const linkRaw = keepCity ? { ...raw, city: keepCity } : raw;
+  const reset = { show: undefined, others: undefined };
+
+  if (soon) {
+    return (
+      <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+        <SearchShell>
+          <SearchForm values={values} filterCount={0} />
+          <ComingSoonNotice city={city} backCity={resolveCity({ cookie: cookieCity }).city} />
+        </SearchShell>
+      </main>
+    );
+  }
 
   // One clock per render: the 48 h "재고 확인 필요" cut-off and the relative times agree.
   const now = new Date();
   const db = await getDb();
   // The rate converts every "최저가" to KRW, not just Korea-linked bottles.
   const terms = await interpretQuery(db, params.q);
-  const [{ main, ca }, fx, jar] = await Promise.all([searchListings(db, params, { now, terms }), getLatestFx(db), cookies()]);
+  const [{ sections }, fx] = await Promise.all([searchListings(db, params, { now, terms }), getLatestFx(db)]);
   // Say so when the search ran on something other than what was typed (스태그 → stagg, sbbp, typo fixes).
   const searchedAs = params.q && queryPhrase(terms) !== literalPhrase(params.q) ? queryPhrase(terms) : null;
   // Admins see the "한국 가격 연결" action on each group; the cookie is re-checked by every action.
   const admin = isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY);
-  const none = main.length === 0 && ca.length === 0;
-  // A whole-store list can exceed the per-section query limit: say so instead of implying that's everything.
-  const truncated = [main, ca].some((sec) => sec.reduce((n, g) => n + g.rows.length, 0) >= SECTION_ROW_LIMIT);
+  const bottleTotal = sections.reduce((n, s) => n + s.groups.length, 0);
+  const none = bottleTotal === 0;
+  // A whole-store list can exceed the per-city query limit: say so instead of implying that's everything.
+  const truncated = sections.some((sec) => sec.groups.reduce((n, g) => n + g.rows.length, 0) >= SECTION_ROW_LIMIT);
   const panelFilters = activeFilterCount(params) - (params.inStockOnly ? 1 : 0);
 
-  // Rendering is capped per section; the query itself is unchanged.
-  const mainShow = parseShowCount(raw.main);
-  const caShow = parseShowCount(raw.ca);
-  const mainCap = capGroups(main, mainShow);
-  const caCap = capGroups(ca, caShow);
-  const storeInMain = store ? MAIN_CITIES.includes(store.city) : null;
-  const showMain = main.length > 0 || (storeInMain ?? params.region !== 'la');
-  const caOpen = main.length === 0 || params.region === 'la' || storeInMain === false || raw.ca !== undefined;
-
   const chips: { label: string; href: string }[] = [];
-  if (params.region) chips.push({ label: ko.city[params.region], href: searchHref(raw, { region: undefined, main: undefined, ca: undefined }) });
-  if (params.sizeMl != null) chips.push({ label: sizeLabel(params.sizeMl), href: searchHref(raw, { size: undefined, main: undefined, ca: undefined }) });
-  if (params.minCents != null) chips.push({ label: ko.search.priceMin(formatUsd(params.minCents)), href: searchHref(raw, { min: undefined, main: undefined, ca: undefined }) });
-  if (params.maxCents != null) chips.push({ label: ko.search.priceMax(formatUsd(params.maxCents)), href: searchHref(raw, { max: undefined, main: undefined, ca: undefined }) });
+  if (params.sizeMl != null) chips.push({ label: sizeLabel(params.sizeMl), href: searchHref(linkRaw, { size: undefined, ...reset }) });
+  if (params.minCents != null) chips.push({ label: ko.search.priceMin(formatUsd(params.minCents)), href: searchHref(linkRaw, { min: undefined, ...reset }) });
+  if (params.maxCents != null) chips.push({ label: ko.search.priceMax(formatUsd(params.maxCents)), href: searchHref(linkRaw, { max: undefined, ...reset }) });
 
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
-      {store && <StoreScopeHeader store={store} clearHref={searchHref(raw, { store: undefined, main: undefined, ca: undefined })} />}
+      {store && <StoreScopeHeader store={store} clearHref={searchHref(linkRaw, { store: undefined, ...reset })} />}
       <SearchShell>
-        <SearchForm key={searchHref(raw, { main: undefined, ca: undefined })} values={values} filterCount={panelFilters} />
+        <SearchForm key={searchHref(linkRaw, reset)} values={values} filterCount={panelFilters} />
 
         {chips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
@@ -222,12 +221,12 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
               description={params.q ? ko.store.emptyQuery(params.q) : ko.store.emptyHint}
             >
               {activeFilterCount(params) > 0 && (
-                <Link href={searchHref({ q: params.q, store: store.id })} className={buttonVariants({ variant: 'default' })}>
+                <Link href={searchHref({ q: params.q, store: store.id, city: keepCity })} className={buttonVariants({ variant: 'default' })}>
                   {ko.search.filtersReset}
                 </Link>
               )}
               {params.q && (
-                <Link href={searchHref({ q: params.q })} className={buttonVariants({ variant: activeFilterCount(params) > 0 ? 'outline' : 'default' })}>
+                <Link href={searchHref({ q: params.q, city: keepCity })} className={buttonVariants({ variant: activeFilterCount(params) > 0 ? 'outline' : 'default' })}>
                   {ko.store.searchAll}
                 </Link>
               )}
@@ -257,7 +256,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
               }
             >
               {activeFilterCount(params) > 0 && (
-                <Link href={searchHref({ q: params.q })} className={buttonVariants({ variant: 'default' })}>
+                <Link href={searchHref({ q: params.q, city: keepCity })} className={buttonVariants({ variant: 'default' })}>
                   {ko.search.filtersReset}
                 </Link>
               )}
@@ -268,70 +267,13 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
               <p className="text-sm font-medium text-muted-foreground" role="status">
                 {store
                   ? params.q
-                    ? ko.store.summaryQuery(params.q, main.length + ca.length)
-                    : ko.store.summary(main.length + ca.length, truncated)
-                  : ko.search.resultSummary(params.q, main.length + ca.length)}
+                    ? ko.store.summaryQuery(params.q, bottleTotal)
+                    : ko.store.summary(bottleTotal, truncated)
+                  : ko.search.resultSummary(params.q, bottleTotal)}
               </p>
               {store && truncated && <p className="-mt-1 text-sm text-muted-foreground">{ko.store.truncatedHint}</p>}
 
-              {showMain && (
-                <section aria-labelledby="main-h" className="flex flex-col gap-4">
-                  <SectionHeader
-                    id="main-h"
-                    icon={MapPin}
-                    title={ko.search.mainHeading}
-                    count={ko.search.bottlesCount(main.length)}
-                    sub={ko.search.mainSub}
-                  />
-                  {main.length === 0 ? (
-                    <p className="rounded-2xl border border-dashed px-4 py-6 text-center text-muted-foreground">{ko.search.sectionEmpty}</p>
-                  ) : (
-                    <GroupList groups={mainCap.visible} q={params.q} admin={admin} now={now} fx={fx} />
-                  )}
-                  {mainCap.hiddenCount > 0 && (
-                    <ShowMoreLink
-                      href={searchHref(raw, { main: String(nextShowCount(mainShow, main.length)) })}
-                      label={ko.search.showMore(mainCap.hiddenCount)}
-                    />
-                  )}
-                </section>
-              )}
-
-              {ca.length > 0 && (
-                <section aria-labelledby="ca-h" className="flex flex-col gap-4 rounded-3xl border bg-muted/60 p-3 pt-5 sm:p-5">
-                  <SectionHeader
-                    id="ca-h"
-                    icon={Plane}
-                    tone="secondary"
-                    title={ko.search.caHeading}
-                    count={ko.search.bottlesCount(ca.length)}
-                    sub={ko.search.caSub}
-                    className="px-1 sm:px-0"
-                  />
-                  <details open={caOpen} className="group/ca flex flex-col">
-                    <summary
-                      className={buttonVariants({
-                        variant: 'outline',
-                        size: 'lg',
-                        className: 'w-full list-none group-open/ca:mb-4',
-                      })}
-                    >
-                      <span className="group-open/ca:hidden">{ko.search.caToggle(ca.length)}</span>
-                      <span className="hidden group-open/ca:inline">{ko.search.caCollapse}</span>
-                      <ChevronDown aria-hidden className="transition-transform group-open/ca:rotate-180" />
-                    </summary>
-                    <div className="flex flex-col gap-4">
-                      <GroupList groups={caCap.visible} q={params.q} admin={admin} now={now} fx={fx} />
-                      {caCap.hiddenCount > 0 && (
-                        <ShowMoreLink
-                          href={searchHref(raw, { ca: String(nextShowCount(caShow, ca.length)) })}
-                          label={ko.search.showMore(caCap.hiddenCount)}
-                        />
-                      )}
-                    </div>
-                  </details>
-                </section>
-              )}
+              <CitySections sections={sections} selected={city.id} raw={linkRaw} q={params.q} admin={admin} now={now} fx={fx} />
             </>
           )}
         </ResultsRegion>
