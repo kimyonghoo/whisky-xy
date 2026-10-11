@@ -56,9 +56,9 @@ export function WatchForm({ initial }: { initial: WatchFormDefaults }) {
   // Error → keep what was typed. Success → a clean form. First render → the ?q= prefill.
   const defaults = state.error ? fromState(state.values) : state.ok ? EMPTY : initial;
   return (
-    <section aria-labelledby="new-watch-h" className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-card sm:p-6">
+    <section aria-labelledby="new-watch-h" className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-6">
       <div className="flex flex-col gap-1">
-        <h2 id="new-watch-h" className="flex items-center gap-2 text-xl font-bold tracking-tight">
+        <h2 id="new-watch-h" className="flex items-center gap-2 font-serif text-xl font-medium">
           <Plus aria-hidden className="size-5 text-primary" />
           {d.watch.formHeading}
         </h2>
@@ -216,7 +216,7 @@ function FormBody({
           {WATCH_CITY_IDS.map((r, i) => (
             <label
               key={r}
-              className="group/chk inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-card px-3.5 text-sm font-semibold shadow-card transition-colors select-none hover:bg-muted has-checked:border-primary/60 has-checked:bg-primary-soft has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring pointer-coarse:min-h-11"
+              className="group/chk inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border-strong bg-card px-3.5 text-sm font-medium transition-colors select-none hover:bg-muted has-checked:border-primary/70 has-checked:bg-primary-soft has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring pointer-coarse:min-h-11"
             >
               <input
                 type="checkbox"
@@ -228,7 +228,7 @@ function FormBody({
               />
               <span
                 aria-hidden
-                className="flex size-4 items-center justify-center rounded border border-border-strong bg-card text-white peer-checked:border-primary peer-checked:bg-primary"
+                className="flex size-4 items-center justify-center rounded-sm border border-input bg-background text-primary peer-checked:border-primary"
               >
                 <Check className="size-3 opacity-0 group-has-checked/chk:opacity-100" strokeWidth={3} />
               </span>
@@ -242,8 +242,8 @@ function FormBody({
         </p>
       </fieldset>
 
-      <details open={advancedOpen} className="group/adv rounded-xl border bg-muted/40">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold pointer-coarse:min-h-11">
+      <details open={advancedOpen} className="group/adv rounded-md border">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm font-semibold pointer-coarse:min-h-11">
           {d.watch.fields.advanced}
           <ChevronDown aria-hidden className="size-4 transition-transform group-open/adv:rotate-180" />
         </summary>

@@ -143,7 +143,7 @@ function FilterChip({ href, label, d }: { href: string; label: string; d: Dict }
     <LocaleLink
       href={href}
       aria-label={d.search.removeFilter(label)}
-      className="inline-flex h-8 items-center gap-1 rounded-full bg-foreground py-1 pr-2 pl-3 text-sm font-semibold text-background transition-opacity hover:opacity-85 pointer-coarse:min-h-11"
+      className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/60 py-1 pr-2 pl-3 text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary-soft pointer-coarse:min-h-11"
     >
       {label}
       <X aria-hidden className="size-4" />
@@ -312,15 +312,17 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 /** Header for a store-scoped list (`/?store=<id>`), with a way back to all stores. */
 function StoreScopeHeader({ store, clearHref, d }: { store: Store; clearHref: string; d: Dict }) {
   return (
-    <header className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-5">
+    <header className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
       <div className="flex min-w-0 items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-          <StoreIcon aria-hidden className="size-5" />
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border-strong text-primary">
+          <StoreIcon aria-hidden className="size-5" strokeWidth={1.5} />
         </span>
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="text-sm font-semibold text-primary">{d.store.eyebrow}</p>
-          <h1 className="text-xl leading-snug font-bold tracking-tight text-balance sm:text-2xl">
-            <span lang="en">{store.name}</span> {d.store.headingSuffix}
+          <p className="text-xs font-medium tracking-[0.06em] text-primary">{d.store.eyebrow}</p>
+          <h1 className="font-serif text-xl leading-snug font-medium text-balance sm:text-2xl">
+            {d.store.headingPrefix && `${d.store.headingPrefix} `}
+            <span lang="en">{store.name}</span>
+            {d.store.headingSuffix && ` ${d.store.headingSuffix}`}
           </h1>
           <div className="flex flex-wrap items-center gap-1.5">
             <CityChip city={store.city} />

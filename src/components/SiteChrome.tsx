@@ -77,7 +77,7 @@ export async function SkipLink() {
   return (
     <a
       href="#main"
-      className="sr-only z-50 rounded-lg bg-foreground px-4 py-3 font-semibold text-background focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      className="sr-only z-50 rounded-md border border-primary bg-popover px-4 py-3 font-semibold text-primary focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
     >
       {d.site.skipToContent}
     </a>

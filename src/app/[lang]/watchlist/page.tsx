@@ -49,8 +49,8 @@ function WatchlistSkeleton({ d }: { d: Dict }) {
       <p role="status" className="sr-only">
         {d.watch.loading}
       </p>
-      <Skeleton className="h-40 w-full rounded-2xl" />
-      <Skeleton className="h-40 w-full rounded-2xl" />
+      <Skeleton className="h-40 w-full rounded-lg" />
+      <Skeleton className="h-40 w-full rounded-lg" />
     </div>
   );
 }
@@ -87,13 +87,15 @@ function toItem(w: Watch, d: Dict): WatchItem {
 }
 
 async function WatchlistView({ searchParams, d }: { searchParams: Promise<RawParams>; d: Dict }) {
+  // The session check reads the clock (expiry) and the list is per-request admin data: neither may
+  // run in a prerender. With partial prefetching, cookies() resolves in the App Shell render, so it
+  // is not a suspension point on its own; connection() must come before isAdmin's Date.now().
+  await connection();
   const jar = await cookies();
   if (!isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY)) return <KeyGate />;
 
   const raw = await searchParams;
   const initial = prefill(raw);
-  // The list is per-request admin data (DB read, timestamps): never part of a prerender.
-  await connection();
   const items = (await listWatches(await getDb())).map((w) => toItem(w, d));
   // Arriving from a search ("관심 등록") means the form is the task: show it first on phones.
   const formFirst = initial.include !== '' || items.length === 0;
@@ -103,10 +105,10 @@ async function WatchlistView({ searchParams, d }: { searchParams: Promise<RawPar
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-start">
         <section aria-labelledby="list-h" className={formFirst ? 'order-2 lg:order-1' : 'order-1'}>
           <div className="mb-3 flex items-baseline gap-2">
-            <h2 id="list-h" className="text-xl font-bold tracking-tight">
+            <h2 id="list-h" className="font-serif text-xl font-medium">
               {d.watch.listHeading}
             </h2>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground tabular">
+            <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular">
               {d.watch.count(items.length)}
             </span>
           </div>
@@ -120,7 +122,7 @@ async function WatchlistView({ searchParams, d }: { searchParams: Promise<RawPar
                   <ol className="flex flex-col gap-1.5 text-left text-sm">
                     {d.watch.empty.steps.map((s, i) => (
                       <li key={s} className="flex gap-2">
-                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground tabular">
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-primary/70 text-xs font-semibold text-primary tabular">
                           {i + 1}
                         </span>
                         {s}

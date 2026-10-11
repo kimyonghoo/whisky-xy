@@ -106,7 +106,7 @@ function WatchCard({ item }: { item: WatchItem }) {
     <article
       aria-labelledby={headingId}
       aria-busy={pending || undefined}
-      className={cn('flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-card transition-opacity sm:p-5', pending && 'opacity-60')}
+      className={cn('flex flex-col gap-4 rounded-lg border bg-card p-4 transition-opacity sm:p-5', pending && 'opacity-60')}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -117,8 +117,8 @@ function WatchCard({ item }: { item: WatchItem }) {
         </div>
         <p
           className={cn(
-            'flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold tabular',
-            item.target ? 'bg-primary-soft text-primary' : 'bg-muted text-muted-foreground',
+            'flex shrink-0 items-center gap-1 rounded-sm border px-2 py-0.5 text-sm font-medium tabular',
+            item.target ? 'border-primary/60 text-primary' : 'border-border-strong text-muted-foreground',
           )}
         >
           <Tag aria-hidden className="size-3.5" />

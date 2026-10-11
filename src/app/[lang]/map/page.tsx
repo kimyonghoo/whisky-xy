@@ -54,12 +54,12 @@ function MapPageSkeleton({ d }: { d: Dict }) {
             <Skeleton className="h-9 w-28 rounded-md" />
             <Skeleton className="h-9 w-24 rounded-md" />
           </div>
-          <Skeleton className="h-[min(55svh,26rem)] min-h-72 rounded-2xl lg:h-[calc(100svh-10rem)] lg:max-h-[42rem]" />
+          <Skeleton className="h-[min(55svh,26rem)] min-h-72 rounded-lg lg:h-[calc(100svh-10rem)] lg:max-h-[42rem]" />
         </div>
         <div className="flex flex-col gap-3 lg:order-1">
           <Skeleton className="h-7 w-28" />
-          <Skeleton className="h-40 rounded-2xl" />
-          <Skeleton className="h-40 rounded-2xl" />
+          <Skeleton className="h-40 rounded-lg" />
+          <Skeleton className="h-40 rounded-lg" />
         </div>
       </div>
     </>

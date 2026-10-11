@@ -91,9 +91,9 @@ describe('design tokens: WCAG contrast (dark theme)', () => {
     expect(ratio('primary-foreground', 'primary')).toBeGreaterThanOrEqual(3);
   });
 
-  // Solid badges render white text on these fills (PriceCompareChip, Badge "solid").
-  it.each(['verdict-must', 'verdict-big', 'verdict-worse', 'instock'])('white text on solid %s is at least 4.5:1', (solid) => {
-    expect(ratio('#ffffff', solid)).toBeGreaterThanOrEqual(4.5);
+  // Solid badges render on-solid text on these fills (PriceCompareChip, Badge "solid").
+  it.each(['verdict-must', 'verdict-big', 'verdict-worse', 'instock'])('on-solid text on solid %s is at least 4.5:1', (solid) => {
+    expect(ratio('on-solid', solid)).toBeGreaterThanOrEqual(4.5);
   });
 
   // Non-text UI (bars on /compare, caution icon, focus ring) needs 3:1 against the surface it sits on.

@@ -8,7 +8,7 @@ import { freshness } from '@/lib/freshness';
 import type { Dict } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { BottleImage } from '@/components/BottleImage';
-import { SpecChips } from '@/components/BottleHeader';
+import { SpecChips } from '@/components/SpecChips';
 import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceCompareChip, VERDICT_STYLE } from '@/components/PriceCompareChip';
 import { diffLabel } from '@/components/KrCompareChip';
@@ -47,7 +47,7 @@ function SavingsRow({ row, rank, max, now, d }: { row: KrRankRow; rank: number; 
   return (
     <li
       aria-labelledby={titleId}
-      className={cn('flex flex-col gap-3.5 rounded-2xl border bg-card p-4 shadow-card sm:p-5', rank === 1 && 'border-primary/25 bg-primary-soft/45')}
+      className={cn('flex flex-col gap-3.5 rounded-lg border bg-card p-4 sm:p-5', rank === 1 && 'border-primary/50')}
     >
       <p className="sr-only">
         {d.ranking.srRow(rank, d.compare.verdict[compare.verdict], d.compare.krLowest(kr), d.compare.usApprox(us), store, diff)}
@@ -68,7 +68,7 @@ function SavingsRow({ row, rank, max, now, d }: { row: KrRankRow; rank: number; 
               <ChevronRight aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-foreground sm:mt-1" />
             </LocaleLink>
           </h3>
-          <SpecChips spec={row} />
+          <SpecChips spec={{ sizeMl: row.sizeMl, proof: row.proof, batch: row.batch }} />
           <p aria-hidden className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-medium text-muted-foreground">
             <span className="sr-only">{d.ranking.usStoreLabel}</span>
             <span lang="en" className="font-semibold text-foreground/85">
@@ -127,7 +127,7 @@ function Bar({ label, value, pct, barClass, strong = false }: { label: string; v
 export function SavingsLegend({ d }: { d: Dict }) {
   const tiers = ['must', 'big', 'good', 'small', 'worse'] as const;
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 text-sm">
+    <div className="flex flex-col gap-3 rounded-lg border p-4 text-sm">
       <ul aria-label={d.ranking.legendLabel} className="flex flex-wrap gap-x-5 gap-y-1.5">
         <li className="flex items-center gap-2">
           <span aria-hidden className="h-3 w-6 rounded-r-full rounded-l-sm bg-kr-bar" />

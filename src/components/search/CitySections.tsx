@@ -51,9 +51,11 @@ export async function CitySections({
   return (
     <>
       {mine && selectedCity && mineCap && (
-        <section aria-labelledby="city-h" className="flex flex-col gap-4">
+        <section aria-labelledby="city-h" className="flex flex-col gap-4 border-t pt-5">
           <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-bold tracking-[0.12em] text-primary">{d.search.yourCity}</p>
+            <p lang="en" className="text-[0.6875rem] tracking-[0.3em] text-primary">
+              {d.search.yourCity}
+            </p>
             <SectionHeader
               id="city-h"
               icon={MapPin}
@@ -63,7 +65,7 @@ export async function CitySections({
             />
           </div>
           {mine.groups.length === 0 ? (
-            <p className="rounded-2xl border border-dashed px-4 py-6 text-center text-muted-foreground">{d.search.sectionEmpty}</p>
+            <p className="rounded-lg border px-4 py-6 text-center text-muted-foreground">{d.search.sectionEmpty}</p>
           ) : (
             <GroupList groups={mineCap.visible} {...list} d={d} />
           )}
@@ -77,23 +79,23 @@ export async function CitySections({
       )}
 
       {others.length > 0 && selectedCity && (
-        <section aria-labelledby="elsewhere-h" className="flex flex-col gap-3">
-          <h2 id="elsewhere-h" className="text-xs font-bold tracking-[0.12em] text-muted-foreground">
+        <section aria-labelledby="elsewhere-h" className="flex flex-col gap-3 border-t pt-5">
+          <h2 id="elsewhere-h" lang="en" className="text-[0.6875rem] font-normal tracking-[0.3em] text-muted-foreground">
             {d.search.elsewhere(d.countryEn[selectedCity.country])}
           </h2>
           {others.map((sec) => {
             const cap = capGroups(sec.groups, othersShow);
             return (
-              <details key={sec.city} open={othersOpen} className="group/city rounded-2xl border bg-muted/60">
-                <summary className="flex min-h-12 cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                  <span className="font-bold">{d.city[sec.city]}</span>
+              <details key={sec.city} open={othersOpen} className="group/city rounded-md border">
+                <summary className="flex min-h-12 cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-4 py-3 transition-colors hover:bg-muted/60">
+                  <span className="font-serif font-medium">{d.city[sec.city]}</span>
                   <span className="text-sm text-muted-foreground tabular">
                     {d.search.otherCitySummary(
                       sec.storeCount,
                       sec.bestAvailableCents !== null ? formatUsd(sec.bestAvailableCents) : null,
                     )}
                   </span>
-                  <ChevronDown aria-hidden className="ml-auto size-4 transition-transform group-open/city:rotate-180" />
+                  <ChevronDown aria-hidden className="ml-auto size-4 text-primary transition-transform group-open/city:rotate-180" />
                 </summary>
                 <div className="flex flex-col gap-4 p-3 pt-1 sm:p-4 sm:pt-1">
                   <GroupList groups={cap.visible} {...list} d={d} />

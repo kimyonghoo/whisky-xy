@@ -41,9 +41,9 @@ function CompareSkeleton({ d }: { d: Dict }) {
       <p role="status" className="sr-only">
         {d.ranking.loading}
       </p>
-      <Skeleton className="h-28 w-full rounded-2xl" />
+      <Skeleton className="h-28 w-full rounded-lg" />
       {[0, 1, 2].map((i) => (
-        <Skeleton key={i} className="h-52 w-full rounded-2xl" />
+        <Skeleton key={i} className="h-52 w-full rounded-lg" />
       ))}
     </div>
   );
@@ -84,10 +84,10 @@ async function CompareView({ d }: { d: Dict }) {
     <>
       <section aria-labelledby="rank-h" className="flex flex-col gap-4">
         <div className="flex items-baseline gap-2">
-          <h2 id="rank-h" className="text-xl font-bold tracking-tight sm:text-2xl">
+          <h2 id="rank-h" className="font-serif text-xl font-medium sm:text-2xl">
             {d.ranking.listHeading}
           </h2>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground tabular">
+          <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular">
             {d.ranking.count(r.rows.length)}
           </span>
         </div>

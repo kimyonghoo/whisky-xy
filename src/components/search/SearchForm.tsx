@@ -27,7 +27,7 @@ export interface SearchFormValues {
 }
 
 const chip =
-  'inline-flex h-10 items-center gap-1.5 rounded-full border border-border-strong bg-card px-3.5 text-sm font-semibold text-foreground shadow-card transition-colors select-none hover:bg-muted pointer-coarse:min-h-11';
+  'inline-flex h-10 items-center gap-1.5 rounded-md border border-border-strong bg-card px-3.5 text-sm font-medium text-foreground transition-colors select-none hover:bg-muted pointer-coarse:min-h-11';
 
 /**
  * Search form. Works as a plain GET form without JS; with JS it navigates in a
@@ -139,11 +139,12 @@ export function SearchForm({
           <button
             type="submit"
             disabled={pending}
+            // The visible label is English caps; the accessible name keeps it (label in name) and adds the page language.
+            aria-label={pending ? d.search.pending : d.search.submitCapsLabel}
             className="flex h-11 shrink-0 items-center gap-2 rounded-md px-1.5 text-xs font-medium tracking-[0.18em] text-primary sm:px-2 sm:tracking-[0.24em] transition-colors hover:text-primary-hover disabled:opacity-60"
           >
             {pending && <LoaderCircle aria-hidden className="size-4 motion-safe:animate-spin" />}
             <span lang="en">{d.search.submitCaps}</span>
-            {pending && <span className="sr-only">{d.search.pending}</span>}
           </button>
         </div>
       ) : (
@@ -179,7 +180,7 @@ export function SearchForm({
             <input type="checkbox" name="inStock" value="1" defaultChecked={values.inStock} className="peer sr-only" />
             <span
               aria-hidden
-              className="flex size-4 items-center justify-center rounded border border-border-strong bg-card peer-checked:border-instock peer-checked:bg-instock peer-checked:text-white"
+              className="flex size-4 items-center justify-center rounded-sm border border-input bg-background text-instock-fg peer-checked:border-instock-fg"
             >
               <Check className="size-3 opacity-0 group-has-checked/chk:opacity-100" strokeWidth={3} />
             </span>
@@ -191,12 +192,12 @@ export function SearchForm({
               <SlidersHorizontal aria-hidden className="size-4" />
               {d.search.filters}
               {filterCount > 0 && (
-                <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground tabular">
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-sm border border-primary/70 px-1 text-xs font-semibold text-primary tabular">
                   {filterCount}
                 </span>
               )}
             </summary>
-            <div className="absolute inset-x-0 top-full z-30 mt-2 flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-raised sm:p-5">
+            <div className="absolute inset-x-0 top-full z-30 mt-2 flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-raised sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(2,minmax(0,1fr))]">
                 <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">
                   {d.search.sizeLabel}

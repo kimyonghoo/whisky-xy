@@ -39,6 +39,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-honey: var(--honey);
+  --color-on-solid: var(--on-solid);
 
   /* Semantic status colors: -fg text/icons, -bg tint, -line border, solid = filled. */
   --color-instock: var(--instock);
@@ -151,6 +152,8 @@
   --info-bg: #0f1823;
   --info-line: #26476a;
   --destructive: #f07167;
+  /* Text on the few small solid status fills (verdict badges, "solid" badge). Never a surface. */
+  --on-solid: #ffffff;
 
   /* Korea comparison verdicts (docs/design-system.md §3a). Ink ≥ 4.5:1 on its band and on card; bars ≥ 3:1 on card. */
   --verdict-must: #137347;
@@ -246,6 +249,14 @@
 div.leaflet-container {
   font-family: var(--font-sans);
   background: var(--muted);
+}
+/*
+ * Standard OSM tiles are drawn for a light page. Inverting them (and turning the hue back so water
+ * stays blue-grey) gives a dark map whose labels keep their original contrast, light on dark.
+ * Only the tile layer is filtered: markers, popups and controls keep their real token colours.
+ */
+.leaflet-container .map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.4);
 }
 .leaflet-container .map-popup a {
   color: revert-layer;

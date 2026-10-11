@@ -13,7 +13,6 @@ const baseVariants = cva(
       variant: {
         // Gold is a line and a label, never a large fill: the primary action is a gold outline on black.
         default: "border-primary/70 bg-transparent text-primary hover:border-primary hover:bg-primary-soft",
-        dark: "bg-foreground text-background hover:bg-foreground/90",
         outline:
           "border-border-strong bg-card text-foreground hover:border-foreground/30 hover:bg-muted",
         secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklab,var(--secondary),var(--foreground)_6%)]",

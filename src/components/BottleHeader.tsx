@@ -1,31 +1,7 @@
-import { Badge } from '@/components/ui/badge';
 import { BottleImage } from '@/components/BottleImage';
-import { cn } from '@/lib/utils';
+import { SpecChips, type BottleSpec } from '@/components/SpecChips';
 
-export interface BottleSpec {
-  sizeMl: number | null;
-  proof: number | null;
-  batch: string | null;
-}
-
-/** "750 ml", "101 proof", batch: the facts that tell near-identical bottles apart. */
-export function SpecChips({ spec, size = 'sm', className }: { spec: BottleSpec; size?: 'sm' | 'md' | 'lg'; className?: string }) {
-  const items = [
-    spec.sizeMl != null ? `${spec.sizeMl} ml` : null,
-    spec.proof != null ? `${spec.proof} proof` : null,
-    spec.batch,
-  ].filter((x): x is string => Boolean(x));
-  if (items.length === 0) return null;
-  return (
-    <div className={cn('flex flex-wrap gap-1.5', className)}>
-      {items.map((t) => (
-        <Badge key={t} variant="spec" size={size} className="tabular">
-          {t}
-        </Badge>
-      ))}
-    </div>
-  );
-}
+export { SpecChips, type BottleSpec };
 
 /**
  * Bottle identity: photo + exact English title + spec chips.
@@ -52,11 +28,11 @@ export function BottleHeader({
   if (variant === 'hero') {
     return (
       <header className="flex flex-col gap-4">
-        <BottleImage src={imageUrl} alt={title} eager className="aspect-[4/3] max-h-80 w-full rounded-2xl shadow-card" />
+        <BottleImage src={imageUrl} alt={title} eager className="aspect-[4/3] max-h-80 w-full rounded-lg" />
         <div className="flex flex-col gap-2.5">
-          <H className="text-[1.75rem] leading-[1.2] font-bold tracking-tight text-balance sm:text-4xl">{title}</H>
+          <H lang="en" className="font-serif text-[1.75rem] leading-[1.2] font-medium text-balance sm:text-4xl">{title}</H>
           {subtitle && <p className="text-lg text-muted-foreground">{subtitle}</p>}
-          <SpecChips spec={spec} size="lg" />
+          <SpecChips spec={{ sizeMl: spec.sizeMl, proof: spec.proof, batch: spec.batch }} size="lg" />
           {children}
         </div>
       </header>
@@ -70,7 +46,7 @@ export function BottleHeader({
           {title}
           {subtitle && <span className="font-medium text-muted-foreground"> · {subtitle}</span>}
         </H>
-        <SpecChips spec={spec} />
+        <SpecChips spec={{ sizeMl: spec.sizeMl, proof: spec.proof, batch: spec.batch }} />
         {children}
       </div>
     </div>

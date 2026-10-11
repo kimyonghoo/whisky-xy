@@ -12,7 +12,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground",
+        default: "border-primary/60 bg-transparent text-primary",
         secondary: "border-transparent bg-secondary text-secondary-foreground",
         outline: "border-border-strong bg-card text-foreground",
         spec: "border-border bg-card text-foreground/85 font-medium",
@@ -22,7 +22,7 @@ const badgeVariants = cva(
         stale: "border-stale-line bg-stale-bg text-stale-fg",
         danger: "border-danger-line bg-danger-bg text-danger-fg",
         info: "border-info-line bg-info-bg text-info-fg",
-        solid: "border-transparent bg-instock text-white",
+        solid: "border-transparent bg-instock text-on-solid",
       },
       size: {
         sm: "h-6 px-2 text-xs [&>svg]:size-3.5",

@@ -56,7 +56,7 @@ export function BottleResult({
             <span className="text-xs font-medium text-muted-foreground tabular">{d.group.stores(s.inStockCount, s.storeCount)}</span>
           </div>
         </BottleHeader>
-        <div className="flex items-baseline justify-between gap-3 rounded-xl bg-muted/70 px-3.5 py-2.5 sm:min-w-40 sm:flex-col sm:items-end sm:bg-transparent sm:p-0 sm:text-right">
+        <div className="flex items-baseline justify-between gap-3 rounded-lg bg-muted/70 px-3.5 py-2.5 sm:min-w-40 sm:flex-col sm:items-end sm:bg-transparent sm:p-0 sm:text-right">
           {s.cheapest ? (
             <>
               <span className="text-sm font-semibold text-primary">

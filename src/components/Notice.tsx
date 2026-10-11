@@ -32,7 +32,7 @@ export function Notice({
 }) {
   const t = TONE[tone];
   return (
-    <div role={urgent ? 'alert' : undefined} className={cn('flex gap-3 rounded-xl border p-4', t.box, className)}>
+    <div role={urgent ? 'alert' : undefined} className={cn('flex gap-3 rounded-lg border p-4', t.box, className)}>
       <t.Icon aria-hidden className={cn('mt-0.5 size-5 shrink-0', t.icon)} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {title && <p className="text-base leading-snug font-bold">{title}</p>}

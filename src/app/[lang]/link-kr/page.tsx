@@ -62,19 +62,21 @@ function PanelSkeleton({ d }: { d: Dict }) {
       <p role="status" className="sr-only">
         {d.linkKr.loading}
       </p>
-      <Skeleton className="h-36 w-full rounded-2xl" />
-      <Skeleton className="h-28 w-full rounded-2xl" />
+      <Skeleton className="h-36 w-full rounded-lg" />
+      <Skeleton className="h-28 w-full rounded-lg" />
     </div>
   );
 }
 
 async function LinkKrView({ searchParams, d }: { searchParams: Promise<RawParams>; d: Dict }) {
+  // connection() before isAdmin: the session check reads the clock, which must never run in a
+  // prerender (cookies() alone resolves in the App Shell render under partial prefetching).
+  await connection();
   const jar = await cookies();
   if (!isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY)) return <KeyGate body={d.linkKr.gateBody} />;
 
   const raw = await searchParams;
   const bottleKey = parseBottleParam(raw.bottle);
-  await connection();
   const db = await getDb();
   // bottleKey comes from the URL: only keys of existing public listings are accepted.
   const bottle = bottleKey ? await getBottleSummary(db, bottleKey) : null;
@@ -111,7 +113,7 @@ async function LinkKrView({ searchParams, d }: { searchParams: Promise<RawParams
       </div>
 
       <section aria-labelledby="ds-h" className="flex flex-col gap-4">
-        <h2 id="ds-h" className="text-xl font-bold tracking-tight">
+        <h2 id="ds-h" className="font-serif text-xl font-medium">
           {d.linkKr.searchHeading}
         </h2>
         {/* GET form: works without JS and keeps the query in the URL. */}
@@ -154,8 +156,8 @@ async function LinkKrView({ searchParams, d }: { searchParams: Promise<RawParams
 
 function UsSummary({ bottle, d }: { bottle: BottleSummary; d: Dict }) {
   return (
-    <section aria-labelledby="us-h" className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card sm:p-5">
-      <h2 id="us-h" className="text-sm font-semibold text-primary">
+    <section aria-labelledby="us-h" className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:p-5">
+      <h2 id="us-h" className="text-xs font-medium tracking-[0.06em] text-primary">
         {d.linkKr.usHeading}
       </h2>
       <BottleHeader title={bottle.title} imageUrl={bottle.imageUrl} spec={bottle} headingLevel="h3">
@@ -170,8 +172,8 @@ function UsSummary({ bottle, d }: { bottle: BottleSummary; d: Dict }) {
 
 function CurrentLink({ link, bottleKey, now, d }: { link: KrLink | null; bottleKey: string; now: Date; d: Dict }) {
   return (
-    <section aria-labelledby="cur-h" className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card sm:p-5">
-      <h2 id="cur-h" className="text-sm font-semibold text-primary">
+    <section aria-labelledby="cur-h" className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:p-5">
+      <h2 id="cur-h" className="text-xs font-medium tracking-[0.06em] text-primary">
         {d.linkKr.currentHeading}
       </h2>
       {link ? (
@@ -206,7 +208,7 @@ function CurrentLink({ link, bottleKey, now, d }: { link: KrLink | null; bottleK
           </div>
         </>
       ) : (
-        <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">{d.linkKr.noneLinked}</p>
+        <p className="rounded-md border px-4 py-6 text-center text-sm text-muted-foreground">{d.linkKr.noneLinked}</p>
       )}
     </section>
   );
@@ -219,7 +221,7 @@ function ResultsSkeleton({ d }: { d: Dict }) {
         {d.linkKr.searching}
       </p>
       {[0, 1, 2].map((i) => (
-        <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+        <Skeleton key={i} className="h-24 w-full rounded-lg" />
       ))}
     </div>
   );
@@ -252,8 +254,8 @@ async function DailyshotResults({ q, bottle, from, currentId, d }: { q: string; 
             <li
               key={c.productId}
               className={cn(
-                'flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card sm:flex-row sm:items-center sm:gap-4',
-                current && 'border-primary/30 bg-primary-soft/45',
+                'flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:gap-4',
+                current && 'border-primary/50',
               )}
             >
               <div className="flex min-w-0 flex-1 gap-3.5">

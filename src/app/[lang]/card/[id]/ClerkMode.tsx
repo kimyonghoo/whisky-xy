@@ -9,7 +9,7 @@ type WakeLock = { release: () => Promise<void> };
 
 /**
  * Full-screen, high-contrast view to hand the phone to a clerk.
- * Black on white, huge type, tap anywhere / Esc / close button to exit.
+ * Off-white on black (the site theme, ~17:1), huge type, tap anywhere / Esc / close button to exit.
  * Keeps the screen awake while open where the browser supports it.
  */
 export function ClerkMode({
@@ -65,7 +65,7 @@ export function ClerkMode({
 
   return (
     <>
-      <Button ref={openerRef} type="button" variant="dark" size="xl" className="w-full" onClick={() => setOpen(true)}>
+      <Button ref={openerRef} type="button" variant="outline" size="xl" className="w-full" onClick={() => setOpen(true)}>
         <Hand aria-hidden />
         {d.card.showClerk}
       </Button>
@@ -75,16 +75,16 @@ export function ClerkMode({
           aria-modal="true"
           aria-label={title}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-50 flex cursor-pointer flex-col overflow-y-auto bg-white text-black motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+          className="fixed inset-0 z-50 flex cursor-pointer flex-col overflow-y-auto bg-background text-foreground motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
         >
           <div className="flex items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))]">
-            <p className="text-base font-medium text-neutral-600">{d.card.clerkClose}</p>
+            <p className="text-base font-medium text-muted-foreground">{d.card.clerkClose}</p>
             <button
               ref={closeRef}
               type="button"
               onClick={() => setOpen(false)}
               aria-label={d.card.clerkCloseButton}
-              className="flex size-12 items-center justify-center rounded-full bg-neutral-100 text-black outline-none focus-visible:ring-4 focus-visible:ring-black"
+              className="flex size-12 items-center justify-center rounded-md border border-border-strong text-foreground transition-colors hover:bg-muted"
             >
               <X aria-hidden className="size-7" />
             </button>
@@ -93,7 +93,7 @@ export function ClerkMode({
             {imageUrl && (
               // Hotlinked from the store CDN on purpose (never copied); already https-checked.
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt="" referrerPolicy="no-referrer" className="max-h-[36vh] w-auto object-contain" />
+              <img src={imageUrl} alt="" referrerPolicy="no-referrer" className="max-h-[36vh] w-auto rounded-md object-contain" />
             )}
             <h2 lang="en" className="text-[2.5rem] leading-[1.1] font-extrabold tracking-tight text-balance sm:text-6xl">
               {title}
@@ -104,11 +104,11 @@ export function ClerkMode({
               </p>
             )}
             {price && (
-              <p lang="en" className="text-2xl font-semibold text-neutral-700 tabular sm:text-3xl">
+              <p lang="en" className="text-2xl font-semibold text-muted-foreground tabular sm:text-3xl">
                 {price}
               </p>
             )}
-            <p lang="en" className="mt-2 rounded-2xl bg-black px-6 py-4 text-3xl font-extrabold text-white sm:text-5xl">
+            <p lang="en" className="mt-2 rounded-md border-2 border-primary px-6 py-4 text-3xl font-extrabold text-primary sm:text-5xl">
               {d.card.clerkQuestion}
             </p>
           </div>

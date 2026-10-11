@@ -1,7 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Section heading: icon + title + optional count chip + one-line sub. */
+/** A small outlined count next to a heading ("12종", "3개"), shared so every list counts alike. */
+export const countTagClass =
+  'inline-flex items-center rounded-sm border border-border-strong px-1.5 py-0.5 font-sans text-xs font-medium text-muted-foreground tabular';
+
+/** Section heading: optional line icon + serif title + optional count + one-line sub. */
 export function SectionHeader({
   id,
   icon: Icon,
@@ -26,24 +30,13 @@ export function SectionHeader({
       <Heading
         id={id}
         className={cn(
-          'flex items-center gap-2.5 font-bold tracking-tight',
+          'flex flex-wrap items-center gap-x-2.5 gap-y-1 font-serif font-medium',
           tone === 'primary' ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl',
         )}
       >
-        {Icon && (
-          <span
-            className={cn(
-              'flex size-8 shrink-0 items-center justify-center rounded-lg',
-              tone === 'primary' ? 'bg-primary text-primary-foreground' : 'bg-border text-foreground/70',
-            )}
-          >
-            <Icon aria-hidden className="size-[1.125rem]" />
-          </span>
-        )}
+        {Icon && <Icon aria-hidden className={cn('size-[1.125rem] shrink-0', tone === 'primary' ? 'text-primary' : 'text-muted-foreground')} />}
         {title}
-        {count && (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-sm font-semibold text-muted-foreground tabular">{count}</span>
-        )}
+        {count && <span className={countTagClass}>{count}</span>}
       </Heading>
       {sub && <p className="text-sm text-muted-foreground">{sub}</p>}
     </div>

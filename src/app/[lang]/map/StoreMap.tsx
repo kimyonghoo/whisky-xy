@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import {
-  STORE_ZOOM, cityView, mapTileConfig, type MapStore, type MapViewId,
+  OSM_TILE_URL, STORE_ZOOM, cityView, mapTileConfig, type MapStore, type MapViewId,
 } from '@/lib/map-view';
 import type { Dict } from '@/lib/i18n';
 import { useDict } from '@/lib/i18n/client';
@@ -33,6 +33,9 @@ export interface StoreMapProps {
 
 // Inlined at build time. OSM is the fallback; see mapTileConfig for the usage-policy note.
 const TILES = mapTileConfig(process.env.NEXT_PUBLIC_MAP_TILE_URL, process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION);
+// Standard OSM tiles are light; on the dark site they are inverted in CSS (globals.css, .map-tiles-dark),
+// which keeps label contrast. A configured provider is shown as-is (it may already be dark).
+const TILE_CLASS = TILES.url === OSM_TILE_URL ? 'map-tiles-dark' : undefined;
 const BOUNDS_PADDING: L.PointExpression = [28, 28];
 const CITY_MAX_ZOOM = 13;
 
@@ -49,7 +52,7 @@ function markerIcon(store: MapStore, d: Dict): L.DivIcon {
   dot.className = [
     'store-marker-dot flex size-[1.875rem] items-center justify-center rounded-full border-2 text-sm font-bold tabular shadow-raised',
     'transition-transform duration-150 group-data-[selected]/marker:scale-125 group-data-[selected]/marker:ring-4 group-data-[selected]/marker:ring-honey/70',
-    store.dimmed ? 'border-soldout-line bg-soldout-bg text-soldout-fg' : 'border-white bg-primary text-primary-foreground',
+    store.dimmed ? 'border-soldout-line bg-soldout-bg text-soldout-fg' : 'border-background bg-primary text-primary-foreground',
   ].join(' ');
   const num = document.createElement('span');
   num.setAttribute('aria-hidden', 'true');
@@ -148,7 +151,7 @@ export default function StoreMap({
 
   return (
     <MapContainer {...initial} scrollWheelZoom={false} className="size-full font-sans">
-      <TileLayer url={TILES.url} attribution={TILES.attribution} eventHandlers={{ tileerror: onTileError }} />
+      <TileLayer url={TILES.url} attribution={TILES.attribution} className={TILE_CLASS} eventHandlers={{ tileerror: onTileError }} />
       {stores.map((s) => (
         <Marker
           key={s.id}

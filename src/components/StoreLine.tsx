@@ -11,14 +11,14 @@ import { CopyLinkButton } from '@/components/CopyLinkButton';
 import { CityChip } from '@/components/CityChip';
 import { LocaleLink } from '@/components/LocaleLink';
 
-/** Rank marker for ranked lists: 1 is filled copper, others outlined, unranked a dash. */
+/** Rank marker for ranked lists: 1 is a gold ring, others a hairline ring, unranked a dash. */
 export function RankMarker({ rank }: { rank: number | null }) {
   return (
     <span
       aria-hidden
       className={cn(
-        'flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular',
-        rank === 1 && 'bg-primary text-primary-foreground',
+        'flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular',
+        rank === 1 && 'border border-primary text-primary',
         rank !== null && rank > 1 && 'border border-border-strong text-foreground/80',
         rank === null && 'text-muted-foreground',
       )}
@@ -38,7 +38,7 @@ export function StoreLine({ row, rank, bottleKey, q, now, d }: { row: ListingRow
   const mapHref = `/map?bottle=${encodeURIComponent(bottleKey)}`;
   const best = rank === 1;
   return (
-    <li className={cn('flex flex-col gap-2.5 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-5', best && 'bg-primary-soft/45')}>
+    <li className={cn('flex flex-col gap-2.5 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-5', best && 'relative before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary')}>
       <LocaleLink
         href={`/card/${row.id}`}
         prefetch={false}

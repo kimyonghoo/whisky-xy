@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-/** Top-of-page title block for list/tool screens (watchlist, map, comparison). */
+/** Top-of-page title block for list/tool screens (watchlist, map, comparison): gold eyebrow, serif title. */
 export function PageHeader({
   eyebrow,
   title,
@@ -18,10 +18,12 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn('flex flex-col gap-2', className)}>
-      {eyebrow && <p className="text-sm font-semibold tracking-wide text-primary">{eyebrow}</p>}
-      <h1 lang={titleLang} className="text-[1.75rem] leading-tight font-bold tracking-tight text-balance sm:text-4xl">{title}</h1>
-      {lead && <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">{lead}</p>}
+    <header className={cn('flex flex-col gap-2.5 border-b pb-6 sm:pb-8', className)}>
+      {eyebrow && <p className="text-xs font-medium tracking-[0.06em] text-primary">{eyebrow}</p>}
+      <h1 lang={titleLang} className="font-serif text-[1.75rem] leading-tight font-medium text-balance sm:text-4xl">
+        {title}
+      </h1>
+      {lead && <p className="max-w-2xl text-[0.9375rem] leading-relaxed text-muted-foreground sm:text-base">{lead}</p>}
       {children}
     </header>
   );

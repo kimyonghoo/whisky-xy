@@ -26,13 +26,13 @@ export function KeyGate({ body }: { body?: string }) {
   return (
     <section
       aria-labelledby="gate-h"
-      className="mx-auto flex w-full max-w-md flex-col gap-5 rounded-2xl border bg-card p-5 shadow-card sm:p-7"
+      className="mx-auto flex w-full max-w-md flex-col gap-5 rounded-lg border bg-card p-5 sm:p-7"
     >
       <div className="flex flex-col items-start gap-3">
-        <span className="flex size-12 items-center justify-center rounded-full bg-primary-soft text-primary">
-          <KeyRound aria-hidden className="size-6" />
+        <span className="flex size-11 items-center justify-center rounded-md border border-border-strong text-primary">
+          <KeyRound aria-hidden className="size-5" strokeWidth={1.5} />
         </span>
-        <h2 id="gate-h" className="text-xl font-bold tracking-tight sm:text-2xl">
+        <h2 id="gate-h" className="font-serif text-xl font-medium sm:text-2xl">
           {d.watch.gate.title}
         </h2>
         <p className="text-[0.9375rem] text-muted-foreground">{body ?? d.watch.gate.body}</p>

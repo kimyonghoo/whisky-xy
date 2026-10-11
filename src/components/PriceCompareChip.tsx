@@ -10,7 +10,7 @@ export const VERDICT_STYLE: Record<
 > = {
   must: {
     Icon: PartyPopper,
-    badge: 'border-transparent bg-verdict-must text-white ring-2 ring-verdict-must-line',
+    badge: 'border-transparent bg-verdict-must text-on-solid ring-2 ring-verdict-must-line',
     icon: 'text-verdict-must-glow',
     band: 'border-verdict-must-line bg-verdict-must-bg border-2',
     ink: 'text-verdict-must-ink',
@@ -18,7 +18,7 @@ export const VERDICT_STYLE: Record<
   },
   big: {
     Icon: ChevronsDown,
-    badge: 'border-transparent bg-verdict-big text-white',
+    badge: 'border-transparent bg-verdict-big text-on-solid',
     band: 'border-verdict-big-line bg-verdict-big-bg',
     ink: 'text-verdict-big-ink',
     bar: 'bg-verdict-big',
@@ -39,7 +39,7 @@ export const VERDICT_STYLE: Record<
   },
   worse: {
     Icon: TrendingUp,
-    badge: 'border-transparent bg-verdict-worse text-white',
+    badge: 'border-transparent bg-verdict-worse text-on-solid',
     band: 'border-verdict-worse-line bg-verdict-worse-bg',
     ink: 'text-verdict-worse-ink',
     bar: 'bg-verdict-worse',
@@ -71,7 +71,7 @@ export function PriceCompareChip({
   return (
     <span
       className={cn(
-        'inline-flex w-fit shrink-0 items-center gap-1 rounded-full border font-bold whitespace-nowrap [&>svg]:shrink-0',
+        'inline-flex w-fit shrink-0 items-center gap-1 rounded-sm border font-semibold whitespace-nowrap [&>svg]:shrink-0',
         SIZE[size],
         v.badge,
         className,

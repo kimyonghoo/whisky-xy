@@ -7,14 +7,14 @@ export function CardSkeleton({ d }: { d: Dict }) {
       <p role="status" className="sr-only">
         {d.loadingCard}
       </p>
-      <Skeleton className="aspect-[4/3] max-h-80 w-full rounded-2xl" />
+      <Skeleton className="aspect-[4/3] max-h-80 w-full rounded-lg" />
       <Skeleton className="h-9 w-11/12" />
       <div className="flex gap-2">
-        <Skeleton className="h-9 w-24 rounded-full" />
-        <Skeleton className="h-9 w-28 rounded-full" />
+        <Skeleton className="h-9 w-24 rounded-md" />
+        <Skeleton className="h-9 w-28 rounded-md" />
       </div>
-      <Skeleton className="h-44 w-full rounded-2xl" />
-      <Skeleton className="h-36 w-full rounded-2xl" />
+      <Skeleton className="h-44 w-full rounded-lg" />
+      <Skeleton className="h-36 w-full rounded-lg" />
     </main>
   );
 }

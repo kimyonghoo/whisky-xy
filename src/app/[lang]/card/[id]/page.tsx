@@ -69,7 +69,7 @@ async function CardView({ params, d }: Props & { d: Dict }) {
   const image = safeHttpsUrl(listing.imageUrl);
   const storeUrl = safeHttpsUrl(listing.url);
   const taxIncluded = withTaxCents(listing.priceCents, store.taxRate);
-  const detail = [listing.sizeMl != null ? `${listing.sizeMl} ml` : null, listing.proof != null ? `${listing.proof} proof` : null, listing.batch]
+  const detail = [listing.sizeMl != null ? d.spec.size(listing.sizeMl) : null, listing.proof != null ? d.spec.proof(listing.proof) : null, listing.batch]
     .filter(Boolean)
     .join(' · ');
   const now = new Date();
@@ -99,7 +99,7 @@ async function CardView({ params, d }: Props & { d: Dict }) {
       />
 
       {/* Price + stock: the decision. */}
-      <section aria-labelledby="status-h" className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-card">
+      <section aria-labelledby="status-h" className="flex flex-col gap-4 rounded-lg border bg-card p-5">
         <h2 id="status-h" className="sr-only">
           {d.card.statusHeading}
         </h2>
@@ -152,10 +152,10 @@ async function CardView({ params, d }: Props & { d: Dict }) {
       {stale && status !== 'failed' && <Notice tone="stale" title={d.stale.warning}>{d.card.staleHint}</Notice>}
 
       {/* Store + primary actions. On phones the actions dock to the bottom edge (thumb reach). */}
-      <section aria-labelledby="store-h" className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-card">
+      <section aria-labelledby="store-h" className="flex flex-col gap-4 rounded-lg border bg-card p-5">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-muted-foreground">{d.card.storeHeading}</p>
-          <h2 id="store-h" className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight">
+          <p className="text-xs font-medium tracking-[0.06em] text-primary">{d.card.storeHeading}</p>
+          <h2 id="store-h" className="flex flex-wrap items-center gap-2 font-serif text-2xl font-medium">
             {store.name}
             <CityChip city={store.city} />
           </h2>
@@ -212,8 +212,8 @@ async function CardView({ params, d }: Props & { d: Dict }) {
 
       <ShareCardButton path={`/card/${listing.id}`} title={listing.title} className="w-full" />
 
-      <details className="group/hist rounded-2xl border bg-card shadow-card">
-        <summary className="flex min-h-14 items-center gap-2 px-5 text-base font-semibold">
+      <details className="group/hist rounded-lg border bg-card">
+        <summary className="flex min-h-14 items-center gap-2 rounded-lg px-5 font-serif text-base font-medium">
           <History aria-hidden className="size-5 text-muted-foreground" />
           {d.card.history}
           <span className={badgeVariants({ variant: 'secondary', className: 'ml-auto tabular' })}>{history.length}</span>

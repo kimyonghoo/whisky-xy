@@ -130,7 +130,7 @@ export function StoreMapPanel({
           ref={mapBoxRef}
           role="region"
           aria-label={d.map.mapLabel}
-          className="relative isolate h-[min(55svh,26rem)] min-h-72 scroll-mt-20 overflow-hidden rounded-2xl border bg-muted shadow-card lg:h-[calc(100svh-10rem)] lg:max-h-[42rem]"
+          className="relative isolate h-[min(55svh,26rem)] min-h-72 scroll-mt-20 overflow-hidden rounded-lg border bg-muted lg:h-[calc(100svh-10rem)] lg:max-h-[42rem]"
         >
           <MapBoundary message={d.map.mapError}>
             <StoreMap
@@ -156,10 +156,10 @@ export function StoreMapPanel({
 
       <section aria-labelledby="stores-h" className="flex flex-col gap-3 lg:order-1">
         <div className="flex items-baseline gap-2">
-          <h2 id="stores-h" className="text-xl font-bold tracking-tight">
+          <h2 id="stores-h" className="font-serif text-xl font-medium">
             {d.map.listHeading}
           </h2>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground tabular">{d.map.storeCount(stores.length)}</span>
+          <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular">{d.map.storeCount(stores.length)}</span>
         </div>
         <ol className="flex flex-col gap-3">
           {stores.map((s) => {
@@ -173,9 +173,9 @@ export function StoreMapPanel({
                 }}
                 aria-current={selected ? 'true' : undefined}
                 className={cn(
-                  'flex scroll-mt-24 flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card transition-colors',
-                  s.dimmed && 'bg-muted/50 shadow-none',
-                  selected && 'border-primary ring-2 ring-primary/25',
+                  'flex scroll-mt-24 flex-col gap-3 rounded-lg border bg-card p-4 transition-colors',
+                  s.dimmed && 'bg-background',
+                  selected && 'border-primary',
                 )}
               >
                 <button

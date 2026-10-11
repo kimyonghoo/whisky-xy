@@ -71,7 +71,7 @@ export function KrCompareChip({
   const v = compare ? VERDICT_STYLE[compare.verdict] : null;
   return (
     <section aria-label={d.compare.heading} className="px-4 pb-4 sm:px-5">
-      <div className={cn('flex flex-col gap-2.5 rounded-xl border p-3 sm:p-3.5', v ? v.band : 'border-border bg-muted/60')}>
+      <div className={cn('flex flex-col gap-2.5 rounded-lg border p-3 sm:p-3.5', v ? v.band : 'border-border bg-muted/60')}>
         {compare ? <Verdict kr={kr} compare={compare} d={d} /> : <Unavailable kr={kr} d={d} />}
         <Meta kr={kr} now={now} d={d}>
           {admin && (
