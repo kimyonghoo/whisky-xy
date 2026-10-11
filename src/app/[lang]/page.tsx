@@ -12,8 +12,9 @@ import { activeFilterCount, distinctBottleCount, searchHref } from '@/lib/search
 import { formatUsd } from '@/lib/money';
 import type { Dict } from '@/lib/i18n';
 import { getDict } from '@/lib/i18n/server';
-import { STORES, getStore, type Store } from '@/lib/stores';
-import { CITY_COOKIE, isCityId, liveCities, resolveCity } from '@/lib/geo';
+import { getStore, type Store } from '@/lib/stores';
+import { COUNTRIES, CITY_COOKIE, citiesOf, isCityId, resolveCity, storesIn } from '@/lib/geo';
+import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { LocaleLink } from '@/components/LocaleLink';
 import { ComingSoonNotice } from '@/components/ComingSoonNotice';
@@ -43,18 +44,23 @@ function firstString(v: string | string[] | undefined): string {
   return (Array.isArray(v) ? v[0] : v) ?? '';
 }
 
-const exampleChip =
-  'inline-flex h-9 items-center rounded-full border border-border-strong bg-card px-3.5 text-sm font-medium text-foreground shadow-card transition-colors hover:border-primary/50 hover:bg-primary-soft pointer-coarse:min-h-11';
-
+/** `CURATED` + underlined example searches (the hero and the no-results state). */
 function Examples({ className, d }: { className?: string; d: Dict }) {
   return (
-    <div className={className}>
-      <p className="mb-2.5 text-sm font-semibold text-muted-foreground">{d.search.curatedLabel}</p>
-      <ul className="flex flex-wrap justify-center gap-2">
+    <div className={cn('flex flex-wrap items-center justify-center gap-x-4 gap-y-1', className)}>
+      <p lang="en" className="text-[0.6875rem] tracking-[0.2em] text-faint">
+        {d.search.curatedLabel}
+      </p>
+      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1">
         {d.search.examples.map((ex) => (
           <li key={ex}>
-            <LocaleLink href={searchHref({ q: ex })} prefetch={false} className={exampleChip} lang="en">
-              {ex}
+            <LocaleLink
+              href={searchHref({ q: ex })}
+              prefetch={false}
+              lang="en"
+              className="group/ex inline-flex min-h-9 items-center text-[0.8125rem] text-secondary-foreground transition-colors hover:text-primary pointer-coarse:min-h-11"
+            >
+              <span className="border-b border-border-strong pb-0.5 transition-colors group-hover/ex:border-primary/60">{ex}</span>
             </LocaleLink>
           </li>
         ))}
@@ -63,51 +69,71 @@ function Examples({ className, d }: { className?: string; d: Dict }) {
   );
 }
 
+/** Live cities with their public store counts, grouped by country (soon cities are left out). */
+function Coverage({ d }: { d: Dict }) {
+  const byCountry = COUNTRIES.map((country) => ({ country, cities: citiesOf(country).filter((c) => c.status === 'live') })).filter(
+    (g) => g.cities.length > 0,
+  );
+  return (
+    <section aria-labelledby="coverage-h" className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-baseline sm:gap-10 sm:px-6">
+      <h2 id="coverage-h" className="shrink-0 font-serif text-base font-medium">
+        {d.search.coverageTitle}
+      </h2>
+      <div className="flex flex-col gap-3">
+        {byCountry.map(({ country, cities }) => (
+          <div key={country} className="flex flex-col gap-1.5 sm:flex-row sm:items-baseline sm:gap-6">
+            <h3 lang="en" className="text-[0.6875rem] tracking-[0.28em] text-primary">
+              {d.countryEn[country]}
+            </h3>
+            <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+              {cities.map((c) => (
+                <li key={c.id} className="tabular">
+                  {d.search.coverageRegion(d.city[c.id], storesIn(c.id).length)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Hero({ values, d }: { values: SearchFormValues; d: Dict }) {
-  const stores = STORES.filter((s) => s.publicAllowed);
-  const cities = liveCities();
   return (
     <main id="main" className="flex-1">
-      <section className="border-b bg-[radial-gradient(120%_80%_at_50%_0%,var(--primary-soft)_0%,transparent_70%)]">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 pt-12 pb-14 text-center sm:px-6 sm:pt-20 sm:pb-20">
-          <p className="text-sm font-bold tracking-[0.12em] text-primary">{d.search.heroEyebrow}</p>
-          <h1 className="text-[2rem] leading-[1.15] font-extrabold tracking-tight text-balance sm:text-5xl">{d.search.heroTitle}</h1>
-          <p className="max-w-xl text-base text-pretty text-muted-foreground sm:text-lg">{d.search.heroLead}</p>
-          <div className="w-full max-w-2xl text-left">
+      <section className="bg-[radial-gradient(70%_60%_at_50%_0%,var(--primary-soft)_0%,transparent_70%)]">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 pt-12 pb-14 text-center sm:px-6 sm:pt-20 sm:pb-24">
+          <p lang="en" className="text-[0.625rem] tracking-[0.3em] text-balance text-primary uppercase sm:text-[0.6875rem] sm:tracking-[0.36em]">
+            {d.search.heroEyebrow}
+          </p>
+          <h1 className="mt-5 font-serif text-[1.75rem] leading-[1.35] font-medium text-balance sm:mt-6 sm:text-[2.5rem]">{d.search.heroTitle}</h1>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-pretty text-muted-foreground sm:text-[0.9375rem] sm:leading-[1.7]">{d.search.heroLead}</p>
+          <div className="mt-9 w-full max-w-xl text-left sm:mt-10">
             <SearchShell>
               <SearchForm values={values} filterCount={0} variant="hero" />
             </SearchShell>
           </div>
-          <Examples className="mt-1" d={d} />
+          <Examples className="mt-5 sm:mt-6" d={d} />
         </div>
       </section>
-      <section className="mx-auto grid w-full max-w-4xl gap-8 px-4 py-12 sm:grid-cols-[1fr_auto] sm:px-6">
-        <div>
-          <h2 className="text-lg font-bold tracking-tight">{d.search.howTitle}</h2>
-          <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-            {d.search.how.map((step) => (
-              <li key={step.kicker} className="flex gap-3 rounded-2xl border bg-card p-4 shadow-card">
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-xs font-bold tracking-[0.12em] text-primary tabular">{step.kicker}</span>
-                  <span className="font-semibold">{step.title}</span>
-                  <span className="text-sm text-muted-foreground">{step.body}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-        <div className="sm:w-52">
-          <h2 className="text-lg font-bold tracking-tight">{d.search.coverageTitle}</h2>
-          <ul className="mt-4 flex flex-col gap-2 text-sm">
-            {cities.map((c) => (
-              <li key={c.id} className="flex items-center gap-2">
-                <MapPin aria-hidden className="size-4 text-primary" />
-                {d.search.coverageRegion(d.city[c.id], stores.filter((s) => s.city === c.id).length)}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section aria-labelledby="how-h" className="border-y">
+        <h2 id="how-h" className="sr-only">
+          {d.search.howTitle}
+        </h2>
+        <ol className="mx-auto grid w-full max-w-5xl sm:grid-cols-3">
+          {d.search.how.map((step) => (
+            <li key={step.kicker} className="border-b px-5 py-6 last:border-b-0 sm:border-r sm:border-b-0 sm:px-7 sm:py-7 sm:last:border-r-0">
+              <p lang="en" className="text-[0.6875rem] tracking-[0.28em] text-primary">
+                {step.kicker}
+              </p>
+              <h3 className="mt-2 font-serif text-base font-medium">{step.title}</h3>
+              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">{step.body}</p>
+            </li>
+          ))}
+        </ol>
       </section>
+      <Coverage d={d} />
     </main>
   );
 }

@@ -6,12 +6,13 @@ import { cn } from "@/lib/utils"
  * Buttons — see docs/design-system.md "Actions".
  * On touch screens (pointer: coarse) every size grows to at least 44px.
  */
-const buttonVariants = cva(
+const baseVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-transparent bg-clip-padding font-semibold whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-150 select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 pointer-coarse:min-h-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[1.15em]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
+        // Gold is a line and a label, never a large fill: the primary action is a gold outline on black.
+        default: "border-primary/70 bg-transparent text-primary hover:border-primary hover:bg-primary-soft",
         dark: "bg-foreground text-background hover:bg-foreground/90",
         outline:
           "border-border-strong bg-card text-foreground hover:border-foreground/30 hover:bg-muted",
@@ -37,16 +38,25 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * cva only concatenates, so the base `border-transparent` and a variant's border colour would both
+ * land in the class list (stylesheet order would pick the winner). Merging here fixes it for links
+ * styled with `buttonVariants` too, not just for `<Button>`.
+ */
+function buttonVariants(props?: Parameters<typeof baseVariants>[0]): string {
+  return cn(baseVariants(props))
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props & VariantProps<typeof baseVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={buttonVariants({ variant, size, className })}
       {...props}
     />
   )

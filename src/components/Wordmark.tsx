@@ -31,8 +31,8 @@ export function Wordmark({ d }: { d: Dict }) {
   return (
     <span className="flex items-center gap-2 sm:gap-3">
       <BrandMark className="max-sm:size-6" />
-      {/* The header link carries an aria-label, so on the narrowest phones the mark stands alone. */}
-      <span className="font-display text-[0.8125rem] leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-foreground uppercase max-[24rem]:hidden sm:text-[1.0625rem] sm:tracking-[0.2em]">
+      {/* Phones have only the menu button beside it (city and language sit on a second row), so the name always fits. */}
+      <span className="font-display text-[0.9375rem] leading-none font-semibold tracking-[0.16em] whitespace-nowrap text-foreground uppercase sm:text-[1.0625rem] sm:tracking-[0.2em]">
         {d.site.title}
       </span>
     </span>

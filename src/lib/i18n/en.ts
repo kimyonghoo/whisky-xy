@@ -18,8 +18,9 @@ export const en: Dict = {
     current: (country: string, city: string) => `${country} · ${city}`,
     storesCount: (n: number) => `${n} ${n === 1 ? 'store' : 'stores'}`,
     soon: 'Coming soon',
+    countryLabel: 'Country',
   },
-  lang: { label: 'Language', ko: 'KO', en: 'EN' },
+  lang: { label: 'Language', ko: 'KO', en: 'EN', names: { ko: '한국어', en: 'English' } },
   freshness: {
     justNow: 'Checked just now',
     minutesAgo: (n: number) => `Checked ${n} min ago`,
@@ -27,7 +28,7 @@ export const en: Dict = {
     daysAgo: (n: number) => `Checked ${n} ${n === 1 ? 'day' : 'days'} ago`,
     nyTime: (date: string) => `${date}, New York time`,
   },
-  nav: { search: 'Search', map: 'Store map', compare: 'vs. Korea', watchlist: 'Watchlist', watchlistShort: 'Watch', label: 'Main menu', home: 'Home' },
+  nav: { search: 'Search', map: 'Store map', compare: 'vs. Korea', watchlist: 'Watchlist', label: 'Main menu', home: 'Home', menu: 'Menu' },
   site: {
     title: 'Whisky Index',
     titleKo: '위스키 인덱스',
@@ -47,6 +48,8 @@ export const en: Dict = {
     placeholder: 'Search by distillery, age or bottling',
     inputLabel: 'Search whisky',
     submit: 'Search',
+    /** The hero's underline search button, a tracked English caps label as in the mockup. */
+    submitCaps: 'SEARCH',
     curatedLabel: 'CURATED',
     /** One per style: Islay, Speyside, Japanese, Campbeltown, bourbon. Each must return results. */
     examples: ['Lagavulin 16', 'Macallan 18', 'Yamazaki 12', 'Springbank 15', "Blanton's"],

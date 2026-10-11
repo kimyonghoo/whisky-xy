@@ -14,9 +14,10 @@ export const ko = {
     label: '도시 선택',
     current: (country: string, city: string) => `${country} · ${city}`,
     storesCount: (n: number) => `매장 ${n}곳`,
-    soon: '오픈 예정',
+    soon: '준비 중',
+    countryLabel: '국가',
   },
-  lang: { label: '언어', ko: 'KO', en: 'EN' },
+  lang: { label: '언어', ko: 'KO', en: 'EN', names: { ko: '한국어', en: 'English' } },
   freshness: {
     justNow: '방금 확인',
     minutesAgo: (n: number) => `${n}분 전 확인`,
@@ -24,7 +25,7 @@ export const ko = {
     daysAgo: (n: number) => `${n}일 전 확인`,
     nyTime: (date: string) => `뉴욕 기준 ${date}`,
   },
-  nav: { search: '검색', map: '매장 지도', compare: '한국 대비', watchlist: '관심 목록', watchlistShort: '관심', label: '주요 메뉴', home: '홈으로' },
+  nav: { search: '검색', map: '매장 지도', compare: '한국 대비', watchlist: '관심 목록', label: '주요 메뉴', home: '홈으로', menu: '메뉴' },
   site: {
     title: 'Whisky Index',
     titleKo: '위스키 인덱스',
@@ -44,6 +45,8 @@ export const ko = {
     placeholder: '증류소, 숙성 연수, 보틀명으로 검색',
     inputLabel: '위스키 검색',
     submit: '검색',
+    /** The hero's underline search button, a tracked English caps label as in the mockup. */
+    submitCaps: 'SEARCH',
     curatedLabel: 'CURATED',
     /** One per style: Islay, Speyside, Japanese, Campbeltown, bourbon. Each must return results. */
     examples: ['Lagavulin 16', 'Macallan 18', 'Yamazaki 12', 'Springbank 15', "Blanton's"],

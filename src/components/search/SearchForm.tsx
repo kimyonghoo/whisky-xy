@@ -117,33 +117,61 @@ export function SearchForm({
     >
       {values.store && <input type="hidden" name="store" value={values.store} />}
       {values.city && <input type="hidden" name="city" value={values.city} />}
-      <div className="flex gap-2">
-        <label className="relative min-w-0 flex-1">
-          <span className="sr-only">{d.search.inputLabel}</span>
-          <Search
-            aria-hidden
-            className={cn('pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground', hero ? 'size-5' : 'size-[1.125rem]')}
-          />
-          <Input
-            name="q"
-            type="search"
-            defaultValue={values.q}
-            placeholder={values.store ? d.store.placeholder : d.search.placeholder}
-            // Browsing a store's list on a phone shouldn't pop the keyboard.
-            autoFocus={!values.q && !values.store}
-            enterKeyHint="search"
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            maxLength={200}
-            className={cn(hero ? 'h-14 rounded-xl pl-11 text-lg shadow-raised' : 'h-12 pl-10')}
-          />
-        </label>
-        <Button type="submit" size={hero ? 'xl' : 'lg'} className="min-w-12 px-4 sm:px-6" disabled={pending}>
-          {pending ? <LoaderCircle aria-hidden className="motion-safe:animate-spin" /> : <Search aria-hidden />}
-          <span className="sr-only sm:not-sr-only">{pending ? d.search.pending : d.search.submit}</span>
-        </Button>
-      </div>
+      {hero ? (
+        // Landing: a single gold underline with a tracked SEARCH label, as in the approved mockup.
+        <div className="flex items-center gap-3 border-b border-primary transition-[box-shadow,background-color] has-[input:focus-visible]:bg-muted/50 has-[input:focus-visible]:shadow-[0_1px_0_0_var(--color-primary)]">
+          <label className="min-w-0 flex-1">
+            <span className="sr-only">{d.search.inputLabel}</span>
+            <Input
+              name="q"
+              type="search"
+              defaultValue={values.q}
+              placeholder={d.search.placeholder}
+              autoFocus={!values.q}
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={200}
+              className="h-14 rounded-none border-0 bg-transparent px-1 placeholder:text-faint hover:border-0 focus-visible:outline-none"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={pending}
+            className="flex h-11 shrink-0 items-center gap-2 rounded-md px-1.5 text-xs font-medium tracking-[0.18em] text-primary sm:px-2 sm:tracking-[0.24em] transition-colors hover:text-primary-hover disabled:opacity-60"
+          >
+            {pending && <LoaderCircle aria-hidden className="size-4 motion-safe:animate-spin" />}
+            <span lang="en">{d.search.submitCaps}</span>
+            {pending && <span className="sr-only">{d.search.pending}</span>}
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">{d.search.inputLabel}</span>
+            <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-[1.125rem] -translate-y-1/2 text-muted-foreground" />
+            <Input
+              name="q"
+              type="search"
+              defaultValue={values.q}
+              placeholder={values.store ? d.store.placeholder : d.search.placeholder}
+              // Browsing a store's list on a phone shouldn't pop the keyboard.
+              autoFocus={!values.q && !values.store}
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={200}
+              className="h-12 pl-10"
+            />
+          </label>
+          <Button type="submit" size="lg" className="min-w-12 px-4 sm:px-6" disabled={pending}>
+            {pending ? <LoaderCircle aria-hidden className="motion-safe:animate-spin" /> : <Search aria-hidden />}
+            <span className="sr-only sm:not-sr-only">{pending ? d.search.pending : d.search.submit}</span>
+          </Button>
+        </div>
+      )}
 
       {!hero && (
         <div className="flex flex-wrap items-center gap-2">
