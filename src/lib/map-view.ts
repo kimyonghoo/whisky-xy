@@ -3,11 +3,8 @@ import { mapsUrl, telHref } from '@/lib/card';
 import { withTaxCents } from '@/lib/money';
 import { searchHref } from '@/lib/search-view';
 import type { Store } from '@/lib/stores';
-import type { CityId } from '@/lib/geo';
+import { CITIES, type CityId } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
-
-// Temporary until the per-city map lands (Tasks 3-5 delete this).
-const MAIN_CITIES: CityId[] = ['brooklyn', 'nj'];
 
 /** Plain, serialisable store data for the client map + list. */
 export interface MapStore {
@@ -43,9 +40,9 @@ export interface MapOffer {
   taxIncludedCents: number | null;
 }
 
-export type MapViewId = 'east' | 'la';
+export type MapViewId = CityId;
 
-/** NYC centre from the brief; used when there are no east-coast stores to fit. */
+/** NYC centre from the brief; fallback for a city with a single store or none. */
 export const NYC_CENTER: [number, number] = [40.7, -73.95];
 export const NYC_ZOOM = 11;
 /** "LA 보기" target from the brief. */
@@ -118,23 +115,37 @@ export function buildMapStores(stores: Store[], availability: Map<string, number
   }));
 }
 
-/** Which region the map opens on: the east coast, unless only CA stores carry the bottle. */
-export function initialView(stores: MapStore[]): MapViewId {
+/** Which city the map opens on: the selected one, unless a bottle is carried only elsewhere (then the first carrying city). */
+export function initialView(stores: MapStore[], selected: CityId): MapViewId {
   const carrying = stores.filter((s) => !s.dimmed);
-  if (carrying.length > 0 && carrying.every((s) => !MAIN_CITIES.includes(s.city))) return 'la';
-  return 'east';
+  if (carrying.length === stores.length || carrying.some((s) => s.city === selected)) return selected;
+  const first = CITIES.find((c) => carrying.some((s) => s.city === c.id));
+  return first ? first.id : selected;
 }
 
-/** [[south, west], [north, east]] around the Brooklyn + NJ stores, or null if there are none. */
-export function eastBounds(stores: Pick<MapStore, 'lat' | 'lng' | 'city'>[]): [[number, number], [number, number]] | null {
-  const east = stores.filter((s) => MAIN_CITIES.includes(s.city));
-  if (east.length === 0) return null;
-  const lats = east.map((s) => s.lat);
-  const lngs = east.map((s) => s.lng);
+/** [[south, west], [north, east]] around the given city's stores, or null if it has none. */
+export function cityBounds(stores: Pick<MapStore, 'lat' | 'lng' | 'city'>[], city: CityId): [[number, number], [number, number]] | null {
+  const inCity = stores.filter((s) => s.city === city);
+  if (inCity.length === 0) return null;
+  const lats = inCity.map((s) => s.lat);
+  const lngs = inCity.map((s) => s.lng);
   return [
     [Math.min(...lats), Math.min(...lngs)],
     [Math.max(...lats), Math.max(...lngs)],
   ];
+}
+
+/** Zoom for a city with a single store. */
+export const SINGLE_STORE_ZOOM = 13;
+
+export type CityView = { bounds: [[number, number], [number, number]] } | { center: [number, number]; zoom: number };
+
+/** How to frame a city: fit its stores, or centre on the lone store, or fall back to the NYC/LA constants. */
+export function cityView(stores: Pick<MapStore, 'lat' | 'lng' | 'city'>[], city: CityId): CityView {
+  const bounds = cityBounds(stores, city);
+  if (bounds && (bounds[0][0] !== bounds[1][0] || bounds[0][1] !== bounds[1][1])) return { bounds };
+  if (bounds) return { center: bounds[0], zoom: SINGLE_STORE_ZOOM };
+  return city === 'la' ? { center: LA_CENTER, zoom: LA_ZOOM } : { center: NYC_CENTER, zoom: NYC_ZOOM };
 }
 
 export const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';

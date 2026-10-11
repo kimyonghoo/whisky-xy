@@ -107,8 +107,6 @@ export const ko = {
     mapLabel: '매장 지도',
     listHeading: '매장 목록',
     regionNav: '지역 바로가기',
-    viewEast: '뉴욕·뉴저지',
-    viewLa: 'LA 보기',
     legendHas: '재고 있음',
     legendNone: '재고 없음',
     legendLabel: '지도 범례',

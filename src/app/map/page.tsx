@@ -2,16 +2,19 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
+import { cookies } from 'next/headers';
 import { X } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
 import { bottleStoreOffers, storeAvailability } from '@/lib/listings';
 import { buildMapStores, initialView, parseBottleParam } from '@/lib/map-view';
 import { STORES } from '@/lib/stores';
+import { CITY_COOKIE, citiesOf, resolveCity } from '@/lib/geo';
 import { ko } from '@/lib/i18n/ko';
 import { buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/PageHeader';
 import { Notice } from '@/components/Notice';
+import { ComingSoonNotice } from '@/components/ComingSoonNotice';
 import { StoreMapPanel } from './StoreMapPanel';
 
 export const metadata: Metadata = {
@@ -64,6 +67,10 @@ function MapPageSkeleton() {
 async function MapView({ searchParams }: { searchParams: Promise<RawParams> }) {
   const raw = await searchParams;
   const bottleKey = parseBottleParam(raw.bottle);
+  const cityParam = Array.isArray(raw.city) ? raw.city[0] : raw.city;
+  const cookieCity = (await cookies()).get(CITY_COOKIE)?.value;
+  const { city, soon } = resolveCity({ city: cityParam, cookie: cookieCity });
+  if (soon) return <ComingSoonNotice city={city} backCity={resolveCity({ cookie: cookieCity }).city} />;
   // Stock counts change every crawl: per-request data, never part of a prerender.
   await connection();
   const db = await getDb();
@@ -95,7 +102,12 @@ async function MapView({ searchParams }: { searchParams: Promise<RawParams> }) {
         </Notice>
       )}
 
-      <StoreMapPanel stores={stores} initialView={initialView(stores)} bottleMode={bottle !== null} />
+      <StoreMapPanel
+        stores={stores}
+        initialView={initialView(stores, city.id)}
+        views={citiesOf(city.country).filter((c) => c.status === 'live').map((c) => c.id)}
+        bottleMode={bottle !== null}
+      />
     </>
   );
 }

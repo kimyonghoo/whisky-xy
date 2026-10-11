@@ -2,7 +2,7 @@
 
 import { Component, useCallback, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { LocateFixed, MapPin, Plane } from 'lucide-react';
+import { LocateFixed, MapPin } from 'lucide-react';
 import type { MapStore, MapViewId } from '@/lib/map-view';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
@@ -52,10 +52,13 @@ const DESKTOP = '(min-width: 64rem)';
 export function StoreMapPanel({
   stores,
   initialView,
+  views,
   bottleMode,
 }: {
   stores: MapStore[];
   initialView: MapViewId;
+  /** Live cities of the selected city's country: one view button each. */
+  views: MapViewId[];
   bottleMode: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -100,14 +103,12 @@ export function StoreMapPanel({
       <div className="flex flex-col gap-3 lg:sticky lg:top-20 lg:order-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <nav aria-label={ko.map.regionNav} className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => showView('east')}>
-              <MapPin aria-hidden />
-              {ko.map.viewEast}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => showView('la')}>
-              <Plane aria-hidden />
-              {ko.map.viewLa}
-            </Button>
+            {views.map((id) => (
+              <Button key={id} variant="outline" size="sm" onClick={() => showView(id)}>
+                <MapPin aria-hidden />
+                {ko.city[id]}
+              </Button>
+            ))}
           </nav>
           {bottleMode && (
             <ul aria-label={ko.map.legendLabel} className="flex items-center gap-3 text-xs font-medium text-muted-foreground">

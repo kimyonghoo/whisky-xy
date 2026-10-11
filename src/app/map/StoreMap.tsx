@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import {
-  LA_CENTER, LA_ZOOM, NYC_CENTER, NYC_ZOOM, STORE_ZOOM, eastBounds, mapTileConfig, type MapStore, type MapViewId,
+  STORE_ZOOM, cityView, mapTileConfig, type MapStore, type MapViewId,
 } from '@/lib/map-view';
 import { ko } from '@/lib/i18n/ko';
 import { StorePopupContent, storeStateText } from './StoreParts';
@@ -33,7 +33,7 @@ export interface StoreMapProps {
 // Inlined at build time. OSM is the fallback; see mapTileConfig for the usage-policy note.
 const TILES = mapTileConfig(process.env.NEXT_PUBLIC_MAP_TILE_URL, process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION);
 const BOUNDS_PADDING: L.PointExpression = [28, 28];
-const EAST_MAX_ZOOM = 13;
+const CITY_MAX_ZOOM = 13;
 
 function reducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -78,21 +78,16 @@ function Controller({
   focusRequest: FocusRequest | null;
 }) {
   const map = useMap();
-  const bounds = useMemo(() => eastBounds(stores), [stores]);
 
   useEffect(() => {
     if (!viewRequest) return;
     const animate = !reducedMotion();
     map.closePopup();
-    if (viewRequest.view === 'east') {
-      if (bounds) map.flyToBounds(bounds, { padding: BOUNDS_PADDING, maxZoom: EAST_MAX_ZOOM, animate });
-      else map.setView(NYC_CENTER, NYC_ZOOM, { animate });
-    } else if (animate) {
-      map.flyTo(LA_CENTER, LA_ZOOM);
-    } else {
-      map.setView(LA_CENTER, LA_ZOOM, { animate: false });
-    }
-  }, [map, viewRequest, bounds]);
+    const target = cityView(stores, viewRequest.view);
+    if ('bounds' in target) map.flyToBounds(target.bounds, { padding: BOUNDS_PADDING, maxZoom: CITY_MAX_ZOOM, animate });
+    else if (animate) map.flyTo(target.center, target.zoom);
+    else map.setView(target.center, target.zoom, { animate: false });
+  }, [map, viewRequest, stores]);
 
   useEffect(() => {
     if (!focusRequest) return;
@@ -131,7 +126,6 @@ export default function StoreMap({
 }: StoreMapProps) {
   const markers = useRef(new Map<string, L.Marker>());
   const icons = useMemo(() => new Map(stores.map((s) => [s.id, markerIcon(s)])), [stores]);
-  const bounds = useMemo(() => eastBounds(stores), [stores]);
 
   // Selection styling toggles a data attribute instead of swapping icons, so keyboard focus on a marker survives.
   useEffect(() => {
@@ -144,12 +138,11 @@ export default function StoreMap({
     }
   }, [selectedId]);
 
+  const target = cityView(stores, initialView);
   const initial =
-    initialView === 'east' && bounds
-      ? { bounds: L.latLngBounds(bounds), boundsOptions: { padding: BOUNDS_PADDING, maxZoom: EAST_MAX_ZOOM } }
-      : initialView === 'la'
-        ? { center: LA_CENTER, zoom: LA_ZOOM }
-        : { center: NYC_CENTER, zoom: NYC_ZOOM };
+    'bounds' in target
+      ? { bounds: L.latLngBounds(target.bounds), boundsOptions: { padding: BOUNDS_PADDING, maxZoom: CITY_MAX_ZOOM } }
+      : { center: target.center, zoom: target.zoom };
 
   return (
     <MapContainer {...initial} scrollWheelZoom={false} className="size-full font-sans">

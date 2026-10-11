@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildMapStores, eastBounds, escapeHtml, initialView, mapTileConfig, parseBottleParam, OSM_ATTRIBUTION, OSM_TILE_URL,
+  buildMapStores, cityBounds, escapeHtml, initialView, mapTileConfig, parseBottleParam, OSM_ATTRIBUTION, OSM_TILE_URL,
 } from '@/lib/map-view';
 import type { BottleOffers } from '@/lib/listings';
 import { STORES } from '@/lib/stores';
@@ -60,24 +60,33 @@ describe('buildMapStores', () => {
   });
 });
 
-describe('initialView / eastBounds', () => {
-  it('opens on LA only when every carrying store is in CA', () => {
-    expect(initialView(buildMapStores(STORES, avail, null))).toBe('east');
-    const caOnly: BottleOffers = {
-      title: 't', sizeMl: null,
-      offers: new Map([['flask', { storeId: 'flask', listed: 1, inStock: 1, unverified: 0, minAvailablePriceCents: 100 }]]),
-    };
-    expect(initialView(buildMapStores(STORES, avail, caOnly))).toBe('la');
-    const nobody: BottleOffers = { title: 't', sizeMl: null, offers: new Map() };
-    expect(initialView(buildMapStores(STORES, avail, nobody))).toBe('east');
+describe('initialView / cityBounds', () => {
+  const only = (id: string): BottleOffers => ({
+    title: 't', sizeMl: null,
+    offers: new Map([[id, { storeId: id, listed: 1, inStock: 1, unverified: 0, minAvailablePriceCents: 100 }]]),
   });
-  it('bounds cover only Brooklyn + NJ stores', () => {
-    const b = eastBounds(buildMapStores(STORES, avail, null))!;
+  it('opens on the selected city when it carries the bottle', () => {
+    expect(initialView(buildMapStores(STORES, avail, null), 'nj')).toBe('nj');
+    expect(initialView(buildMapStores(STORES, avail, only('liquorcave')), 'nj')).toBe('nj');
+    const nobody: BottleOffers = { title: 't', sizeMl: null, offers: new Map() };
+    expect(initialView(buildMapStores(STORES, avail, nobody), 'la')).toBe('la');
+  });
+  it('opens on LA when only LA carries the bottle, even with brooklyn selected', () => {
+    expect(initialView(buildMapStores(STORES, avail, only('flask')), 'brooklyn')).toBe('la');
+  });
+  it('bounds only the given city', () => {
+    const stores = buildMapStores(STORES, avail, null);
+    const b = cityBounds(stores, 'nj')!;
     expect(b[0][0]).toBeCloseTo(40.5125877);
     expect(b[0][1]).toBeCloseTo(-74.3837563);
     expect(b[1][0]).toBeCloseTo(40.7200248);
-    expect(b[1][1]).toBeCloseTo(-73.9485132);
-    expect(eastBounds([])).toBeNull();
+    expect(b[1][1]).toBeCloseTo(-74.0378045);
+    const brooklyn = cityBounds(stores, 'brooklyn')!;
+    expect(brooklyn[0][0]).toBeCloseTo(40.6635689);
+    expect(brooklyn[1][0]).toBeCloseTo(40.7096302);
+    expect(brooklyn[1][1]).toBeCloseTo(-73.9485132);
+    expect(cityBounds(stores, 'tokyo')).toBeNull();
+    expect(cityBounds([], 'nj')).toBeNull();
   });
 });
 
