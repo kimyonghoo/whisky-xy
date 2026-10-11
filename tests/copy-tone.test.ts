@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ko } from '@/lib/i18n/ko';
 
 /** 해요체 endings (a bare 요 is fine: 필요, 주요, 중요 are nouns). */
-const HAEYO = /(해요|세요|에요|예요|어요|아요|여요|네요|돼요|줘요|봐요|죠)[.?!…]?$/;
+const HAEYO = /(해요|세요|에요|예요|어요|아요|여요|네요|돼요|줘요|봐요|려요|까요|게요|나요|래요|데요|군요|죠)[.?!…]?$/;
 
 /** Intentionally English lines (ClerkMode is read by the store clerk). */
 const ALLOW = new Set(['card.clerkQuestion']);
