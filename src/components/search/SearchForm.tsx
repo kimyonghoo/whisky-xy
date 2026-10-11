@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, LoaderCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { searchHref } from '@/lib/search-view';
+import { SIZE_OPTIONS, sizeLabel } from '@/lib/search-form';
 import { REGION_LABEL } from '@/lib/stores';
 import { ko } from '@/lib/i18n/ko';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,8 @@ import { useSearchNav } from '@/components/search/SearchShell';
 export interface SearchFormValues {
   q: string;
   region: string;
+  /** Bottle size in ml as a string, '' = any. */
+  size: string;
   min: string;
   max: string;
   inStock: boolean;
@@ -88,7 +91,7 @@ export function SearchForm({
     }
     if (detailsRef.current?.open) closeFilters(true);
     // A new search always starts from the first page of each section.
-    nav.navigate(searchHref({ q, store, region: get('region'), min: get('min'), max: get('max'), inStock: get('inStock') }));
+    nav.navigate(searchHref({ q, store, region: get('region'), size: get('size'), min: get('min'), max: get('max'), inStock: get('inStock') }));
   }
 
   function onChange(e: React.ChangeEvent<HTMLFormElement>) {
@@ -162,14 +165,25 @@ export function SearchForm({
               )}
             </summary>
             <div className="absolute inset-x-0 top-full z-30 mt-2 flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-raised sm:p-5">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <label className="col-span-2 flex flex-col gap-1.5 text-sm font-semibold sm:col-span-1">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
+                <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">
                   {ko.search.regionLabel}
                   <NativeSelect name="region" defaultValue={values.region}>
                     <option value="">{ko.search.regionAll}</option>
                     <option value="brooklyn">{REGION_LABEL.brooklyn}</option>
                     <option value="nj">{REGION_LABEL.nj}</option>
                     <option value="ca">{REGION_LABEL.ca}</option>
+                  </NativeSelect>
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm font-semibold max-sm:col-span-2">
+                  {ko.search.sizeLabel}
+                  <NativeSelect name="size" defaultValue={values.size}>
+                    <option value="">{ko.search.sizeAll}</option>
+                    {SIZE_OPTIONS.map((ml) => (
+                      <option key={ml} value={ml}>
+                        {sizeLabel(ml)}
+                      </option>
+                    ))}
                   </NativeSelect>
                 </label>
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">

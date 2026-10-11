@@ -1,9 +1,10 @@
-import { and, asc, desc, gte, ilike, inArray, lte, eq } from 'drizzle-orm';
+import { and, asc, desc, gte, ilike, inArray, lte, eq, or, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, type FxRate, type KrLink, type Listing } from '@/lib/db/schema';
 import { STORES, getStore, MAIN_REGIONS, type Region, type Store } from '@/lib/stores';
 import { withTaxCents } from '@/lib/money';
 import { normalizeText } from '@/lib/whisky/parse';
+import { matchesPhrase, parseQuery, queryPhrase, type QueryTerm, type Vocab } from '@/lib/search-query';
 import { getKrLinks } from '@/lib/krlinks';
 import { getLatestFx } from '@/lib/fx';
 import { compareKr } from '@/lib/compare';
@@ -14,6 +15,8 @@ export interface SearchParams {
   region?: Region;
   storeId?: string;
   inStockOnly?: boolean;
+  /** Bottle size in ml; one of SIZE_OPTIONS. */
+  sizeMl?: number;
   minCents?: number;
   maxCents?: number;
 }
@@ -68,7 +71,17 @@ export function identifyingVariant(variantTitle: string | null): string | null {
   return rest ? variantTitle.trim() : null;
 }
 
-function buildGroups(rows: ListingRow[]): BottleGroup[] {
+/**
+ * Relevance tier, best first: the query phrase in the bottle's own title, then anywhere in its
+ * text (the vendor is part of it: "buffalo trace" also hits Benchmark), then scattered words.
+ */
+function phraseTier(rows: ListingRow[], phrase: string): number {
+  if (!phrase) return 0;
+  if (rows.some((r) => matchesPhrase(normalizeText(`${r.title} ${r.variantTitle ?? ''}`), phrase))) return 0;
+  return rows.some((r) => matchesPhrase(r.searchText, phrase)) ? 1 : 2;
+}
+
+function buildGroups(rows: ListingRow[], phrase: string): BottleGroup[] {
   const map = new Map<string, ListingRow[]>();
   for (const r of rows) {
     const arr = map.get(r.bottleKey);
@@ -76,7 +89,9 @@ function buildGroups(rows: ListingRow[]): BottleGroup[] {
     else map.set(r.bottleKey, [r]);
   }
   const groups: BottleGroup[] = [];
+  const tier = new Map<string, number>();
   for (const [key, rs] of map) {
+    tier.set(key, phraseTier(rs, phrase));
     rs.sort(rowCmp);
     const first = rs[0];
     const avail = rs.filter((r) => r.stock === 'instock').map((r) => r.taxIncludedCents);
@@ -93,6 +108,8 @@ function buildGroups(rows: ListingRow[]): BottleGroup[] {
     });
   }
   groups.sort((a, b) => {
+    const t = tier.get(a.bottleKey)! - tier.get(b.bottleKey)!;
+    if (t) return t;
     const A = a.bestAvailableCents;
     const B = b.bestAvailableCents;
     if (A !== null && B !== null) return A - B || a.displayTitle.localeCompare(b.displayTitle);
@@ -108,6 +125,41 @@ export interface SearchOptions {
   rowLimit?: number;
   /** Clock for the 48 h unverified cut-off; tests inject it. */
   now?: Date;
+  /** Already-interpreted query (the page shows it); parsed from `p.q` when omitted. */
+  terms?: QueryTerm[];
+}
+
+const VOCAB_TTL_MS = 60 * 60_000;
+const vocabCache = new WeakMap<Db, { at: number; vocab: Promise<Vocab> }>();
+
+/** Every word in listings' search text with its listing count, cached per db for an hour (feeds typo fixes). */
+export function getVocab(db: Db, now = Date.now()): Promise<Vocab> {
+  const hit = vocabCache.get(db);
+  if (hit && now - hit.at < VOCAB_TTL_MS) return hit.vocab;
+  const vocab = db
+    .execute<{ w: string; n: number }>(
+      sql`select w, count(*)::int as n from (select distinct id, unnest(string_to_array(${listings.searchText}, ' ')) as w from ${listings}) t where w <> '' group by w`,
+    )
+    .then((res) => {
+      const rows = (Array.isArray(res) ? res : (res as { rows: { w: string; n: number }[] }).rows) as { w: string; n: number }[];
+      return new Map(rows.map((r) => [r.w, Number(r.n)]));
+    });
+  // A failed load must not stick for an hour.
+  vocab.catch(() => vocabCache.delete(db));
+  vocabCache.set(db, { at: now, vocab });
+  return vocab;
+}
+
+/** The query as searched: Korean spellings, abbreviations and typos resolved against listing words. */
+export async function interpretQuery(db: Db, q: string): Promise<QueryTerm[]> {
+  const plain = parseQuery(q);
+  if (plain.length === 0) return plain;
+  return parseQuery(q, await getVocab(db));
+}
+
+function termCond(term: QueryTerm): SQL | undefined {
+  const alts = term.map((tokens) => and(...tokens.map((t) => ilike(listings.searchText, `%${escapeLike(t)}%`))));
+  return alts.length === 1 ? alts[0] : or(...alts);
 }
 
 export async function searchListings(
@@ -115,8 +167,9 @@ export async function searchListings(
   p: SearchParams,
   opts: SearchOptions = {},
 ): Promise<{ main: BottleGroup[]; ca: BottleGroup[] }> {
-  const tokens = normalizeText(p.q ?? '').split(' ').filter(Boolean);
-  if (tokens.length === 0 && !p.storeId) return { main: [], ca: [] };
+  const terms = opts.terms ?? (await interpretQuery(db, p.q ?? ''));
+  if (terms.length === 0 && !p.storeId) return { main: [], ca: [] };
+  const phrase = queryPhrase(terms);
   const limit = opts.rowLimit ?? SECTION_ROW_LIMIT;
   const now = opts.now ?? new Date();
 
@@ -127,12 +180,10 @@ export async function searchListings(
   // Each section is queried separately so one region can never crowd out the other.
   const section = async (sectionStores: Store[]): Promise<BottleGroup[]> => {
     if (sectionStores.length === 0) return [];
-    const conds = [
-      inArray(listings.storeId, sectionStores.map((s) => s.id)),
-      ...tokens.map((t) => ilike(listings.searchText, `%${escapeLike(t)}%`)),
-    ];
+    const conds = [inArray(listings.storeId, sectionStores.map((s) => s.id)), ...terms.map(termCond)];
     // "재고 있는 곳만" means confirmed in stock: unverified (> 48 h) rows are left out too.
     if (p.inStockOnly) conds.push(eq(listings.available, true), gte(listings.checkedAt, confirmedSince(now)));
+    if (p.sizeMl != null) conds.push(eq(listings.sizeMl, p.sizeMl));
     if (p.minCents != null) conds.push(gte(listings.priceCents, p.minCents));
     if (p.maxCents != null) conds.push(lte(listings.priceCents, p.maxCents));
     const found = await db
@@ -147,7 +198,7 @@ export async function searchListings(
       if (!store) continue;
       rows.push({ ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate), stock: stockState(l, now) });
     }
-    return buildGroups(rows);
+    return buildGroups(rows, phrase);
   };
 
   const [main, ca] = await Promise.all([

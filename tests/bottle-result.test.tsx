@@ -52,6 +52,14 @@ describe('BottleResult status branches', () => {
     expect(html).toContain(ko.stock.unreliable);
   });
 
+  it('shows a rounded 원화 amount under the lowest price when a rate exists', () => {
+    const g = group([row(1, 'dewinespot', 9000, 'instock', 2)]);
+    const fx = { date: '2026-10-11', usdKrw: 1400, fetchedAt: now };
+    const html = renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} fx={fx} />);
+    expect(html).toContain(ko.group.krwApprox('126,000원'));
+    expect(render(g)).not.toContain('원');
+  });
+
   it('says all sold out when nothing is available', () => {
     const html = render(group([row(3, 'grainvine', 9500, 'soldout', 2)]));
     expect(html).toContain(ko.group.allSoldOut);

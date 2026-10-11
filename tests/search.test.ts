@@ -47,6 +47,17 @@ describe('searchListings', () => {
     expect(nj.ca).toEqual([]);
     const pr = await searchListings(db, { q: 'jack', minCents: 6000, maxCents: 7500 });
     expect(pr.main.flatMap((g) => g.rows).every((x) => x.priceCents >= 6000 && x.priceCents <= 7500)).toBe(true);
+    // seeded rows are all 750 ml
+    expect((await searchListings(db, { q: 'jack', sizeMl: 750 })).main.length).toBeGreaterThan(0);
+    expect(await searchListings(db, { q: 'jack', sizeMl: 1750 })).toEqual({ main: [], ca: [] });
+  });
+
+  it('understands Korean spellings, abbreviations-style typos and ranks phrase matches first', async () => {
+    expect((await searchListings(db, { q: '스태그' })).main.length).toBe(2);
+    expect((await searchListings(db, { q: 'stagg bourbn' })).main.length).toBe(2);
+    expect((await searchListings(db, { q: 'jack daniel barel proof' })).main.length).toBe(1);
+    // "stagg jr" phrase: Stagg Jr first even though plain Stagg is in stock and Jr is sold out
+    expect((await searchListings(db, { q: 'stagg jr' })).main[0].displayTitle).toBe('Stagg Jr Bourbon');
   });
 
   it('does not group Stagg with Stagg Jr', async () => {

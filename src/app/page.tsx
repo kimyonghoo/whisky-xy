@@ -5,8 +5,11 @@ import { cookies } from 'next/headers';
 import { ChevronDown, MapPin, Plane, SearchX, Store as StoreIcon, X } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
 import { ADMIN_COOKIE, isAdmin } from '@/lib/admin';
-import { SECTION_ROW_LIMIT, searchListings, type BottleGroup } from '@/lib/search';
-import { parseSearchForm } from '@/lib/search-form';
+import { SECTION_ROW_LIMIT, interpretQuery, searchListings, type BottleGroup } from '@/lib/search';
+import { literalPhrase, queryPhrase } from '@/lib/search-query';
+import { parseSearchForm, sizeLabel } from '@/lib/search-form';
+import { getLatestFx } from '@/lib/fx';
+import type { FxRate } from '@/lib/db/schema';
 import { activeFilterCount, capGroups, nextShowCount, parseShowCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
@@ -33,7 +36,7 @@ export default function Home({ searchParams }: { searchParams: Promise<RawParams
   );
 }
 
-const EMPTY_VALUES: SearchFormValues = { q: '', region: '', min: '', max: '', inStock: false };
+const EMPTY_VALUES: SearchFormValues = { q: '', region: '', size: '', min: '', max: '', inStock: false };
 
 function firstString(v: string | string[] | undefined): string {
   return (Array.isArray(v) ? v[0] : v) ?? '';
@@ -123,11 +126,11 @@ function FilterChip({ href, label }: { href: string; label: string }) {
   );
 }
 
-function GroupList({ groups, q, admin, now }: { groups: BottleGroup[]; q: string; admin: boolean; now: Date }) {
+function GroupList({ groups, q, admin, now, fx }: { groups: BottleGroup[]; q: string; admin: boolean; now: Date; fx: FxRate | null }) {
   return (
     <div className="flex flex-col gap-4">
       {groups.map((g) => (
-        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} />
+        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} fx={fx} />
       ))}
     </div>
   );
@@ -139,6 +142,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   const values: SearchFormValues = {
     q: params.q,
     region: params.region ?? '',
+    size: params.sizeMl != null ? String(params.sizeMl) : '',
     min: firstString(raw.min),
     max: firstString(raw.max),
     inStock: Boolean(params.inStockOnly),
@@ -153,7 +157,12 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 
   // One clock per render: the 48 h "재고 확인 필요" cut-off and the relative times agree.
   const now = new Date();
-  const [{ main, ca }, jar] = await Promise.all([searchListings(await getDb(), params, { now }), cookies()]);
+  const db = await getDb();
+  // The rate converts every "최저가" to KRW, not just Korea-linked bottles.
+  const terms = await interpretQuery(db, params.q);
+  const [{ main, ca }, fx, jar] = await Promise.all([searchListings(db, params, { now, terms }), getLatestFx(db), cookies()]);
+  // Say so when the search ran on something other than what was typed (스태그 → stagg, sbbp, typo fixes).
+  const searchedAs = params.q && queryPhrase(terms) !== literalPhrase(params.q) ? queryPhrase(terms) : null;
   // Admins see the "한국 가격 연결" action on each group; the cookie is re-checked by every action.
   const admin = isAdmin(jar.get(ADMIN_COOKIE)?.value, process.env.ADMIN_KEY);
   const none = main.length === 0 && ca.length === 0;
@@ -172,6 +181,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 
   const chips: { label: string; href: string }[] = [];
   if (params.region) chips.push({ label: REGION_LABEL[params.region], href: searchHref(raw, { region: undefined, main: undefined, ca: undefined }) });
+  if (params.sizeMl != null) chips.push({ label: sizeLabel(params.sizeMl), href: searchHref(raw, { size: undefined, main: undefined, ca: undefined }) });
   if (params.minCents != null) chips.push({ label: ko.search.priceMin(formatUsd(params.minCents)), href: searchHref(raw, { min: undefined, main: undefined, ca: undefined }) });
   if (params.maxCents != null) chips.push({ label: ko.search.priceMax(formatUsd(params.maxCents)), href: searchHref(raw, { max: undefined, main: undefined, ca: undefined }) });
 
@@ -188,6 +198,16 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
               <FilterChip key={c.label} {...c} />
             ))}
           </div>
+        )}
+
+        {searchedAs && (
+          <p className="text-sm text-muted-foreground">
+            {ko.search.searchedAsPrefix}
+            <span lang="en" className="font-semibold text-foreground">
+              {searchedAs}
+            </span>
+            {ko.search.searchedAsSuffix}
+          </p>
         )}
 
         <ResultsRegion className="mt-2">
@@ -262,7 +282,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                   {main.length === 0 ? (
                     <p className="rounded-2xl border border-dashed px-4 py-6 text-center text-muted-foreground">{ko.search.sectionEmpty}</p>
                   ) : (
-                    <GroupList groups={mainCap.visible} q={params.q} admin={admin} now={now} />
+                    <GroupList groups={mainCap.visible} q={params.q} admin={admin} now={now} fx={fx} />
                   )}
                   {mainCap.hiddenCount > 0 && (
                     <ShowMoreLink
@@ -297,7 +317,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                       <ChevronDown aria-hidden className="transition-transform group-open/ca:rotate-180" />
                     </summary>
                     <div className="flex flex-col gap-4">
-                      <GroupList groups={caCap.visible} q={params.q} admin={admin} now={now} />
+                      <GroupList groups={caCap.visible} q={params.q} admin={admin} now={now} fx={fx} />
                       {caCap.hiddenCount > 0 && (
                         <ShowMoreLink
                           href={searchHref(raw, { ca: String(nextShowCount(caShow, ca.length)) })}

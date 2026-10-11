@@ -47,6 +47,8 @@ export const ko = {
     coverageRegion: (region: string, n: number) => `${region} ${n}곳`,
     regionLabel: '지역',
     regionAll: '메인 (브루클린·뉴저지)',
+    sizeLabel: '용량',
+    sizeAll: '전체',
     inStockOnly: '재고 있는 것만',
     minLabel: '최소 가격 (세전, $)',
     maxLabel: '최대 가격 (세전, $)',
@@ -67,6 +69,9 @@ export const ko = {
     sectionEmpty: '이 지역에는 결과가 없어요',
     showMore: (n: number) => `더 보기 (${n}종 남음)`,
     pending: '검색 중…',
+    /** "‘<interpreted query>’ 기준으로 찾았어요" around the English phrase. */
+    searchedAsPrefix: '‘',
+    searchedAsSuffix: '’ 기준으로 찾았어요',
   },
   store: {
     eyebrow: '매장별 보기',
@@ -124,6 +129,8 @@ export const ko = {
   group: {
     lowest: '최저가',
     lowestHint: '세금 포함 약',
+    krwApprox: (krw: string) => `약 ${krw}`,
+    krwApproxLabel: (krw: string, date: string) => `원화 환산 약 ${krw} (${date} 환율 기준)`,
     allSoldOut: '전 매장 품절',
     noConfirmedStock: '재고 확인 필요',
     stores: (inStock: number, total: number) => `재고 ${inStock}곳 / ${total}곳`,

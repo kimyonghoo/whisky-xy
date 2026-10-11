@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   formatKrw,
+  approxKrw,
   brandQuery,
   parseProductId,
   returnQuery,
@@ -17,6 +18,12 @@ describe('kr-view', () => {
     expect(formatKrw(0)).toBe('0원');
     expect(formatKrw(-50000)).toBe('-50,000원');
     expect(formatKrw(1234.6)).toBe('1,235원');
+  });
+
+  it('approximates USD cents in KRW to the nearest 1,000원', () => {
+    expect(approxKrw(12999, 1380.5)).toBe(179000); // 179,452
+    expect(approxKrw(4999, 1400)).toBe(70000); // 69,986
+    expect(approxKrw(0, 1400)).toBe(0);
   });
 
   it('strips titles to brand words for the Dailyshot query', () => {

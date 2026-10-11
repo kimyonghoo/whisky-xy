@@ -16,6 +16,14 @@ export function parseDollarsToCents(s: string | undefined): number | undefined {
 
 const REGIONS: Region[] = ['brooklyn', 'nj', 'ca'];
 
+/** Bottle sizes offered by the 용량 filter (ml). Anything else in `?size=` is ignored. */
+export const SIZE_OPTIONS = [375, 700, 750, 1000, 1750] as const;
+
+/** 750 → "750ml", 1750 → "1.75L". */
+export function sizeLabel(ml: number): string {
+  return ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`;
+}
+
 type Raw = Record<string, string | string[] | undefined>;
 
 function first(v: string | string[] | undefined): string | undefined {
@@ -30,6 +38,8 @@ export function parseSearchForm(raw: Raw): SearchParams {
   const store = getStore(first(raw.store) ?? '');
   if (store?.publicAllowed) params.storeId = store.id;
   if (first(raw.inStock)) params.inStockOnly = true;
+  const size = Number(first(raw.size));
+  if ((SIZE_OPTIONS as readonly number[]).includes(size)) params.sizeMl = size;
   const min = parseDollarsToCents(first(raw.min));
   const max = parseDollarsToCents(first(raw.max));
   if (min !== undefined) params.minCents = min;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDollarsToCents, parseSearchForm } from '@/lib/search-form';
+import { parseDollarsToCents, parseSearchForm, sizeLabel } from '@/lib/search-form';
 
 describe('parseDollarsToCents', () => {
   it('parses exactly', () => {
@@ -32,6 +32,18 @@ describe('parseSearchForm', () => {
     expect(parseSearchForm({ store: 'nope' })).toEqual({ q: '' });
     expect(parseSearchForm({ store: '' })).toEqual({ q: '' });
     expect(parseSearchForm({ store: "flask' OR 1=1" })).toEqual({ q: '' });
+  });
+  it('accepts only offered sizes', () => {
+    expect(parseSearchForm({ q: 'a', size: '750' })).toEqual({ q: 'a', sizeMl: 750 });
+    expect(parseSearchForm({ q: 'a', size: '1750' })).toEqual({ q: 'a', sizeMl: 1750 });
+    expect(parseSearchForm({ q: 'a', size: '751' })).toEqual({ q: 'a' });
+    expect(parseSearchForm({ q: 'a', size: '' })).toEqual({ q: 'a' });
+    expect(parseSearchForm({ q: 'a', size: '750abc' })).toEqual({ q: 'a' });
+  });
+  it('labels sizes', () => {
+    expect(sizeLabel(750)).toBe('750ml');
+    expect(sizeLabel(1000)).toBe('1L');
+    expect(sizeLabel(1750)).toBe('1.75L');
   });
   it('ignores invalid region and handles arrays', () => {
     expect(parseSearchForm({ q: ['a', 'b'], region: 'zz' })).toEqual({ q: 'a' });

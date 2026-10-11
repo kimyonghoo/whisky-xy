@@ -2,6 +2,8 @@ import { ChevronDown } from 'lucide-react';
 import type { BottleGroup } from '@/lib/search';
 import { ROWS_PER_GROUP, summarizeGroup } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
+import { approxKrw, formatKrw, fxDateLabel } from '@/lib/kr-view';
+import type { FxRate } from '@/lib/db/schema';
 import { ko } from '@/lib/i18n/ko';
 import { Card } from '@/components/ui/card';
 import { BottleHeader } from '@/components/BottleHeader';
@@ -13,8 +15,22 @@ import { KrCompareChip } from '@/components/KrCompareChip';
  * One bottle in search results: identity + best in-stock price + Korea comparison + ranked store list.
  * `admin` adds the "한국 가격 연결" action; `now` keeps relative times consistent within a render.
  */
-export function BottleResult({ group, q, admin = false, now }: { group: BottleGroup; q: string; admin?: boolean; now: Date }) {
+export function BottleResult({
+  group,
+  q,
+  admin = false,
+  now,
+  fx = null,
+}: {
+  group: BottleGroup;
+  q: string;
+  admin?: boolean;
+  now: Date;
+  /** Latest USD→KRW rate; when present the lowest price also shows a rounded 원화 amount. */
+  fx?: FxRate | null;
+}) {
   const s = summarizeGroup(group);
+  const krw = s.cheapest && fx ? formatKrw(approxKrw(s.cheapest.taxIncludedCents, fx.usdKrw)) : null;
   const ranks = new Map<number, number>();
   let n = 0;
   // Rank only confirmed in-stock offers; "재고 확인 필요" and sold-out rows get a dash.
@@ -42,8 +58,16 @@ export function BottleResult({ group, q, admin = false, now }: { group: BottleGr
               <span className="text-sm font-semibold text-primary">
                 {ko.group.lowest} <span className="font-medium text-muted-foreground">· {ko.group.lowestHint}</span>
               </span>
-              <span className="text-2xl leading-none font-bold tracking-tight tabular sm:text-[1.75rem]">
-                {formatUsd(s.cheapest.taxIncludedCents)}
+              <span className="flex flex-col items-end gap-1">
+                <span className="text-2xl leading-none font-bold tracking-tight tabular sm:text-[1.75rem]">
+                  {formatUsd(s.cheapest.taxIncludedCents)}
+                </span>
+                {krw && fx && (
+                  <span className="text-sm font-medium text-muted-foreground tabular" title={ko.group.krwApproxLabel(krw, fxDateLabel(fx.date))}>
+                    <span aria-hidden>{ko.group.krwApprox(krw)}</span>
+                    <span className="sr-only">{ko.group.krwApproxLabel(krw, fxDateLabel(fx.date))}</span>
+                  </span>
+                )}
               </span>
             </>
           ) : s.unverifiedCount > 0 ? (

@@ -13,6 +13,11 @@ export function formatKrw(krw: number): string {
   return `${krwFmt.format(Math.round(krw))}원`;
 }
 
+/** USD cents → KRW rounded to the nearest 1,000원: a ballpark next to a dollar price, not a quote. */
+export function approxKrw(usdCents: number, usdKrw: number): number {
+  return Math.round((usdCents * usdKrw) / 100_000) * 1000;
+}
+
 // Generic category/spec words that say nothing about the brand.
 const GENERIC = new Set([
   'bourbon', 'whiskey', 'whisky', 'kentucky', 'tennessee', 'straight', 'rye', 'single', 'malt', 'scotch', 'barrel',
