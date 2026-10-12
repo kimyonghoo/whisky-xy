@@ -105,7 +105,6 @@ describe('design tokens: WCAG contrast (dark theme)', () => {
     ['verdict-worse', 'card'],
     ['kr-bar', 'card'],
     ['caution-icon', 'caution-bg'],
-    ['verdict-must-glow', 'verdict-must'],
     ['ring', 'background'],
     ['ring', 'card'],
   ])('non-text %s on %s is at least 3:1', (fg, bg) => {

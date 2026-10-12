@@ -86,7 +86,7 @@ Five **ordinal** tiers computed by `compareKr()` (`src/lib/compare.ts`). Labels 
 
 | Tier | Range | Word (ko) | Icon | Badge | Bar on card | Ink on band |
 |---|---|---|---|---|---|---|
-| `must` | ≥ 50 % | 최우선 구매 | PartyPopper (`must-glow`, 4.8) | solid `#137347` + `on-solid` (5.9), 2 px honey ring | 3.1 | 10.9 |
+| `must` | ≥ 50 % | 최우선 구매 | BadgeCheck (`on-solid`, 5.9) | solid `#137347` + `on-solid` (5.9), 2 px honey ring | 3.1 | 10.9 |
 | `big` | 30–49 % | 크게 유리 | ChevronsDown | solid `#1e7a42` + `on-solid` (5.4) | 3.4 | 9.2 |
 | `good` | 15–29 % | 유리 | ChevronDown | tint + ink | 5.0 | 10.8 |
 | `small` | 0–14 % | 소폭 유리 | Minus | neutral tint + ink | 4.8 | 7.9 |

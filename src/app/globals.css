@@ -84,7 +84,6 @@
   --color-verdict-worse-bg: var(--verdict-worse-bg);
   --color-verdict-worse-line: var(--verdict-worse-line);
   --color-verdict-worse-ink: var(--verdict-worse-ink);
-  --color-verdict-must-glow: var(--verdict-must-glow);
   --color-kr-bar: var(--kr-bar);
 
   --radius-sm: calc(var(--radius) * 0.5);
@@ -160,7 +159,6 @@
   --verdict-must-bg: #1b1810;
   --verdict-must-line: #b8924f;
   --verdict-must-ink: #9ad9b0;
-  --verdict-must-glow: #ffe7a8;
   --verdict-big: #1e7a42;
   --verdict-big-bg: #0f1c14;
   --verdict-big-line: #2e6645;

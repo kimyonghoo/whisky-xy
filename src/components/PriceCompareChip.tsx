@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronsDown, Minus, PartyPopper, TrendingUp, type LucideIcon } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ChevronsDown, Minus, TrendingUp, type LucideIcon } from 'lucide-react';
 import type { Verdict } from '@/lib/compare';
 import type { Dict } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -6,12 +6,11 @@ import { cn } from '@/lib/utils';
 /** Verdict styling (docs/design-system.md §3a). Icon + word + colour, never colour alone. */
 export const VERDICT_STYLE: Record<
   Verdict,
-  { Icon: LucideIcon; badge: string; icon?: string; band: string; ink: string; bar: string }
+  { Icon: LucideIcon; badge: string; band: string; ink: string; bar: string }
 > = {
   must: {
-    Icon: PartyPopper,
+    Icon: BadgeCheck,
     badge: 'border-transparent bg-verdict-must text-on-solid ring-2 ring-verdict-must-line',
-    icon: 'text-verdict-must-glow',
     band: 'border-verdict-must-line bg-verdict-must-bg border-2',
     ink: 'text-verdict-must-ink',
     bar: 'bg-verdict-must',
@@ -77,7 +76,7 @@ export function PriceCompareChip({
         className,
       )}
     >
-      <v.Icon aria-hidden className={v.icon} />
+      <v.Icon aria-hidden />
       {d.compare.verdict[verdict]}
     </span>
   );
