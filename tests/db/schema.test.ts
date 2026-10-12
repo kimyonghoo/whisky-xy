@@ -32,4 +32,22 @@ describe('schema', () => {
     const res = await pg.query<{ cities: string[] }>('SELECT cities FROM watches');
     expect(res.rows[0].cities).toEqual(['brooklyn', 'la']);
   });
+
+  it('migration 0004 adds listings.currency and existing rows read USD', async () => {
+    const { PGlite } = await import('@electric-sql/pglite');
+    const pg = new PGlite();
+    const sqlOf = (name: string) => readFileSync(join(process.cwd(), 'drizzle', name), 'utf8');
+    const run = async (name: string) => {
+      for (const stmt of sqlOf(name).split('--> statement-breakpoint')) if (stmt.trim()) await pg.exec(stmt);
+    };
+    for (const f of ['0000_condemned_charles_xavier.sql', '0001_steep_morgan_stark.sql', '0002_store_live_budget.sql', '0003_watch_cities.sql']) {
+      await run(f);
+    }
+    await pg.exec(`INSERT INTO listings (store_id, product_id, variant_id, handle, title, vendor, product_type, url, price_cents,
+      available, bottle_key, search_text, first_seen_at, last_seen_at, checked_at, updated_at)
+      VALUES ('flask', '1', '11', 'h', 'T', 'V', 'Whiskey', 'https://x/p/h', 6499, true, 'k', 't', now(), now(), now(), now())`);
+    await run('0004_listing_currency.sql');
+    const res = await pg.query<{ currency: string }>('SELECT currency FROM listings');
+    expect(res.rows).toEqual([{ currency: 'USD' }]);
+  });
 });

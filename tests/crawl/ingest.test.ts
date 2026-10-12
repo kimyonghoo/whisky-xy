@@ -11,7 +11,7 @@ const t2 = new Date('2026-01-01T12:00:00Z');
 const mk = (id: string) => (priceCents: number, available: boolean): Observation => ({
   storeId: 'flask', productId: 'p' + id, variantId: id, handle: 'h' + id, title: 'Whisky ' + id, variantTitle: null,
   vendor: 'V', productType: 'Whiskey', imageUrl: null, url: 'https://flaskfinewines.com/products/h' + id,
-  priceCents, available, sizeMl: 750, proof: null, batch: null, bottleKey: 'k' + id, searchText: 'whisky ' + id,
+  currency: 'USD', priceCents, available, sizeMl: 750, proof: null, batch: null, bottleKey: 'k' + id, searchText: 'whisky ' + id,
 });
 const a = mk('a'), b = mk('b'), c = mk('c');
 
@@ -19,6 +19,15 @@ let db: Awaited<ReturnType<typeof createTestDb>>;
 beforeEach(async () => { db = await createTestDb(); });
 
 const rowFor = async (variantId: string) => (await db.select().from(listings)).find((l) => l.variantId === variantId)!;
+
+describe('ingestStoreCrawl currency', () => {
+  it('persists currency and refreshes it on conflict', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, true)], t0);
+    expect((await rowFor('a')).currency).toBe('USD');
+    await ingestStoreCrawl(db, 'flask', [{ ...a(27500, true), currency: 'JPY' }], t1);
+    expect(await rowFor('a')).toMatchObject({ currency: 'JPY', priceCents: 27500 });
+  });
+});
 
 describe('ingestStoreCrawl', () => {
   it('first crawl of a store inserts silently', async () => {

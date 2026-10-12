@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { fetchCatalog, fetchLiveProduct, CurrencyMismatchError, storeHeaders } from '@/lib/shopify/client';
 import type { Store } from '@/lib/stores';
 
-const store = { id: 'dewinespot', name: 'De Wine Spot', domain: 'dewinespot.co', city: 'brooklyn' } as Store;
+const store = { id: 'dewinespot', name: 'De Wine Spot', domain: 'dewinespot.co', city: 'brooklyn', currency: 'USD' } as Store;
+const jpStore = { id: 'jpshop', name: 'JP Shop', domain: 'jp.example', city: 'tokyo', currency: 'JPY' } as Store;
 const HOST = 'https://dewinespot.co';
 
 interface Call { url: string; headers: Record<string, string> }
@@ -103,7 +104,29 @@ describe('fetchLiveProduct', () => {
 
 describe('storeHeaders', () => {
   it('has cookie and UA', () => {
-    expect(storeHeaders().Cookie).toBe('localization=US; cart_currency=USD');
+    expect(storeHeaders(store).Cookie).toBe('localization=US; cart_currency=USD');
+  });
+  it('sends the JP cookie for a JPY store', () => {
+    expect(storeHeaders(jpStore).Cookie).toBe('localization=JP; cart_currency=JPY');
+  });
+});
+
+describe('JPY store', () => {
+  it('sends the JPY cookie and accepts a JPY cart', async () => {
+    const fake = makeFake((url) => (url.endsWith('/cart.js') ? json({ currency: 'JPY' }) : json({ products: [] })));
+    await fetchCatalog(jpStore, { fetchFn: fake, delayMs: 0 });
+    expect(fake.calls.length).toBeGreaterThan(0);
+    for (const c of fake.calls) expect(c.headers.Cookie).toBe('localization=JP; cart_currency=JPY');
+  });
+  it('throws CurrencyMismatchError when a JPY store reports USD', async () => {
+    const fake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({ products: [] })));
+    const err = await fetchCatalog(jpStore, { fetchFn: fake, delayMs: 0 }).catch((e) => e);
+    expect(err).toBeInstanceOf(CurrencyMismatchError);
+    expect(err.message).toBe('Expected JPY but store reported USD');
+  });
+  it('live recheck uses the per-store currency too', async () => {
+    const fake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({ variants: [] })));
+    await expect(fetchLiveProduct(jpStore, 'x', { fetchFn: fake })).rejects.toBeInstanceOf(CurrencyMismatchError);
   });
 });
 

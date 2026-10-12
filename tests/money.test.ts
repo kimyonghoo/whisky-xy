@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { parsePriceToCents, formatUsd, withTaxCents } from '@/lib/money';
+import { parsePriceToCents, parsePriceMinor, formatUsd, withTaxCents } from '@/lib/money';
+
+describe('parsePriceMinor', () => {
+  it('parses JPY as whole yen', () => {
+    expect(parsePriceMinor('27500', 'JPY')).toBe(27500);
+    expect(parsePriceMinor('27500.00', 'JPY')).toBe(27500);
+    expect(parsePriceMinor('27,500', 'JPY')).toBe(27500);
+    expect(parsePriceMinor('¥27,500', 'JPY')).toBe(27500);
+  });
+  it('rejects a fractional yen amount', () => {
+    expect(() => parsePriceMinor('27500.50', 'JPY')).toThrow();
+    expect(() => parsePriceMinor('abc', 'JPY')).toThrow();
+  });
+  it('parses USD as cents', () => {
+    expect(parsePriceMinor('129.99', 'USD')).toBe(12999);
+    expect(parsePriceMinor('129.99', 'USD')).toBe(parsePriceToCents('129.99'));
+  });
+});
 
 describe('money', () => {
   it('parses price strings exactly', () => {

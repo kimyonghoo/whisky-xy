@@ -27,7 +27,7 @@ function classify(
   return null;
 }
 
-// Rows per statement. listings has 21 insert columns, so 500 rows = 10.5k bind params,
+// Rows per statement. listings has 22 insert columns, so 500 rows = 10.5k bind params,
 // well under Postgres' 65535 limit; priceHistory (4 cols) and id lists are far below it.
 const CHUNK = 500;
 
@@ -40,7 +40,7 @@ function chunked<T>(xs: T[], size = CHUNK): T[][] {
 // Columns refreshed on conflict (everything except storeId, variantId, firstSeenAt).
 const UPDATE_COLS = [
   'productId', 'handle', 'title', 'variantTitle', 'vendor', 'productType', 'imageUrl', 'url',
-  'priceCents', 'available', 'sizeMl', 'proof', 'batch', 'bottleKey', 'searchText',
+  'priceCents', 'currency', 'available', 'sizeMl', 'proof', 'batch', 'bottleKey', 'searchText',
   'lastSeenAt', 'checkedAt', 'updatedAt',
 ] as const satisfies readonly (keyof typeof listings.$inferInsert)[];
 
@@ -86,7 +86,7 @@ export async function ingestStoreCrawl(
             storeId, variantId: o.variantId, firstSeenAt: now,
             productId: o.productId, handle: o.handle, title: o.title, variantTitle: o.variantTitle,
             vendor: o.vendor, productType: o.productType, imageUrl: o.imageUrl, url: o.url,
-            priceCents: o.priceCents, available: o.available, sizeMl: o.sizeMl, proof: o.proof,
+            priceCents: o.priceCents, currency: o.currency, available: o.available, sizeMl: o.sizeMl, proof: o.proof,
             batch: o.batch, bottleKey: o.bottleKey, searchText: o.searchText,
             lastSeenAt: now, checkedAt: now, updatedAt: now,
           })),

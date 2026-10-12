@@ -1,6 +1,6 @@
-import type { Store } from '@/lib/stores';
+import type { Currency, Store } from '@/lib/stores';
 import type { ShopifyProduct } from '@/lib/shopify/client';
-import { parsePriceToCents } from '@/lib/money';
+import { parsePriceMinor } from '@/lib/money';
 import { isWhiskyProduct, parseSizeMl, parseProof, parseBatch, normalizeText, bottleKey } from '@/lib/whisky/parse';
 
 export interface Observation {
@@ -14,7 +14,9 @@ export interface Observation {
   productType: string;
   imageUrl: string | null;
   url: string;
+  /** Minor unit of `currency` (USD cents, whole JPY). */
   priceCents: number;
+  currency: Currency;
   available: boolean;
   sizeMl: number | null;
   proof: number | null;
@@ -37,7 +39,7 @@ export function toObservations(store: Store, p: ShopifyProduct): Observation[] {
   for (const v of p.variants) {
     let priceCents: number;
     try {
-      priceCents = parsePriceToCents(v.price);
+      priceCents = parsePriceMinor(v.price, store.currency);
     } catch {
       continue; // unparseable price: skip this variant only
     }
@@ -57,6 +59,7 @@ export function toObservations(store: Store, p: ShopifyProduct): Observation[] {
       imageUrl: p.images[0]?.src ?? null,
       url: `https://${store.domain}/products/${p.handle}`,
       priceCents,
+      currency: store.currency,
       available: v.available,
       sizeMl,
       proof: parseProof(sizeText),

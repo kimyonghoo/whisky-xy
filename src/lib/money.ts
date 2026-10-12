@@ -1,12 +1,26 @@
-/** Parse a price string like "1,299.97" into integer cents without float math. */
-export function parsePriceToCents(s: string): number {
-  const cleaned = s.trim().replace(/[$,\s]/g, '');
+import type { Currency } from '@/lib/stores';
+
+/**
+ * Parse a price string into the currency's minor unit without float math:
+ * USD "1,299.97" -> 129997 cents; JPY "27,500" -> 27500 yen (yen has no fraction).
+ */
+export function parsePriceMinor(s: string, currency: Currency): number {
+  const cleaned = s.trim().replace(/[$¥￥,\s]/g, '');
   if (!/^\d+(\.\d*)?$/.test(cleaned)) {
     throw new Error(`Invalid price: ${JSON.stringify(s)}`);
   }
   const [whole, frac = ''] = cleaned.split('.');
+  if (currency === 'JPY') {
+    if (/[1-9]/.test(frac)) throw new Error(`Invalid JPY price (fraction): ${JSON.stringify(s)}`);
+    return parseInt(whole, 10);
+  }
   const fraction = (frac + '00').slice(0, 2);
   return parseInt(whole, 10) * 100 + parseInt(fraction, 10);
+}
+
+/** Parse a USD price string like "1,299.97" into integer cents. */
+export function parsePriceToCents(s: string): number {
+  return parsePriceMinor(s, 'USD');
 }
 
 export function formatUsd(cents: number): string {

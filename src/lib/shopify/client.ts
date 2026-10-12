@@ -1,4 +1,4 @@
-import type { Store } from '@/lib/stores';
+import type { Currency, Store } from '@/lib/stores';
 import { liveFetch, storeFetch } from '@/lib/shopify/http';
 import { botUserAgent } from '@/lib/bot-ua';
 
@@ -19,16 +19,21 @@ export interface LiveVariant { id: number; priceCents: number; available: boolea
 
 export class CurrencyMismatchError extends Error {
   currency: string;
-  constructor(currency: string) {
-    super(`Expected USD but store reported ${currency}`);
+  constructor(expected: string, currency: string) {
+    super(`Expected ${expected} but store reported ${currency}`);
     this.name = 'CurrencyMismatchError';
     this.currency = currency;
   }
 }
 
-export function storeHeaders(): Record<string, string> {
+const CURRENCY_COOKIE: Record<Currency, string> = {
+  USD: 'localization=US; cart_currency=USD',
+  JPY: 'localization=JP; cart_currency=JPY',
+};
+
+export function storeHeaders(store: Pick<Store, 'currency'>): Record<string, string> {
   return {
-    Cookie: 'localization=US; cart_currency=USD',
+    Cookie: CURRENCY_COOKIE[store.currency],
     Accept: '*/*',
     'User-Agent': botUserAgent(),
   };
@@ -38,7 +43,7 @@ const sleep = (ms: number) => (ms > 0 ? new Promise<void>((r) => setTimeout(r, m
 
 async function storeRequest(store: Store, path: string, fetchFn: FetchFn, signal: AbortSignal): Promise<Response> {
   // redirect: 'manual' so we never send our cookie to, or read data from, another host.
-  const res = await fetchFn(`https://${store.domain}${path}`, { headers: storeHeaders(), signal, redirect: 'manual' });
+  const res = await fetchFn(`https://${store.domain}${path}`, { headers: storeHeaders(store), signal, redirect: 'manual' });
   if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
     throw new Error(`${store.domain} ${path}: unexpected redirect (HTTP ${res.status || 'opaqueredirect'})`);
   }
@@ -58,7 +63,7 @@ async function checkCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal
   const res = await storeRequest(store, '/cart.js', fetchFn, signal);
   if (!res.ok) throw new Error(`${store.domain} /cart.js failed: HTTP ${res.status}`);
   const cart = await readJson<{ currency?: string }>(store, '/cart.js', res);
-  if (cart.currency !== 'USD') throw new CurrencyMismatchError(String(cart.currency));
+  if (cart.currency !== store.currency) throw new CurrencyMismatchError(store.currency, String(cart.currency));
 }
 
 /** Only `/products.json` or `/collections/<handle>/products.json`: never an arbitrary path. */

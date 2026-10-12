@@ -16,7 +16,9 @@ export const listings = pgTable(
     productType: text('product_type').notNull(),
     imageUrl: text('image_url'),
     url: text('url').notNull(),
+    /** Price in the minor unit of `currency` (USD cents, whole JPY). */
     priceCents: integer('price_cents').notNull(),
+    currency: text('currency').notNull().default('USD'),
     available: boolean('available').notNull(),
     sizeMl: integer('size_ml'),
     proof: real('proof'),

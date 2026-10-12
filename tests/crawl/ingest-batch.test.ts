@@ -32,7 +32,7 @@ async function referenceIngest(
       const fields = {
         productId: o.productId, handle: o.handle, title: o.title, variantTitle: o.variantTitle,
         vendor: o.vendor, productType: o.productType, imageUrl: o.imageUrl, url: o.url,
-        priceCents: o.priceCents, available: o.available, sizeMl: o.sizeMl, proof: o.proof,
+        currency: o.currency, priceCents: o.priceCents, available: o.available, sizeMl: o.sizeMl, proof: o.proof,
         batch: o.batch, bottleKey: o.bottleKey, searchText: o.searchText,
         lastSeenAt: now, checkedAt: now, updatedAt: now,
       };
@@ -80,7 +80,7 @@ function ob(storeId: string, i: number, priceCents: number, available: boolean, 
     storeId, productId: 'p' + id, variantId: id, handle: 'h' + id, title: `Whisky ${id} r${rev}`,
     variantTitle: i % 7 === 0 ? `${i} ml` : null, vendor: 'V' + (i % 13), productType: 'Whiskey',
     imageUrl: i % 3 === 0 ? null : `https://img.test/${id}.jpg`, url: `https://s.test/products/h${id}`,
-    priceCents, available, sizeMl: i % 5 === 0 ? null : 750, proof: i % 4 === 0 ? 101.4 : null,
+    currency: 'USD', priceCents, available, sizeMl: i % 5 === 0 ? null : 750, proof: i % 4 === 0 ? 101.4 : null,
     batch: i % 11 === 0 ? 'B' + rev : null, bottleKey: `k${id}|r${rev}`, searchText: `whisky ${id} r${rev}`,
   };
 }

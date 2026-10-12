@@ -13,7 +13,7 @@ function listing(over: Partial<Listing> = {}): Listing {
   return {
     id: 1, storeId: 'dewinespot', productId: 'p', variantId: 'v', handle: 'h', title: "Blanton's Original", variantTitle: null,
     vendor: 'x', productType: 'Whiskey', imageUrl: 'https://cdn.shopify.com/a.jpg', url: 'https://dewinespot.co/products/h',
-    priceCents: 17500, available: true, sizeMl: 750, proof: 93, batch: null, bottleKey: 'k', searchText: 's',
+    priceCents: 17500, currency: 'USD', available: true, sizeMl: 750, proof: 93, batch: null, bottleKey: 'k', searchText: 's',
     firstSeenAt: d, lastSeenAt: d, checkedAt: d, updatedAt: d, ...over,
   };
 }

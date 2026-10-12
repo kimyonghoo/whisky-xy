@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { toObservations, catalogVariantIds } from '@/lib/crawl/map';
-import { getStore } from '@/lib/stores';
+import { getStore, type Store } from '@/lib/stores';
 
 const flask = getStore('flask')!;
 const p = {
@@ -12,6 +12,20 @@ const p = {
     { id: 13, title: '50ml', price: '2.99', available: true },
   ],
 };
+
+describe('toObservations currency', () => {
+  const jp = { ...flask, id: 'jpshop', domain: 'jp.example', currency: 'JPY' } as Store;
+  it('US stores yield USD', () => {
+    expect(toObservations(flask, p)[0].currency).toBe('USD');
+  });
+  it('a JPY store yields JPY and the whole-yen price', () => {
+    const obs = toObservations(jp, { ...p, variants: [{ id: 21, title: '700ml', price: '27500', available: true }] });
+    expect(obs[0]).toMatchObject({ currency: 'JPY', priceCents: 27500 });
+  });
+  it('skips a JPY variant with a fractional price', () => {
+    expect(toObservations(jp, { ...p, variants: [{ id: 22, title: '700ml', price: '27500.50', available: true }] })).toEqual([]);
+  });
+});
 
 describe('toObservations', () => {
   it('maps variants, drops minis, builds url and distinct bottle keys', () => {
