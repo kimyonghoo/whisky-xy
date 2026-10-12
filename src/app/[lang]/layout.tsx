@@ -5,6 +5,7 @@ import { Cormorant_Garamond, Noto_Serif_KR } from 'next/font/google';
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import { LOCALES, dictFor } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n/server';
+import { DEFAULT_CASK, DEFAULT_THEME, THEME_COLOR, themeBootScript } from '@/lib/theme';
 import { DictProvider } from '@/lib/i18n/client';
 import { SiteFooter, SiteHeader, SkipLink } from '@/components/SiteChrome';
 import '../globals.css';
@@ -41,16 +42,31 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
-  colorScheme: 'dark',
+  // Light is the default; the theme script below swaps it for a stored dark preference.
+  themeColor: THEME_COLOR[DEFAULT_THEME],
+  colorScheme: 'light dark',
   width: 'device-width',
   initialScale: 1,
 };
 
+// Built from constants only (src/lib/theme.ts), never from request data.
+const THEME_BOOT = themeBootScript();
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className={`${notoSerifKr.variable} ${cormorant.variable} h-full antialiased`}>
+    // The layout never reads the theme cookies (that would make every page dynamic). It renders the
+    // default, and the inline script swaps in the stored mode and cask before first paint.
+    <html
+      lang={locale}
+      data-theme={DEFAULT_THEME}
+      data-cask={DEFAULT_CASK}
+      suppressHydrationWarning
+      className={`${notoSerifKr.variable} ${cormorant.variable} h-full antialiased`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <DictProvider locale={locale}>
           <SkipLink />

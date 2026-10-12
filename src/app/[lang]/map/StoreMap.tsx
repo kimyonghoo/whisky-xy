@@ -33,8 +33,9 @@ export interface StoreMapProps {
 
 // Inlined at build time. OSM is the fallback; see mapTileConfig for the usage-policy note.
 const TILES = mapTileConfig(process.env.NEXT_PUBLIC_MAP_TILE_URL, process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION);
-// Standard OSM tiles are light; on the dark site they are inverted in CSS (globals.css, .map-tiles-dark),
-// which keeps label contrast. A configured provider is shown as-is (it may already be dark).
+// Standard OSM tiles are light: light mode shows them as-is, dark mode inverts them in CSS
+// (globals.css, `[data-theme="dark"] .map-tiles-dark`), which keeps label contrast. A configured
+// provider is shown as-is in both modes.
 const TILE_CLASS = TILES.url === OSM_TILE_URL ? 'map-tiles-dark' : undefined;
 const BOUNDS_PADDING: L.PointExpression = [28, 28];
 const CITY_MAX_ZOOM = 13;

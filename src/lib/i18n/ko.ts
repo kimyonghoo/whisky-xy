@@ -20,6 +20,20 @@ export const ko = {
     countryLabel: '국가',
   },
   lang: { label: '언어', ko: 'KO', en: 'EN', names: { ko: '한국어', en: 'English' } },
+  theme: {
+    label: '화면 설정',
+    mode: '화면 모드',
+    modes: { light: '라이트', dark: '다크' },
+    cask: '위스키 색',
+    // `en` is the English cask name, shown as a small echo when it differs from `name`.
+    casks: {
+      bourbon: { name: '버번', en: 'Bourbon', sub: '꿀빛 호박색' },
+      oloroso: { name: '올로로소', en: 'Oloroso', sub: '마호가니' },
+      madeira: { name: '마데이라', en: 'Madeira', sub: '구운 캐러멜' },
+      px: { name: '페드로 히메네스', en: 'Pedro Ximénez', sub: '짙은 적갈색' },
+      port: { name: '포트', en: 'Port', sub: '루비' },
+    },
+  },
   freshness: {
     justNow: '방금 확인',
     minutesAgo: (n: number) => `${n}분 전 확인`,

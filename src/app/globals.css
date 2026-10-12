@@ -4,8 +4,10 @@
 
 /*
  * Design tokens — see docs/design-system.md.
- * Direction: "Route W" — deep black, warm off-white ink, one gold accent, thin lines.
- * Dark is the only theme (no light/dark switch).
+ * Direction: "Route W" — warm ink, one whisky accent, thin lines. Two modes on <html data-theme>:
+ * light (warm cream, the default) and dark (deep black). The accent is a cask colour on
+ * <html data-cask> (bourbon, oloroso, madeira, px, port), with a light and a dark value each.
+ * Bare :root resolves to light + oloroso. src/lib/theme.ts sets both attributes before first paint.
  */
 
 @theme inline {
@@ -86,6 +88,13 @@
   --color-verdict-worse-ink: var(--verdict-worse-ink);
   --color-kr-bar: var(--kr-bar);
 
+  /* Cask swatches for the theme menu's drops. Mode-independent; small swatches only, never text. */
+  --color-cask-bourbon: var(--cask-bourbon);
+  --color-cask-oloroso: var(--cask-oloroso);
+  --color-cask-madeira: var(--cask-madeira);
+  --color-cask-px: var(--cask-px);
+  --color-cask-port: var(--cask-port);
+
   --radius-sm: calc(var(--radius) * 0.5);
   --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
@@ -94,13 +103,217 @@
   --radius-3xl: calc(var(--radius) * 2);
   --radius-4xl: calc(var(--radius) * 2.667);
 
-  /* Lines do the separating; shadows only lift overlays off the black. */
+  /* Lines do the separating; shadows only lift overlays off the page. Values differ per mode. */
   --shadow-card: 0 0 #0000;
-  --shadow-raised: 0 12px 32px -16px rgb(0 0 0 / 0.8);
-  --shadow-overlay: 0 24px 64px -16px rgb(0 0 0 / 0.9);
+  --shadow-raised: var(--elevation-raised);
+  --shadow-overlay: var(--elevation-overlay);
 }
 
+/* Mode-independent: radius and the cask swatches (theme menu drops). */
 :root {
+  --radius: 0.375rem;
+  --cask-bourbon: #b7832a;
+  --cask-oloroso: #7a2f14;
+  --cask-madeira: #9a5420;
+  --cask-px: #3f150a;
+  --cask-port: #7d1f2e;
+}
+
+/* Light (default): warm cream page, white-cream cards, dark warm ink. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Neutrals: cream surfaces, warm brown ink, warm hairlines */
+  --background: #f7f2ea;
+  --foreground: #1f1712;
+  --card: #fffdf9;
+  --card-foreground: #1f1712;
+  --popover: #fffdf9;
+  --popover-foreground: #1f1712;
+  --muted: #efe7da;
+  --muted-foreground: #6b5d50;
+  --faint: #6e6155;
+  --secondary: #efe7da;
+  --secondary-foreground: #2e241c;
+  --accent: #ebe2d3;
+  --accent-foreground: #1f1712;
+  --border: #e6dccd;
+  --border-strong: #d8cab6;
+  --input: #9a8a74;
+
+  /* Status (light): dark -fg text on a pale tint, mid-tone -line */
+  --instock: #1e7a42;
+  --instock-fg: #17643a;
+  --instock-bg: #e6f2ea;
+  --instock-line: #a9d2b6;
+  --soldout-fg: #6b5d50;
+  --soldout-bg: #efe7da;
+  --soldout-line: #d8cab6;
+  --caution-fg: #7a5200;
+  --caution-bg: #f8ecd0;
+  --caution-line: #e0c27a;
+  --caution-icon: #a86e00;
+  --stale-fg: #8f3d17;
+  --stale-bg: #f9e6dc;
+  --stale-line: #e3b39b;
+  --danger-fg: #a3231b;
+  --danger-bg: #fae4e1;
+  --danger-line: #e5aaa4;
+  --info-fg: #1f5486;
+  --info-bg: #e3edf7;
+  --info-line: #a9c3df;
+  --destructive: #b3261e;
+  /* Text on the few small solid status fills (verdict badges, "solid" badge). Never a surface. */
+  --on-solid: #ffffff;
+
+  /* Korea comparison verdicts (docs/design-system.md §3a). Ink ≥ 4.5:1 on its band and on card; bars ≥ 3:1 on card. */
+  --verdict-must: #137347;
+  --verdict-must-bg: #f3ecdc;
+  --verdict-must-ink: #0f5a36;
+  --verdict-big: #1e7a42;
+  --verdict-big-bg: #e6f2ea;
+  --verdict-big-line: #a9d2b6;
+  --verdict-big-ink: #17643a;
+  --verdict-good: #4a9466;
+  --verdict-good-bg: #edf5ef;
+  --verdict-good-line: #bcdcc6;
+  --verdict-good-ink: #2d6a45;
+  --verdict-small: #8c8178;
+  --verdict-small-bg: #f1ece4;
+  --verdict-small-line: #d8cab6;
+  --verdict-small-ink: #5f544a;
+  --verdict-worse: #c0392b;
+  --verdict-worse-bg: #fae4e1;
+  --verdict-worse-line: #e5aaa4;
+  --verdict-worse-ink: #a3231b;
+  /* Korea reference bar on /compare: slate, a different hue from every verdict. */
+  --kr-bar: #5a7898;
+
+  /* Soft warm shadows: overlays lift off cream without a dark halo. */
+  --elevation-raised: 0 12px 32px -16px rgb(64 44 24 / 0.28);
+  --elevation-overlay: 0 24px 64px -16px rgb(64 44 24 / 0.32);
+
+  /* Product photo spotlight: the card's own cream, so white store photos melt into the page. */
+  --spot-core: #fffdf9;
+  --spot-mid: #f3ece1;
+
+  /* Kept for vendored shadcn utilities that reference them. */
+  --chart-2: #a87a2c;
+  --chart-3: #4a9466;
+  --chart-4: #5a7898;
+  --chart-5: #6b5d50;
+  --sidebar: #f7f2ea;
+  --sidebar-foreground: #1f1712;
+  --sidebar-accent: #efe7da;
+  --sidebar-accent-foreground: #1f1712;
+  --sidebar-border: #e6dccd;
+}
+
+/* Cask accents, light mode: the deep whisky colour itself; text on accent fills is cream. */
+/* Oloroso: mahogany (light). */
+:root,
+[data-theme="light"][data-cask="oloroso"] {
+  --primary: #7a2f14;
+  --primary-hover: #62240e;
+  --primary-foreground: #fffdf9;
+  --primary-soft: #f3e2d8;
+  --ring: #7a2f14;
+  --honey: #a4573a;
+  --verdict-must-line: #a4573a;
+  --chart-1: #7a2f14;
+  --sidebar-primary: #7a2f14;
+  --sidebar-primary-foreground: #fffdf9;
+  --sidebar-ring: #7a2f14;
+  --pour-deep: #c98552;
+  --pour-mid: #9c4a1e;
+  --pour-light: #6e2a12;
+  --pour-glint: #e0a070;
+  --pour-liquid: #8a3a17;
+}
+
+/* Bourbon: honey amber (light). */
+[data-theme="light"][data-cask="bourbon"] {
+  --primary: #7d5716;
+  --primary-hover: #644511;
+  --primary-foreground: #fffdf9;
+  --primary-soft: #f3e8d2;
+  --ring: #7d5716;
+  --honey: #a87a2c;
+  --verdict-must-line: #a87a2c;
+  --chart-1: #7d5716;
+  --sidebar-primary: #7d5716;
+  --sidebar-primary-foreground: #fffdf9;
+  --sidebar-ring: #7d5716;
+  --pour-deep: #c99a45;
+  --pour-mid: #a8761f;
+  --pour-light: #7d5716;
+  --pour-glint: #e9c27a;
+  --pour-liquid: #c98f2e;
+}
+
+/* Madeira: burnt caramel (light). */
+[data-theme="light"][data-cask="madeira"] {
+  --primary: #86461a;
+  --primary-hover: #6c3813;
+  --primary-foreground: #fffdf9;
+  --primary-soft: #f4e6d4;
+  --ring: #86461a;
+  --honey: #b0703c;
+  --verdict-must-line: #b0703c;
+  --chart-1: #86461a;
+  --sidebar-primary: #86461a;
+  --sidebar-primary-foreground: #fffdf9;
+  --sidebar-ring: #86461a;
+  --pour-deep: #d9a061;
+  --pour-mid: #b0652a;
+  --pour-light: #7d3f15;
+  --pour-glint: #ebb878;
+  --pour-liquid: #a65a22;
+}
+
+/* Pedro Ximénez: raisin brown (light). */
+[data-theme="light"][data-cask="px"] {
+  --primary: #4f1c0c;
+  --primary-hover: #3a1308;
+  --primary-foreground: #fffdf9;
+  --primary-soft: #eedfd6;
+  --ring: #4f1c0c;
+  --honey: #8a5040;
+  --verdict-must-line: #8a5040;
+  --chart-1: #4f1c0c;
+  --sidebar-primary: #4f1c0c;
+  --sidebar-primary-foreground: #fffdf9;
+  --sidebar-ring: #4f1c0c;
+  --pour-deep: #9c5a3a;
+  --pour-mid: #6e2c12;
+  --pour-light: #3a1309;
+  --pour-glint: #c98552;
+  --pour-liquid: #5a2210;
+}
+
+/* Port: ruby (light). */
+[data-theme="light"][data-cask="port"] {
+  --primary: #7d1f2e;
+  --primary-hover: #641824;
+  --primary-foreground: #fffdf9;
+  --primary-soft: #f3dde0;
+  --ring: #7d1f2e;
+  --honey: #b04a5a;
+  --verdict-must-line: #b04a5a;
+  --chart-1: #7d1f2e;
+  --sidebar-primary: #7d1f2e;
+  --sidebar-primary-foreground: #fffdf9;
+  --sidebar-ring: #7d1f2e;
+  --pour-deep: #c4606f;
+  --pour-mid: #a33447;
+  --pour-light: #6e1a28;
+  --pour-glint: #e88a98;
+  --pour-liquid: #8a2434;
+}
+
+/* Dark: deep black, warm off-white ink, warm dark hairlines (the original Route W theme). */
+[data-theme="dark"] {
   color-scheme: dark;
 
   /* Neutrals: deep black, warm off-white ink, warm dark hairlines */
@@ -121,7 +334,7 @@
   --border-strong: #2c2720;
   --input: #3a342b;
 
-  /* Brand: one gold accent (links, labels, selected states; never large fills) */
+  /* Accent: bourbon gold when no cask is set (each [data-cask] block below overrides it). Never large fills. */
   --primary: #d4af6a;
   --primary-hover: #e0c084;
   --primary-foreground: #0a0a0a;
@@ -185,11 +398,13 @@
   --pour-glint: #d99a5a;
   --pour-liquid: #7a2f14;
 
+  /* Shadows lift overlays off the black. */
+  --elevation-raised: 0 12px 32px -16px rgb(0 0 0 / 0.8);
+  --elevation-overlay: 0 24px 64px -16px rgb(0 0 0 / 0.9);
+
   /* Product photo spotlight: a warm display-case light that store photos' white backgrounds melt into. */
   --spot-core: #ebe5d9;
   --spot-mid: #c9bfae;
-
-  --radius: 0.375rem;
 
   /* Kept for vendored shadcn utilities that reference them. */
   --chart-1: #d4af6a;
@@ -205,6 +420,107 @@
   --sidebar-accent-foreground: #f2efe8;
   --sidebar-border: #1f1c18;
   --sidebar-ring: #d4af6a;
+}
+
+/* Cask accents, dark mode: a light tint of each whisky so it reads on black; text on accent fills is black. */
+/* Bourbon: honey amber (dark). */
+[data-theme="dark"][data-cask="bourbon"] {
+  --primary: #d4af6a;
+  --primary-hover: #e0c084;
+  --primary-foreground: #0a0a0a;
+  --primary-soft: #1d1912;
+  --ring: #d4af6a;
+  --honey: #b8924f;
+  --verdict-must-line: #b8924f;
+  --chart-1: #d4af6a;
+  --sidebar-primary: #d4af6a;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-ring: #d4af6a;
+  --pour-deep: #5a3a10;
+  --pour-mid: #9a6a22;
+  --pour-light: #c99a45;
+  --pour-glint: #f0cf8a;
+  --pour-liquid: #a8761f;
+}
+
+/* Oloroso: mahogany (dark). */
+[data-theme="dark"][data-cask="oloroso"] {
+  --primary: #e0a07a;
+  --primary-hover: #eab595;
+  --primary-foreground: #0a0a0a;
+  --primary-soft: #22140e;
+  --ring: #e0a07a;
+  --honey: #b87652;
+  --verdict-must-line: #b87652;
+  --chart-1: #e0a07a;
+  --sidebar-primary: #e0a07a;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-ring: #e0a07a;
+  --pour-deep: #3a1309;
+  --pour-mid: #6e2a12;
+  --pour-light: #9c4a1e;
+  --pour-glint: #d99a5a;
+  --pour-liquid: #7a2f14;
+}
+
+/* Madeira: burnt caramel (dark). */
+[data-theme="dark"][data-cask="madeira"] {
+  --primary: #e2ae74;
+  --primary-hover: #ebc193;
+  --primary-foreground: #0a0a0a;
+  --primary-soft: #22180e;
+  --ring: #e2ae74;
+  --honey: #b8844e;
+  --verdict-must-line: #b8844e;
+  --chart-1: #e2ae74;
+  --sidebar-primary: #e2ae74;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-ring: #e2ae74;
+  --pour-deep: #45200c;
+  --pour-mid: #7d3f15;
+  --pour-light: #b0652a;
+  --pour-glint: #e6ad6a;
+  --pour-liquid: #8a4818;
+}
+
+/* Pedro Ximénez: raisin brown (dark). */
+[data-theme="dark"][data-cask="px"] {
+  --primary: #cf9a86;
+  --primary-hover: #dcb0a0;
+  --primary-foreground: #0a0a0a;
+  --primary-soft: #1e1210;
+  --ring: #cf9a86;
+  --honey: #a8705c;
+  --verdict-must-line: #a8705c;
+  --chart-1: #cf9a86;
+  --sidebar-primary: #cf9a86;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-ring: #cf9a86;
+  --pour-deep: #1e0905;
+  --pour-mid: #4a1a0b;
+  --pour-light: #7a3317;
+  --pour-glint: #c98552;
+  --pour-liquid: #5a2210;
+}
+
+/* Port: ruby (dark). */
+[data-theme="dark"][data-cask="port"] {
+  --primary: #e08a95;
+  --primary-hover: #e9a3ac;
+  --primary-foreground: #0a0a0a;
+  --primary-soft: #221114;
+  --ring: #e08a95;
+  --honey: #b4606c;
+  --verdict-must-line: #b4606c;
+  --chart-1: #e08a95;
+  --sidebar-primary: #e08a95;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-ring: #e08a95;
+  --pour-deep: #3a0c14;
+  --pour-mid: #6e1a28;
+  --pour-light: #a33447;
+  --pour-glint: #e88a98;
+  --pour-liquid: #7d1f2e;
 }
 
 @layer base {
@@ -260,11 +576,12 @@ div.leaflet-container {
   background: var(--muted);
 }
 /*
- * Standard OSM tiles are drawn for a light page. Inverting them (and turning the hue back so water
- * stays blue-grey) gives a dark map whose labels keep their original contrast, light on dark.
- * Only the tile layer is filtered: markers, popups and controls keep their real token colours.
+ * Standard OSM tiles are drawn for a light page, so light mode shows them as-is. In dark mode,
+ * inverting them (and turning the hue back so water stays blue-grey) gives a dark map whose labels
+ * keep their original contrast, light on dark. Only the tile layer is filtered: markers, popups and
+ * controls keep their real token colours.
  */
-.leaflet-container .map-tiles-dark {
+[data-theme="dark"] .leaflet-container .map-tiles-dark {
   filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.4);
 }
 .leaflet-container .map-popup a {
@@ -297,12 +614,12 @@ div.leaflet-container {
 .leaflet-container .leaflet-control-attribution {
   font-size: 0.75rem;
   color: var(--muted-foreground);
-  background: rgb(10 10 10 / 0.85);
+  background: color-mix(in srgb, var(--background) 90%, transparent);
 }
 .leaflet-container .leaflet-control-attribution a {
   color: var(--primary);
 }
-/* Zoom buttons: dark chrome with thin lines instead of Leaflet's white tiles. */
+/* Zoom buttons: token chrome (card surface, thin lines) instead of Leaflet's own white tiles. */
 div.leaflet-container .leaflet-bar {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);

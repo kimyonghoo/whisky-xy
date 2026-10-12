@@ -9,6 +9,7 @@ import { Wordmark } from '@/components/Wordmark';
 import { MobileMenu, MobileMenuFallback, NavLinks, NavLinksFallback } from '@/components/NavLinks';
 import { CitySelect, CitySelectFallback } from '@/components/CitySelect';
 import { LangSwitch, LangSwitchFallback } from '@/components/LangSwitch';
+import { ThemeMenu } from '@/components/ThemeMenu';
 import { PourProgress } from '@/components/PourProgress';
 
 /** Reads the remembered city at request time; the client component prefers a valid `?city=`. */
@@ -18,9 +19,10 @@ async function HeaderCity() {
 }
 
 /**
- * One row on desktop: mark, nav, city and language. Below `lg` the nav collapses into a menu
- * button and the city/language controls drop to a full-width second row (spec appendix B).
- * DOM order (mark, nav, menu button, city, language) matches the visual order at every width.
+ * One row on desktop: mark, nav, city, language and the display menu. Below `lg` the nav collapses
+ * into a menu button and the city/language/display controls drop to a full-width second row (spec
+ * appendix B). DOM order (mark, nav, menu button, city, language, display) matches the visual order
+ * at every width. The translucent header uses the page's own --background, so it works in both modes.
  */
 export async function SiteHeader() {
   const d = await getDict();
@@ -44,9 +46,12 @@ export async function SiteHeader() {
           <Suspense fallback={<CitySelectFallback />}>
             <HeaderCity />
           </Suspense>
-          <Suspense fallback={<LangSwitchFallback />}>
-            <LangSwitch />
-          </Suspense>
+          <div className="flex items-center gap-2">
+            <Suspense fallback={<LangSwitchFallback />}>
+              <LangSwitch />
+            </Suspense>
+            <ThemeMenu />
+          </div>
         </div>
       </div>
       <Suspense fallback={null}>

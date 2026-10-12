@@ -23,6 +23,19 @@ export const en: Dict = {
     countryLabel: 'Country',
   },
   lang: { label: 'Language', ko: 'KO', en: 'EN', names: { ko: '한국어', en: 'English' } },
+  theme: {
+    label: 'Display',
+    mode: 'Mode',
+    modes: { light: 'Light', dark: 'Dark' },
+    cask: 'Whisky colour',
+    casks: {
+      bourbon: { name: 'Bourbon', en: 'Bourbon', sub: 'Honey amber' },
+      oloroso: { name: 'Oloroso', en: 'Oloroso', sub: 'Mahogany' },
+      madeira: { name: 'Madeira', en: 'Madeira', sub: 'Burnt caramel' },
+      px: { name: 'Pedro Ximénez', en: 'Pedro Ximénez', sub: 'Raisin brown' },
+      port: { name: 'Port', en: 'Port', sub: 'Ruby' },
+    },
+  },
   freshness: {
     justNow: 'Checked just now',
     minutesAgo: (n: number) => `Checked ${n} min ago`,
