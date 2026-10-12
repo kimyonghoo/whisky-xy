@@ -191,15 +191,96 @@ describe('Japanese text', () => {
   });
 });
 
-describe('ASCII regression (recorded before the Japanese work)', () => {
-  const rows = regression as { title: string; variantTitle: string | null; key: string; norm: string }[];
-  it('has a meaningful number of recorded titles', () => {
-    expect(rows.length).toBeGreaterThanOrEqual(150);
+describe('Japanese bottle keys at script boundaries', () => {
+  const k = (title: string, variantTitle: string | null = null) => bottleKey({ title, variantTitle });
+
+  it('spaced and unspaced forms of the same bottle share one key', () => {
+    expect(k('山崎12年 700ml')).toBe(k('山崎 12年 700ml'));
+    expect(k('サントリー山崎12年')).toBe(k('サントリー 山崎 12年'));
+    expect(k('サントリー山崎12年ウイスキー')).toBe(k('サントリー 山崎 12年 ウイスキー'));
+    expect(k('サントリー山崎12年 シングルモルト 700ml')).toBe(k('サントリー 山崎 12年 シングルモルト 700ml'));
+  });
+
+  it('splits at CJK boundaries only, never inside Latin or digit runs', () => {
+    expect(k('山崎12年')).toBe('12 山崎 年|p|b|s750');
+    expect(k('白州B524 12年')).toContain('|bB524|');
+    expect(k('山崎 12yr 700ml')).toContain('12yr');
+    expect(k('ニッカ Coffey Grain')).toBe('coffey grain ニッカ|p|b|s750');
+  });
+
+  it('keeps the long-vowel mark with its kana run', () => {
+    expect(k('らーめん')).toBe('らーめん|p|b|s750');
+    expect(k('サントリー')).toBe('サントリー|p|b|s750');
+  });
+
+  it('still tells different Japanese bottles apart', () => {
+    expect(k('サントリー山崎12年')).not.toBe(k('サントリー白州12年'));
+    expect(k('山崎12年')).not.toBe(k('山崎18年'));
+    expect(k('山崎12年 700ml')).not.toBe(k('山崎12年 1L'));
+  });
+});
+
+describe('isWhiskyProduct Latin edge cases', () => {
+  const w = (title: string, productType = '') => isWhiskyProduct({ title, productType, tags: [] });
+  it('accepts a trademark sign after a word (NFKC must not break \\b)', () => {
+    expect(w('Bulleit Rye™')).toBe(true);
+    expect(w('Bulleit Rye™ Frontier Whiskey')).toBe(true);
+    expect(w('Bulleit Bourbon®')).toBe(true);
+  });
+  it('still rejects non-whisky with a trademark sign', () => {
+    expect(w('Craft Cans™ Sampler Whiskey')).toBe(false);
+    expect(w('Whisky Glass™ Set')).toBe(false);
+  });
+  it('グラス: rejects glassware, keeps Glasgow', () => {
+    expect(w('グラスゴー蒸溜所 ウイスキー')).toBe(true);
+    expect(w('ウイスキーグラス')).toBe(false);
+    expect(w('テイスティンググラス')).toBe(false);
+    expect(w('テイスティンググラス ウイスキー用')).toBe(false);
+  });
+});
+
+interface RegressionRow {
+  title: string;
+  variantTitle: string | null;
+  productType: string;
+  source: string;
+  key: string;
+  norm: string;
+  whisky: boolean;
+  whiskyTyped: boolean;
+  size: number | null;
+  proof: number | null;
+  batch: string | null;
+}
+
+describe('regression against the pre-Japanese parser (3ce1042)', () => {
+  const rows = regression as RegressionRow[];
+  const txt = (r: RegressionRow) => `${r.title} ${r.variantTitle ?? ''}`;
+  it('has a meaningful number of recorded titles, including non-ASCII Latin', () => {
+    expect(rows.length).toBeGreaterThanOrEqual(200);
+    expect(rows.filter((r) => r.source === 'db').length).toBeGreaterThanOrEqual(40);
+    expect(rows.filter((r) => /[^ -~]/.test(r.title)).length).toBeGreaterThanOrEqual(20);
+    expect(rows.some((r) => r.title.includes('™'))).toBe(true);
+    expect(rows.some((r) => r.title.includes('é'))).toBe(true);
+    expect(rows.some((r) => r.title.includes('®'))).toBe(true);
   });
   it('bottleKey and normalizeText outputs are byte-identical', () => {
     for (const r of rows) {
       expect(bottleKey({ title: r.title, variantTitle: r.variantTitle }), `key: ${r.title}`).toBe(r.key);
-      expect(normalizeText(`${r.title} ${r.variantTitle ?? ''}`), `norm: ${r.title}`).toBe(r.norm);
+      expect(normalizeText(txt(r)), `norm: ${r.title}`).toBe(r.norm);
+    }
+  });
+  it('isWhiskyProduct is unchanged (title-only, and with the real product type)', () => {
+    for (const r of rows) {
+      expect(isWhiskyProduct({ title: r.title, productType: '', tags: [] }), `whisky: ${r.title}`).toBe(r.whisky);
+      expect(isWhiskyProduct({ title: r.title, productType: r.productType, tags: [] }), `typed: ${r.title}`).toBe(r.whiskyTyped);
+    }
+  });
+  it('parseSizeMl, parseProof and parseBatch are unchanged', () => {
+    for (const r of rows) {
+      expect(parseSizeMl(txt(r)), `size: ${r.title}`).toBe(r.size);
+      expect(parseProof(txt(r)), `proof: ${r.title}`).toBe(r.proof);
+      expect(parseBatch(txt(r)), `batch: ${r.title}`).toBe(r.batch);
     }
   });
 });

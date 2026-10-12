@@ -2,1387 +2,2861 @@
  {
   "title": "1 / 750 ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "1|p|b|s750",
-  "norm": "1 750 ml"
+  "norm": "1 750 ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "1 Liter",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s1000",
-  "norm": "1 liter"
+  "norm": "1 liter",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 1000,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "1.75L",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s1750",
-  "norm": "1 75l"
+  "norm": "1 75l",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 1750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "2024 george stagg t|p|b|s750",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 b george p s750 stagg t|p|b|s750",
-  "norm": "2024 george stagg t p b s750"
+  "norm": "2024 george stagg t p b s750",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "24A",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "24a|p|b|s750",
-  "norm": "24a"
+  "norm": "24a",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "50ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s50",
-  "norm": "50ml"
+  "norm": "50ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 50,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "700ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s700",
-  "norm": "700ml"
+  "norm": "700ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 700,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s750",
-  "norm": "750ml"
+  "norm": "750ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "A <b> & \"Stagg\"",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a and b stagg|p|b|s750",
-  "norm": "a b and stagg"
+  "norm": "a b and stagg",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Alpha Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "alpha|p|b|s750",
-  "norm": "alpha bourbon"
+  "norm": "alpha bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "B524",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|bB524|s750",
-  "norm": "b524"
+  "norm": "b524",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": "B524"
  },
  {
   "title": "BTAC George T Stagg 2023",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2023 george stagg t|p|b|s750",
-  "norm": "btac george t stagg 2023"
+  "norm": "btac george t stagg 2023",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "BTAC George T. Stagg Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "george stagg t|p|b|s750",
-  "norm": "btac george t stagg bourbon"
+  "norm": "btac george t stagg bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "BTAC George T. Stagg Bourbon 2024 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p|b|s750",
-  "norm": "btac george t stagg bourbon 2024 750ml"
+  "norm": "btac george t stagg bourbon 2024 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Barrel Proof 100ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel proof|p|b|s100",
-  "norm": "barrel proof 100ml"
+  "norm": "barrel proof 100ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 100,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Barrell Seagrass Cask Finished Rye Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrell cask finished rye seagrass|p|b|s750",
-  "norm": "barrell seagrass cask finished rye whiskey"
+  "norm": "barrell seagrass cask finished rye whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Batch 12Yr",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "12yr batch|p|b|s750",
-  "norm": "batch 12yr"
+  "norm": "batch 12yr",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Beer",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "beer|p|b|s750",
-  "norm": "beer"
+  "norm": "beer",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Beta Rye",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "beta rye|p|b|s750",
-  "norm": "beta rye"
+  "norm": "beta rye",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Blanton's Original",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "blantons original|p|b|s750",
-  "norm": "blantons original"
+  "norm": "blantons original",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Blantons Single Barrel Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel blantons single|p|b|s750",
-  "norm": "blantons single barrel bourbon"
+  "norm": "blantons single barrel bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Blantons Single Barrel Bourbon 1L",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel blantons single|p|b|s1000",
-  "norm": "blantons single barrel bourbon 1l"
+  "norm": "blantons single barrel bourbon 1l",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 1000,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Blantons Single Barrel Bourbon 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel blantons single|p|b|s750",
-  "norm": "blantons single barrel bourbon 750ml"
+  "norm": "blantons single barrel bourbon 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s750",
-  "norm": "bourbon"
+  "norm": "bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Bourbon Barrel Aged Stout",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "aged barrel stout|p|b|s750",
-  "norm": "bourbon barrel aged stout"
+  "norm": "bourbon barrel aged stout",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Buffalo Trace Antique Collection George T. Stagg 2024",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p|b|s750",
-  "norm": "buffalo trace antique collection george t stagg 2024"
+  "norm": "buffalo trace antique collection george t stagg 2024",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Buffalo Trace Antique Collection Sazerac Rye 18 Year",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "18 rye sazerac|p|b|s750",
-  "norm": "buffalo trace antique collection sazerac rye 18 year"
+  "norm": "buffalo trace antique collection sazerac rye 18 year",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Buffalo Trace Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "buffalo trace|p|b|s750",
-  "norm": "buffalo trace bourbon"
+  "norm": "buffalo trace bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Buffalo Trace Kentucky Straight Bourbon 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "buffalo trace|p|b|s750",
-  "norm": "buffalo trace kentucky straight bourbon 750ml"
+  "norm": "buffalo trace kentucky straight bourbon 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Buffalo Trace Single Oak 375ml / Half-Bottle",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "buffalo half oak single trace|p|b|s375",
-  "norm": "buffalo trace single oak 375ml half bottle"
+  "norm": "buffalo trace single oak 375ml half bottle",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 375,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Cabernet Cask Finished Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "cabernet cask finished|p|b|s750",
-  "norm": "cabernet cask finished bourbon"
+  "norm": "cabernet cask finished bourbon",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Cans & Cocktails",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and cans cocktails|p|b|s750",
-  "norm": "cans and cocktails"
+  "norm": "cans and cocktails",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Crowd Rye A",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a crowd rye|p|b|s750",
-  "norm": "crowd rye a"
+  "norm": "crowd rye a",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Crowd Rye B",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "b crowd rye|p|b|s750",
-  "norm": "crowd rye b"
+  "norm": "crowd rye b",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Crowd Rye C",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "c crowd rye|p|b|s750",
-  "norm": "crowd rye c"
+  "norm": "crowd rye c",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Crowd Rye D",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "crowd d rye|p|b|s750",
-  "norm": "crowd rye d"
+  "norm": "crowd rye d",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Crowd Rye E",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "crowd e rye|p|b|s750",
-  "norm": "crowd rye e"
+  "norm": "crowd rye e",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Default Title",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s750",
-  "norm": "default title"
+  "norm": "default title",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Default Title becomes null variantTitle and tiny price parses",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and becomes null parses price tiny varianttitle|p|b|s750",
-  "norm": "default title becomes null varianttitle and tiny price parses"
+  "norm": "default title becomes null varianttitle and tiny price parses",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Delta Sold",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "delta sold|p|b|s750",
-  "norm": "delta sold"
+  "norm": "delta sold",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Doctor Bird Private Barrel Cask Strength (119 Proof)",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel bird cask doctor private strength|p119|b|s750",
-  "norm": "doctor bird private barrel cask strength 119 proof"
+  "norm": "doctor bird private barrel cask strength 119 proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": 119,
+  "batch": null
  },
  {
   "title": "Elijah Craig Barrel Proof B524 Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel craig elijah proof|p|bB524|s750",
-  "norm": "elijah craig barrel proof b524 bourbon"
+  "norm": "elijah craig barrel proof b524 bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": "B524"
  },
  {
   "title": "Expresiones Del Corazon George T. Stagg Anejo Tequila",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "anejo corazon del expresiones george stagg t tequila|p|b|s750",
-  "norm": "expresiones del corazon george t stagg anejo tequila"
+  "norm": "expresiones del corazon george t stagg anejo tequila",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Foo 100 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "foo|p100|b|s750",
-  "norm": "foo 100 proof"
+  "norm": "foo 100 proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": 100,
+  "batch": null
  },
  {
   "title": "Foo 1000",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "1000 foo|p|b|s750",
-  "norm": "foo 1000"
+  "norm": "foo 1000",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Four Roses Small Batch 90 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "batch four roses small|p90|b|s750",
-  "norm": "four roses small batch 90 proof"
+  "norm": "four roses small batch 90 proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": 90,
+  "batch": null
  },
  {
   "title": "Four Roses Small Batch Bourbon 90 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "batch four roses small|p90|b|s750",
-  "norm": "four roses small batch bourbon 90 proof"
+  "norm": "four roses small batch bourbon 90 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 90,
+  "batch": null
  },
  {
   "title": "Gamma Malt",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "gamma malt|p|b|s750",
-  "norm": "gamma malt"
+  "norm": "gamma malt",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T Stagg 2024 Edition Bourbon Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p|b|s750",
-  "norm": "george t stagg 2024 edition bourbon whiskey"
+  "norm": "george t stagg 2024 edition bourbon whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T Stagg 2024 Release 138.7 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p138.7|b|s750",
-  "norm": "george t stagg 2024 release 138 7 proof"
+  "norm": "george t stagg 2024 release 138 7 proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": 138.7,
+  "batch": null
  },
  {
   "title": "George T Stagg Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "george stagg t|p|b|s750",
-  "norm": "george t stagg bourbon"
+  "norm": "george t stagg bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T. Stagg 2024 Release",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p|b|s750",
-  "norm": "george t stagg 2024 release"
+  "norm": "george t stagg 2024 release",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T. Stagg Bourbon 2023 Release 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2023 george stagg t|p|b|s750",
-  "norm": "george t stagg bourbon 2023 release 750ml"
+  "norm": "george t stagg bourbon 2023 release 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T. Stagg Bourbon 2024 Release 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p|b|s750",
-  "norm": "george t stagg bourbon 2024 release 750ml"
+  "norm": "george t stagg bourbon 2024 release 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T. Stagg Kentucky Straight Bourbon Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "george stagg t|p|b|s750",
-  "norm": "george t stagg kentucky straight bourbon whiskey"
+  "norm": "george t stagg kentucky straight bourbon whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T. Stagg Kentucky Straight Bourbon Whiskey 2024 Release 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 george stagg t|p|b|s750",
-  "norm": "george t stagg kentucky straight bourbon whiskey 2024 release 750ml"
+  "norm": "george t stagg kentucky straight bourbon whiskey 2024 release 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "George T. Stagg Kentucky Straight Bourbon Whiskey 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "george stagg t|p|b|s750",
-  "norm": "george t stagg kentucky straight bourbon whiskey 750ml"
+  "norm": "george t stagg kentucky straight bourbon whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Glassware",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "glassware|p|b|s750",
-  "norm": "glassware"
+  "norm": "glassware",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Glendronach Port Wine Cask Finish Scotch",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "cask finish glendronach port scotch wine|p|b|s750",
-  "norm": "glendronach port wine cask finish scotch"
+  "norm": "glendronach port wine cask finish scotch",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "JPY",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "jpy|p|b|s750",
-  "norm": "jpy"
+  "norm": "jpy",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "daniel jack|p|b|s750",
-  "norm": "jack daniel"
+  "norm": "jack daniel",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel's & Coca-Cola Zero Sugar Variety 6-Pack 355ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "6 and coca cola daniels jack pack sugar variety zero|p|b|s355",
-  "norm": "jack daniels and coca cola zero sugar variety 6 pack 355ml"
+  "norm": "jack daniels and coca cola zero sugar variety 6 pack 355ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 355,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel's 10 Year Tennessee Whiskey Batch 05 700ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "10 daniels jack|p|b5|s700",
-  "norm": "jack daniels 10 year tennessee whiskey batch 05 700ml"
+  "norm": "jack daniels 10 year tennessee whiskey batch 05 700ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 700,
+  "proof": null,
+  "batch": "5"
  },
  {
   "title": "Jack Daniel's Barrel Proof Single Barrel Tennessee Rye Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack proof rye single|p|b|s750",
-  "norm": "jack daniels barrel proof single barrel tennessee rye whiskey"
+  "norm": "jack daniels barrel proof single barrel tennessee rye whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel's Barrel Proof Single Barrel Tennessee Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack proof single|p|b|s750",
-  "norm": "jack daniels barrel proof single barrel tennessee whiskey"
+  "norm": "jack daniels barrel proof single barrel tennessee whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel's Honey Liqueur",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "daniels honey jack liqueur|p|b|s750",
-  "norm": "jack daniels honey liqueur"
+  "norm": "jack daniels honey liqueur",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel's Single Barrel Barrel Proof Tennessee Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack proof single|p|b|s750",
-  "norm": "jack daniels single barrel barrel proof tennessee whiskey"
+  "norm": "jack daniels single barrel barrel proof tennessee whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniel's Single Barrel Proof 125",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack single|p125|b|s750",
-  "norm": "jack daniels single barrel proof 125"
+  "norm": "jack daniels single barrel proof 125",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": 125,
+  "batch": null
  },
  {
   "title": "Jack Daniel's Whiskey Single Barrel 94°",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack single|p94|b|s750",
-  "norm": "jack daniels whiskey single barrel 94"
+  "norm": "jack daniels whiskey single barrel 94",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 94,
+  "batch": null
  },
  {
   "title": "Jack Daniel's Whiskey Single Barrel 94º",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack single|p94|b|s750",
-  "norm": "jack daniels whiskey single barrel 94o"
+  "norm": "jack daniels whiskey single barrel 94o",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 94,
+  "batch": null
  },
  {
   "title": "Jack Daniels 12Yr Batch # 2",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "12yr daniels jack|p|b2|s750",
-  "norm": "jack daniels 12yr batch 2"
+  "norm": "jack daniels 12yr batch 2",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": "2"
  },
  {
   "title": "Jack Daniels Bonded Tennessee Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "bonded daniels jack|p|b|s750",
-  "norm": "jack daniels bonded tennessee whiskey"
+  "norm": "jack daniels bonded tennessee whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniels Bonded Tennessee Whiskey 1 Liter",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "bonded daniels jack|p|b|s1000",
-  "norm": "jack daniels bonded tennessee whiskey 1 liter"
+  "norm": "jack daniels bonded tennessee whiskey 1 liter",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 1000,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniels Single Barrel Rye 94 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel daniels jack rye single|p94|b|s750",
-  "norm": "jack daniels single barrel rye 94 proof"
+  "norm": "jack daniels single barrel rye 94 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 94,
+  "batch": null
  },
  {
   "title": "Jack Daniel’s & Coca-Cola  Café",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and cafe coca cola daniels jack|p|b|s750",
-  "norm": "jack daniels and coca cola cafe"
+  "norm": "jack daniels and coca cola cafe",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Liqueur",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "liqueur|p|b|s750",
-  "norm": "liqueur"
+  "norm": "liqueur",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Nikka From the Barrel",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel from nikka|p|b|s750",
-  "norm": "nikka from the barrel"
+  "norm": "nikka from the barrel",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "One",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "one|p|b|s750",
-  "norm": "one"
+  "norm": "one",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Other",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "other|p|b|s750",
-  "norm": "other"
+  "norm": "other",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Raw",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "raw|p|b|s750",
-  "norm": "raw"
+  "norm": "raw",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Raw2",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "raw2|p|b|s750",
-  "norm": "raw2"
+  "norm": "raw2",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Sazerac Rye Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "rye sazerac|p|b|s750",
-  "norm": "sazerac rye whiskey"
+  "norm": "sazerac rye whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Sazerac Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "sazerac|p|b|s750",
-  "norm": "sazerac whiskey"
+  "norm": "sazerac whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Sinatra Select 90 Proof 1L",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "select sinatra|p90|b|s1000",
-  "norm": "sinatra select 90 proof 1l"
+  "norm": "sinatra select 90 proof 1l",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 1000,
+  "proof": 90,
+  "batch": null
  },
  {
   "title": "Single Malt Scotch",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "malt scotch single|p|b|s750",
-  "norm": "single malt scotch"
+  "norm": "single malt scotch",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Small Batch 12 Year",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "12 batch small|p|b|s750",
-  "norm": "small batch 12 year"
+  "norm": "small batch 12 year",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Sold Out Only Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "only out sold|p|b|s750",
-  "norm": "sold out only whiskey"
+  "norm": "sold out only whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Spirits - Japanese Whisky",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "japanese spirits|p|b|s750",
-  "norm": "spirits japanese whisky"
+  "norm": "spirits japanese whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stag's Leap Artemis Cabernet Sauvignon 2022 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2022 artemis cabernet leap sauvignon stags|p|b|s750",
-  "norm": "stags leap artemis cabernet sauvignon 2022 750ml"
+  "norm": "stags leap artemis cabernet sauvignon 2022 750ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b|s750",
-  "norm": "stagg"
+  "norm": "stagg",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Batch 24A",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b24A|s750",
-  "norm": "stagg batch 24a"
+  "norm": "stagg batch 24a",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": "24A"
  },
  {
   "title": "Stagg Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b|s750",
-  "norm": "stagg bourbon"
+  "norm": "stagg bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Bourbon 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b|s750",
-  "norm": "stagg bourbon 750ml"
+  "norm": "stagg bourbon 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Bourbon Whiskey 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b|s750",
-  "norm": "stagg bourbon whiskey 750ml"
+  "norm": "stagg bourbon whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Jr Barrel Proof Bourbon Batch 14 130.2 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel jr proof stagg|p130.2|b14|s750",
-  "norm": "stagg jr barrel proof bourbon batch 14 130 2 proof"
+  "norm": "stagg jr barrel proof bourbon batch 14 130 2 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 130.2,
+  "batch": "14"
  },
  {
   "title": "Stagg Jr Barrel Proof Bourbon Batch 9 131.9 Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "barrel jr proof stagg|p131.9|b9|s750",
-  "norm": "stagg jr barrel proof bourbon batch 9 131 9 proof"
+  "norm": "stagg jr barrel proof bourbon batch 9 131 9 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 131.9,
+  "batch": "9"
  },
  {
   "title": "Stagg Jr Bourbon",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "jr stagg|p|b|s750",
-  "norm": "stagg jr bourbon"
+  "norm": "stagg jr bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Jr Bourbon 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "jr stagg|p|b|s750",
-  "norm": "stagg jr bourbon 750ml"
+  "norm": "stagg jr bourbon 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Jr Bourbon Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "jr stagg|p|b|s750",
-  "norm": "stagg jr bourbon whiskey"
+  "norm": "stagg jr bourbon whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Jr Kentucky Straight Bourbon Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "jr stagg|p|b|s750",
-  "norm": "stagg jr kentucky straight bourbon whiskey"
+  "norm": "stagg jr kentucky straight bourbon whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Jr. Kentucky Straight Bourbon Whiskey 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "jr stagg|p|b|s750",
-  "norm": "stagg jr kentucky straight bourbon whiskey 750ml"
+  "norm": "stagg jr kentucky straight bourbon whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Kentucky Straight Bourbon Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b|s750",
-  "norm": "stagg kentucky straight bourbon whiskey"
+  "norm": "stagg kentucky straight bourbon whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Stagg Kentucky Straight Bourbon Whiskey 750ml",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stagg|p|b|s750",
-  "norm": "stagg kentucky straight bourbon whiskey 750ml"
+  "norm": "stagg kentucky straight bourbon whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Tax Order Rye",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "order rye tax|p|b|s750",
-  "norm": "tax order rye"
+  "norm": "tax order rye",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Tequila",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "tequila|p|b|s750",
-  "norm": "tequila"
+  "norm": "tequila",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Titos 1.75L",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "titos|p|b|s1750",
-  "norm": "titos 1 75l"
+  "norm": "titos 1 75l",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 1750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "US stores yield USD",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "stores us usd yield|p|b|s750",
-  "norm": "us stores yield usd"
+  "norm": "us stores yield usd",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "USD",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "usd|p|b|s750",
-  "norm": "usd"
+  "norm": "usd",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Und",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "und|p|b|s750",
-  "norm": "und"
+  "norm": "und",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Und2",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "und2|p|b|s750",
-  "norm": "und2"
+  "norm": "und2",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Unlinked Rye",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "rye unlinked|p|b|s750",
-  "norm": "unlinked rye"
+  "norm": "unlinked rye",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "WHISKY",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s750",
-  "norm": "whisky"
+  "norm": "whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Weller Full Proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "full proof weller|p|b|s750",
-  "norm": "weller full proof"
+  "norm": "weller full proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s750",
-  "norm": "whiskey"
+  "norm": "whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Whisky ",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "|p|b|s750",
-  "norm": "whisky"
+  "norm": "whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Wine",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "wine|p|b|s750",
-  "norm": "wine"
+  "norm": "wine",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Wine Glass Set",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "glass set wine|p|b|s750",
-  "norm": "wine glass set"
+  "norm": "wine glass set",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Zeta Whiskey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "zeta|p|b|s750",
-  "norm": "zeta whiskey"
+  "norm": "zeta whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Zeta Whiskey Soldout",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "soldout zeta|p|b|s750",
-  "norm": "zeta whiskey soldout"
+  "norm": "zeta whiskey soldout",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "a JPY store yields JPY and the whole-yen price",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a and jpy price store whole yen yields|p|b|s750",
-  "norm": "a jpy store yields jpy and the whole yen price"
+  "norm": "a jpy store yields jpy and the whole yen price",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "accepts array tags and returns [] for non-whisky",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "accepts and array for non returns tags|p|b|s750",
-  "norm": "accepts array tags and returns for non whisky"
+  "norm": "accepts array tags and returns for non whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "accepts whisky and rejects non-whisky",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "accepts and non rejects|p|b|s750",
-  "norm": "accepts whisky and rejects non whisky"
+  "norm": "accepts whisky and rejects non whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "bottleKey",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "bottlekey|p|b|s750",
-  "norm": "bottlekey"
+  "norm": "bottlekey",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "bottleKey canonicalization (I1)",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "bottlekey canonicalization i1|p|b|s750",
-  "norm": "bottlekey canonicalization i1"
+  "norm": "bottlekey canonicalization i1",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "bourbon, usa",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "usa|p|b|s750",
-  "norm": "bourbon usa"
+  "norm": "bourbon usa",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "buffalo trace|p|b|s750",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "b buffalo p s750 trace|p|b|s750",
-  "norm": "buffalo trace p b s750"
+  "norm": "buffalo trace p b s750",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "catalogVariantIds",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "catalogvariantids|p|b|s750",
-  "norm": "catalogvariantids"
+  "norm": "catalogvariantids",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "fix round 1",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "1 fix round|p|b|s750",
-  "norm": "fix round 1"
+  "norm": "fix round 1",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "groups GTS 2024 listings from different stores that differ only in marketing words or missing size",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "2024 differ different from groups gts in listings marketing missing only or size stores that words|p|b|s750",
-  "norm": "groups gts 2024 listings from different stores that differ only in marketing words or missing size"
+  "norm": "groups gts 2024 listings from different stores that differ only in marketing words or missing size",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "groups conservatively",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "conservatively groups|p|b|s750",
-  "norm": "groups conservatively"
+  "norm": "groups conservatively",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "https://cdn.shopify.com/a.jpg",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a cdn com https jpg shopify|p|b|s750",
-  "norm": "https cdn shopify com a jpg"
+  "norm": "https cdn shopify com a jpg",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "https://flaskfinewines.com/products/jd-bonded",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "bonded com flaskfinewines https jd products|p|b|s750",
-  "norm": "https flaskfinewines com products jd bonded"
+  "norm": "https flaskfinewines com products jd bonded",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "includes every variant, even filtered, unparseable and non-whisky ones",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and even every filtered includes non ones unparseable variant|p|b|s750",
-  "norm": "includes every variant even filtered unparseable and non whisky ones"
+  "norm": "includes every variant even filtered unparseable and non whisky ones",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "isWhiskyProduct",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "iswhiskyproduct|p|b|s750",
-  "norm": "iswhiskyproduct"
+  "norm": "iswhiskyproduct",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "isWhiskyProduct handles cask finishes and beer",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and beer cask finishes handles iswhiskyproduct|p|b|s750",
-  "norm": "iswhiskyproduct handles cask finishes and beer"
+  "norm": "iswhiskyproduct handles cask finishes and beer",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "jack daniels and coca cola cafe",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and cafe coca cola daniels jack|p|b|s750",
-  "norm": "jack daniels and coca cola cafe"
+  "norm": "jack daniels and coca cola cafe",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "jp.example",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "example jp|p|b|s750",
-  "norm": "jp example"
+  "norm": "jp example",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "keeps Stagg, Stagg Jr. and George T. Stagg in three separate groups",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and george groups in jr keeps separate stagg t three|p|b|s750",
-  "norm": "keeps stagg stagg jr and george t stagg in three separate groups"
+  "norm": "keeps stagg stagg jr and george t stagg in three separate groups",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "keeps proof and rye in the key (missing vs present proof stays split, the safe direction)",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and direction in keeps key missing present proof rye safe split stays vs|p|b|s750",
-  "norm": "keeps proof and rye in the key missing vs present proof stays split the safe direction"
+  "norm": "keeps proof and rye in the key missing vs present proof stays split the safe direction",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "maps variants, drops minis, builds url and distinct bottle keys",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "and builds distinct drops keys maps minis url variants|p|b|s750",
-  "norm": "maps variants drops minis builds url and distinct bottle keys"
+  "norm": "maps variants drops minis builds url and distinct bottle keys",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "normalizeText",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "normalizetext|p|b|s750",
-  "norm": "normalizetext"
+  "norm": "normalizetext",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parseBatch",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "parsebatch|p|b|s750",
-  "norm": "parsebatch"
+  "norm": "parsebatch",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parseBatch ignores small batch / age / proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "age batch ignores parsebatch proof small|p|b|s750",
-  "norm": "parsebatch ignores small batch age proof"
+  "norm": "parsebatch ignores small batch age proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parseProof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "parseproof|p|b|s750",
-  "norm": "parseproof"
+  "norm": "parseproof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parseProof ignores sizes; Stagg Jr vs George T",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "george ignores jr parseproof sizes stagg t vs|p|b|s750",
-  "norm": "parseproof ignores sizes stagg jr vs george t"
+  "norm": "parseproof ignores sizes stagg jr vs george t",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parseSizeMl",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "parsesizeml|p|b|s750",
-  "norm": "parsesizeml"
+  "norm": "parsesizeml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parses batch",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "batch parses|p|b|s750",
-  "norm": "parses batch"
+  "norm": "parses batch",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parses prices exactly",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "exactly parses prices|p|b|s750",
-  "norm": "parses prices exactly"
+  "norm": "parses prices exactly",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parses proof",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "parses proof|p|b|s750",
-  "norm": "parses proof"
+  "norm": "parses proof",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "parses sizes",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "parses sizes|p|b|s750",
-  "norm": "parses sizes"
+  "norm": "parses sizes",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "skips a JPY variant with a fractional price",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a fractional jpy price skips variant with|p|b|s750",
-  "norm": "skips a jpy variant with a fractional price"
+  "norm": "skips a jpy variant with a fractional price",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "skips a variant with an unparseable price without throwing",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a an price skips throwing unparseable variant with without|p|b|s750",
-  "norm": "skips a variant with an unparseable price without throwing"
+  "norm": "skips a variant with an unparseable price without throwing",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "strips \"buffalo trace antique collection\" only as a whole phrase",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a as only phrase strips whole|p|b|s750",
-  "norm": "strips buffalo trace antique collection only as a whole phrase"
+  "norm": "strips buffalo trace antique collection only as a whole phrase",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "t",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "t|p|b|s750",
-  "norm": "t"
+  "norm": "t",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "toObservations",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "toobservations|p|b|s750",
-  "norm": "toobservations"
+  "norm": "toobservations",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "toObservations currency",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "currency toobservations|p|b|s750",
-  "norm": "toobservations currency"
+  "norm": "toobservations currency",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "treats a missing size as 750 ml but keeps stated other sizes apart",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "a apart as but keeps missing other size sizes stated treats|p|b|s750",
-  "norm": "treats a missing size as 750 ml but keeps stated other sizes apart"
+  "norm": "treats a missing size as 750 ml but keeps stated other sizes apart",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "|b|",
   "variantTitle": null,
+  "productType": "",
   "source": "test",
   "key": "b|p|b|s750",
-  "norm": "b"
+  "norm": "b",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Johnnie Walker Blue Label \"New York Limited Edition Design\" Blended Scotch Whisky",
   "variantTitle": "750ml",
+  "productType": "Spirits",
   "source": "db",
   "key": "blended blue design johnnie label limited new scotch walker york|p|b|s750",
-  "norm": "johnnie walker blue label new york limited edition design blended scotch whisky 750ml"
+  "norm": "johnnie walker blue label new york limited edition design blended scotch whisky 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Willett 6 Year Old Single Barrel Kentucky Straight Rye Whiskey",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "6 barrel rye single willett|p|b|s750",
-  "norm": "willett 6 year old single barrel kentucky straight rye whiskey"
+  "norm": "willett 6 year old single barrel kentucky straight rye whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Iwai Mars Blue Label Japanese Whisky",
   "variantTitle": null,
+  "productType": "Spirits - Japanese Whisky",
   "source": "db",
   "key": "blue iwai japanese label mars|p|b|s750",
-  "norm": "iwai mars blue label japanese whisky"
+  "norm": "iwai mars blue label japanese whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Saint Cloud Bourbon X-Series / Abstrakt 2 By Flore",
   "variantTitle": null,
+  "productType": "Spirits - Bourbon",
   "source": "db",
   "key": "2 abstrakt by cloud flore saint series x|p|b|s750",
-  "norm": "saint cloud bourbon x series abstrakt 2 by flore"
+  "norm": "saint cloud bourbon x series abstrakt 2 by flore",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "The Colonel E.H. Taylor Straight Rye Whiskey",
   "variantTitle": "750ml",
+  "productType": "Spirits",
   "source": "db",
   "key": "colonel e h rye taylor|p|b|s750",
-  "norm": "the colonel e h taylor straight rye whiskey 750ml"
+  "norm": "the colonel e h taylor straight rye whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Cooperstown Springfield Basketball Decanter Whiskey",
   "variantTitle": "750ML",
+  "productType": "Whisky",
   "source": "db",
   "key": "basketball cooperstown decanter springfield|p|b|s750",
-  "norm": "cooperstown springfield basketball decanter whiskey 750ml"
+  "norm": "cooperstown springfield basketball decanter whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Knob Creek Small Batch Limited Edition 21 Year Bourbon 750ml",
   "variantTitle": null,
+  "productType": "Bourbon Whiskey",
   "source": "db",
   "key": "21 batch creek knob limited small|p|b|s750",
-  "norm": "knob creek small batch limited edition 21 year bourbon 750ml"
+  "norm": "knob creek small batch limited edition 21 year bourbon 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Willett Vintage 23 Year Old Rye Whiskey",
   "variantTitle": null,
+  "productType": "Spirits - Rye Whiskey",
   "source": "db",
   "key": "23 rye vintage willett|p|b|s750",
-  "norm": "willett vintage 23 year old rye whiskey"
+  "norm": "willett vintage 23 year old rye whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Woodford Reserve Master's Collection Batch Proof Kentucky Straight Bourbon Whiskey",
   "variantTitle": "2021 (128.3 Proof)",
+  "productType": "Spirits",
   "source": "db",
   "key": "2021 batch collection masters proof reserve woodford|p128.3|b|s750",
-  "norm": "woodford reserve masters collection batch proof kentucky straight bourbon whiskey 2021 128 3 proof"
+  "norm": "woodford reserve masters collection batch proof kentucky straight bourbon whiskey 2021 128 3 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 128.3,
+  "batch": null
  },
  {
   "title": "Traveller Whiskey Field of Dreams Edition",
   "variantTitle": "750 ML",
+  "productType": "whiskey",
   "source": "db",
   "key": "dreams field of traveller|p|b|s750",
-  "norm": "traveller whiskey field of dreams edition 750 ml"
+  "norm": "traveller whiskey field of dreams edition 750 ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "The Glen Grant 12 Years Rothes Speyside Single Malt Scotch Whisky",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "12 glen grant malt rothes scotch single speyside|p|b|s750",
-  "norm": "the glen grant 12 years rothes speyside single malt scotch whisky"
+  "norm": "the glen grant 12 years rothes speyside single malt scotch whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Glenallachie Anniversary Selection 35 Year Old Single Malt Scotch Whisky",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "35 anniversary glenallachie malt scotch selection single|p|b|s750",
-  "norm": "glenallachie anniversary selection 35 year old single malt scotch whisky"
+  "norm": "glenallachie anniversary selection 35 year old single malt scotch whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Glenlivet Nadurra Peated Cask 750ml",
   "variantTitle": null,
+  "productType": "Spirits - Single Malt Scotch",
   "source": "db",
   "key": "cask glenlivet nadurra peated|p|b|s750",
-  "norm": "glenlivet nadurra peated cask 750ml"
+  "norm": "glenlivet nadurra peated cask 750ml",
+  "whisky": false,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "All Points West Kill Van Kull Single Pot Still Rum 750ml",
   "variantTitle": "1 / 750ml / default",
+  "productType": "Gold / Amber",
   "source": "db",
   "key": "1 750ml all kill kull points pot rum single still van west|p|b|s750",
-  "norm": "all points west kill van kull single pot still rum 750ml 1 750ml default"
+  "norm": "all points west kill van kull single pot still rum 750ml 1 750ml default",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Fighting Cock Bourbon 8 Yr. 103º",
   "variantTitle": "750ML",
+  "productType": "Whisky",
   "source": "db",
   "key": "8 cock fighting|p103|b|s750",
-  "norm": "fighting cock bourbon 8 yr 103o 750ml"
+  "norm": "fighting cock bourbon 8 yr 103o 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": 103,
+  "batch": null
  },
  {
   "title": "Proof & Wood The Representative 750ml",
   "variantTitle": "Each",
+  "productType": "Liquor & Spirits",
   "source": "db",
   "key": "and each proof representative wood|p|b|s750",
-  "norm": "proof and wood the representative 750ml each"
+  "norm": "proof and wood the representative 750ml each",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Four Roses \"B for Bourbon\" Single Barrel Kentucky Straight Bourbon Whiskey The Prime Barrel Pick #6",
   "variantTitle": "750ml",
+  "productType": "Spirits",
   "source": "db",
   "key": "6 b barrel for four pick prime roses single|p|b|s750",
-  "norm": "four roses b for bourbon single barrel kentucky straight bourbon whiskey the prime barrel pick 6 750ml"
+  "norm": "four roses b for bourbon single barrel kentucky straight bourbon whiskey the prime barrel pick 6 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Colonel E.H. Taylor Barrel Proof Bourbon 127.9 Proof Batch 15 / 2026",
   "variantTitle": null,
+  "productType": "Spirits - Bourbon",
   "source": "db",
   "key": "2026 barrel colonel e h proof taylor|p127.9|b15|s750",
-  "norm": "colonel e h taylor barrel proof bourbon 127 9 proof batch 15 2026"
+  "norm": "colonel e h taylor barrel proof bourbon 127 9 proof batch 15 2026",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 127.9,
+  "batch": "15"
  },
  {
   "title": "Taconic Distillery “Man’s Best Friend” Dutchess Private Reserve  Cognac Cask Finish Straight Bourbon The Prime Barrel Pick #15",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "15 barrel best cask cognac distillery dutchess finish friend mans pick prime private reserve taconic|p|b|s750",
-  "norm": "taconic distillery mans best friend dutchess private reserve cognac cask finish straight bourbon the prime barrel pick 15"
+  "norm": "taconic distillery mans best friend dutchess private reserve cognac cask finish straight bourbon the prime barrel pick 15",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "OFC Old Fashioned Copper 1990 Buffalo Trace Distillery Bourbon Whiskey [Net]",
   "variantTitle": null,
+  "productType": "Spirits - Bourbon",
   "source": "db",
   "key": "1990 buffalo copper distillery fashioned net ofc trace|p|b|s750",
-  "norm": "ofc old fashioned copper 1990 buffalo trace distillery bourbon whiskey net"
+  "norm": "ofc old fashioned copper 1990 buffalo trace distillery bourbon whiskey net",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Laphroaig 10 Year Old Cask Strength Batch 14 117.2",
   "variantTitle": null,
+  "productType": "Spirits - Single Malt Scotch",
   "source": "db",
   "key": "10 117 2 cask laphroaig strength|p|b14|s750",
-  "norm": "laphroaig 10 year old cask strength batch 14 117 2"
+  "norm": "laphroaig 10 year old cask strength batch 14 117 2",
+  "whisky": false,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": "14"
  },
  {
   "title": "Thomas S. Moore Madeira Casks Bourbon",
   "variantTitle": "750 ml",
+  "productType": "Whiskey",
   "source": "db",
   "key": "casks madeira moore s thomas|p|b|s750",
-  "norm": "thomas s moore madeira casks bourbon 750 ml"
+  "norm": "thomas s moore madeira casks bourbon 750 ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Bookers Bourbon 2022-04 Pinkies Batch 122.4 Proof",
   "variantTitle": null,
+  "productType": "Spirits - Bourbon",
   "source": "db",
   "key": "04 2022 batch bookers pinkies|p122.4|b122|s750",
-  "norm": "bookers bourbon 2022 04 pinkies batch 122 4 proof"
+  "norm": "bookers bourbon 2022 04 pinkies batch 122 4 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 122.4,
+  "batch": "122"
  },
  {
   "title": "Four Roses Sm Batch 90PF",
   "variantTitle": "1 / 375ml",
+  "productType": "Bourbon",
   "source": "db",
   "key": "1 four pf roses sm|p|b90|s375",
-  "norm": "four roses sm batch 90pf 1 375ml"
+  "norm": "four roses sm batch 90pf 1 375ml",
+  "whisky": false,
+  "whiskyTyped": true,
+  "size": 375,
+  "proof": null,
+  "batch": "90"
  },
  {
   "title": "Foursquare Distillery Mark XVIII \"Indelible\" 11 Years Single Blended Rum",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "11 blended distillery foursquare indelible mark rum single xviii|p|b|s750",
-  "norm": "foursquare distillery mark xviii indelible 11 years single blended rum"
+  "norm": "foursquare distillery mark xviii indelible 11 years single blended rum",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "High Proof Bourbon Flight",
   "variantTitle": null,
+  "productType": "Curated",
   "source": "db",
   "key": "flight high proof|p|b|s750",
-  "norm": "high proof bourbon flight"
+  "norm": "high proof bourbon flight",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Glenglassaugh Sandend Highland Single Malt Scotch Whisky",
   "variantTitle": null,
+  "productType": "Spirits - Single Malt Scotch",
   "source": "db",
   "key": "glenglassaugh highland malt sandend scotch single|p|b|s750",
-  "norm": "glenglassaugh sandend highland single malt scotch whisky"
+  "norm": "glenglassaugh sandend highland single malt scotch whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Glenglassaugh Sandend Highland Single Malt Scotch Whisky",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "glenglassaugh highland malt sandend scotch single|p|b|s750",
-  "norm": "glenglassaugh sandend highland single malt scotch whisky"
+  "norm": "glenglassaugh sandend highland single malt scotch whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Breaker Bourbon Wheated 750ml",
   "variantTitle": null,
+  "productType": "Spirits - Bourbon",
   "source": "db",
   "key": "breaker wheated|p|b|s750",
-  "norm": "breaker bourbon wheated 750ml"
+  "norm": "breaker bourbon wheated 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jim Beam White Bourbon 750 ML",
   "variantTitle": "1 / 750ml / default",
+  "productType": "Whiskey",
   "source": "db",
   "key": "1 750ml beam jim white|p|b|s750",
-  "norm": "jim beam white bourbon 750 ml 1 750ml default"
+  "norm": "jim beam white bourbon 750 ml 1 750ml default",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "High West A Midwinter Nights Dram Blend of Straight Rye Whiskey",
   "variantTitle": "4",
+  "productType": "Spirits",
   "source": "db",
   "key": "4 a blend dram high midwinter nights of rye west|p|b|s750",
-  "norm": "high west a midwinter nights dram blend of straight rye whiskey 4"
+  "norm": "high west a midwinter nights dram blend of straight rye whiskey 4",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Barrett's 20 Year Old Black Label Straight Pennsylvania Bourbon",
   "variantTitle": null,
+  "productType": "Spirits - Bourbon",
   "source": "db",
   "key": "20 barretts black label pennsylvania|p|b|s750",
-  "norm": "barretts 20 year old black label straight pennsylvania bourbon"
+  "norm": "barretts 20 year old black label straight pennsylvania bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Akashi White Oak Blended Japanese Whisky",
   "variantTitle": null,
+  "productType": "Spirits - Japanese Whisky",
   "source": "db",
   "key": "akashi blended japanese oak white|p|b|s750",
-  "norm": "akashi white oak blended japanese whisky"
+  "norm": "akashi white oak blended japanese whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Jack Daniels  Mr. Jacks 160th Birthday",
   "variantTitle": null,
+  "productType": "Spirits - Whiskey",
   "source": "db",
   "key": "160th birthday daniels jack jacks mr|p|b|s750",
-  "norm": "jack daniels mr jacks 160th birthday"
+  "norm": "jack daniels mr jacks 160th birthday",
+  "whisky": false,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Indri Trini Indian Single Malt Whisky 750 ML",
   "variantTitle": "6 / 750ml / default",
+  "productType": "Indian",
   "source": "db",
   "key": "6 750ml indian indri malt single trini|p|b|s750",
-  "norm": "indri trini indian single malt whisky 750 ml 6 750ml default"
+  "norm": "indri trini indian single malt whisky 750 ml 6 750ml default",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Barrell Craft Spirits Private Release “Donkey Kong” Kentucky Whiskey Finished in PX Sherry Barrel The Prime Barrel Pick #30",
   "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
   "key": "30 barrel barrell craft donkey finished in kong pick prime private px sherry spirits|p|b|s750",
-  "norm": "barrell craft spirits private release donkey kong kentucky whiskey finished in px sherry barrel the prime barrel pick 30"
+  "norm": "barrell craft spirits private release donkey kong kentucky whiskey finished in px sherry barrel the prime barrel pick 30",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Cedar Ridge Original 86 Bbn",
   "variantTitle": "1 / 750ml",
+  "productType": "American (Other)",
   "source": "db",
   "key": "1 86 bbn cedar original ridge|p|b|s750",
-  "norm": "cedar ridge original 86 bbn 1 750ml"
+  "norm": "cedar ridge original 86 bbn 1 750ml",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Lagavulin Distillers Edition 2022 Single Malt Scotch Whisky",
   "variantTitle": null,
+  "productType": "Spirits - Single Malt Scotch",
   "source": "db",
   "key": "2022 distillers lagavulin malt scotch single|p|b|s750",
-  "norm": "lagavulin distillers edition 2022 single malt scotch whisky"
+  "norm": "lagavulin distillers edition 2022 single malt scotch whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  },
  {
   "title": "Sam Houston 14 Years Kentucky Straight Bourbon Whiskey",
   "variantTitle": "750ml",
+  "productType": "Spirits",
   "source": "db",
   "key": "14 houston sam|p|b|s750",
-  "norm": "sam houston 14 years kentucky straight bourbon whiskey 750ml"
+  "norm": "sam houston 14 years kentucky straight bourbon whiskey 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
  },
  {
-  "title": "Sam Houston 14 Years Kentucky Straight Bourbon Whiskey",
-  "variantTitle": "750ml",
+  "title": "Tumblin’ Dice \"A Natural\" 7 Year Single Barrel Straight Bourbon Whiskey The Prime Barrel Pick #123",
+  "variantTitle": null,
+  "productType": "Spirits",
   "source": "db",
-  "key": "14 houston sam|p|b|s750",
-  "norm": "sam houston 14 years kentucky straight bourbon whiskey 750ml"
+  "key": "123 7 a barrel dice natural pick prime single tumblin|p|b|s750",
+  "norm": "tumblin dice a natural 7 year single barrel straight bourbon whiskey the prime barrel pick 123",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Lucky Seven 14 Years Old “Drink Lucky” Single Barrel Kentucky Straight Bourbon Whiskey The Prime Barrel Pick #42",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "14 42 barrel drink lucky pick prime seven single|p|b|s750",
+  "norm": "lucky seven 14 years old drink lucky single barrel kentucky straight bourbon whiskey the prime barrel pick 42",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Maker’s Mark Limited Edition Keeneland 2023 Set",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "2023 keeneland limited makers mark set|p|b|s750",
+  "norm": "makers mark limited edition keeneland 2023 set",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Parkers Heritage Collection 8th Edition 13 Year Old Cask Strength Wheat Whiskey",
+  "variantTitle": null,
+  "productType": "Spirits - Bourbon",
+  "source": "db",
+  "key": "13 8th cask collection heritage parkers strength wheat|p|b|s750",
+  "norm": "parkers heritage collection 8th edition 13 year old cask strength wheat whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Maker’s Mark ”The Winning Ticket” Private Select Single Barrel Kentucky Straight Bourbon Whiskey The Prime Barrel Pick #13",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "13 barrel makers mark pick prime private select single ticket winning|p|b|s750",
+  "norm": "makers mark the winning ticket private select single barrel kentucky straight bourbon whiskey the prime barrel pick 13",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "The Famous Grouse Scotch 80º",
+  "variantTitle": "375 ML",
+  "productType": "SCOTCH",
+  "source": "db",
+  "key": "famous grouse scotch|p80|b|s375",
+  "norm": "the famous grouse scotch 80o 375 ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 375,
+  "proof": 80,
+  "batch": null
+ },
+ {
+  "title": "Binder’s Stash “Ceci n’est pas un Willett” Flask Private Single Barrel Bourbon 8 Year 124.4 Proof",
+  "variantTitle": null,
+  "productType": "Spirits - Bourbon",
+  "source": "db",
+  "key": "8 barrel binders ceci flask nest pas private single stash un willett|p124.4|b|s750",
+  "norm": "binders stash ceci nest pas un willett flask private single barrel bourbon 8 year 124 4 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 124.4,
+  "batch": null
+ },
+ {
+  "title": "King’s Family Distillery Toasted Amburana Ryeconic Twice Barreled Rye Whiskey",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "amburana barreled distillery family kings rye ryeconic toasted twice|p|b|s750",
+  "norm": "kings family distillery toasted amburana ryeconic twice barreled rye whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Kings County Distillery 6 Year Old ”Kings of New York” Barrel Strength Bourbon The Prime Barrel Pick #17",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "17 6 barrel county distillery kings new of pick prime strength york|p|b|s750",
+  "norm": "kings county distillery 6 year old kings of new york barrel strength bourbon the prime barrel pick 17",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Angel’s Envy Breaking Bourbon “Questionable Gaze” Port Cask Finished Bourbon",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "angels breaking cask envy finished gaze port questionable|p|b|s750",
+  "norm": "angels envy breaking bourbon questionable gaze port cask finished bourbon",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Seagram’s 7 Crown Apple Pie",
+  "variantTitle": "1 / 750 Ml",
+  "productType": "Flavored Whiskey",
+  "source": "db",
+  "key": "1 7 apple crown pie seagrams|p|b|s750",
+  "norm": "seagrams 7 crown apple pie 1 750 ml",
+  "whisky": false,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "High West “Have Merci” Barrel Select Blend of Straight Bourbon Whiskeys Finished in Armagnac Barrels The Prime Barrel x R-Bourbon Pick",
+  "variantTitle": null,
+  "productType": "Spirits",
+  "source": "db",
+  "key": "armagnac barrel barrels blend finished have high in merci of pick prime r select west whiskeys x|p|b|s750",
+  "norm": "high west have merci barrel select blend of straight bourbon whiskeys finished in armagnac barrels the prime barrel x r bourbon pick",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Old Taylor 1917 Prohibition Era American Medicinal Spirits Co. / Private Bottling / Full Quart [Mid Shoulder]",
+  "variantTitle": null,
+  "productType": "Spirits - Bourbon",
+  "source": "db",
+  "key": "1917 american bottling co era full medicinal mid private prohibition quart shoulder spirits taylor|p|b|s750",
+  "norm": "old taylor 1917 prohibition era american medicinal spirits co private bottling full quart mid shoulder",
+  "whisky": false,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Bulleit Rye™ Frontier Whiskey",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "bulleit frontier rye|p|b|s750",
+  "norm": "bulleit rye frontier whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Bulleit Bourbon® 750ml",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "bulleit|p|b|s750",
+  "norm": "bulleit bourbon 750ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 750,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Café de Paris Whisky Liqueur",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "cafe de liqueur paris|p|b|s750",
+  "norm": "cafe de paris whisky liqueur",
+  "whisky": false,
+  "whiskyTyped": false,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Crème de Whisky",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "creme de|p|b|s750",
+  "norm": "creme de whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Jameson® Irish Whiskey 1L",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "irish jameson|p|b|s1000",
+  "norm": "jameson irish whiskey 1l",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 1000,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Glenmorangie™ Nectar d’Or Single Malt 46º",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "46o dor glenmorangie malt nectar single|p|b|s750",
+  "norm": "glenmorangie nectar dor single malt 46o",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Maker’s Mark® Bourbon 94 Proof",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "makers mark|p94|b|s750",
+  "norm": "makers mark bourbon 94 proof",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": 94,
+  "batch": null
+ },
+ {
+  "title": "Bushmills® Original — Irish Whiskey",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "bushmills irish original|p|b|s750",
+  "norm": "bushmills original irish whiskey",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Hakushu™ 12 Year Single Malt 700ml",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "12 hakushu malt single|p|b|s700",
+  "norm": "hakushu 12 year single malt 700ml",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": 700,
+  "proof": null,
+  "batch": null
+ },
+ {
+  "title": "Nikka Coffey Grain® Whisky",
+  "variantTitle": null,
+  "productType": "",
+  "source": "latin",
+  "key": "coffey grain nikka|p|b|s750",
+  "norm": "nikka coffey grain whisky",
+  "whisky": true,
+  "whiskyTyped": true,
+  "size": null,
+  "proof": null,
+  "batch": null
  }
 ]

@@ -3,7 +3,7 @@
 const WHISKY_RE =
   /whisk(e)?y|bourbon|scotch|\brye\b|single malt|ウイスキー|ウィスキー|ウヰスキー|ウイスキ|シングルモルト|ブレンデッド/i;
 const ALWAYS_REJECT_RE =
-  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒|焼酎|日本酒|グラス|ギフト券/i;
+  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒|焼酎|日本酒|グラス(?!ゴー)|ギフト券/i;
 // Wine/grape and beer terms only reject when productType is not itself whisky-like
 // (cask-finished whisky legitimately mentions port, cabernet, etc.).
 const NON_WHISKY_TYPE_REJECT_RE =
@@ -16,14 +16,20 @@ function foldForMatch(text: string): string {
 }
 
 export function isWhiskyProduct(p: { title: string; productType: string; tags: string[] }): boolean {
-  const title = foldForMatch(p.title);
-  const productType = foldForMatch(p.productType);
-  if (ALWAYS_REJECT_RE.test(title) || ALWAYS_REJECT_RE.test(productType)) return false;
-  const typeIsWhisky = WHISKY_RE.test(productType);
-  if (!typeIsWhisky && (NON_WHISKY_TYPE_REJECT_RE.test(title) || NON_WHISKY_TYPE_REJECT_RE.test(productType))) {
-    return false;
-  }
-  return WHISKY_RE.test(`${title} ${productType} ${foldForMatch(p.tags.join(' '))}`);
+  const rawTitle = p.title;
+  const rawType = p.productType;
+  const rawAll = `${p.title} ${p.productType} ${p.tags.join(' ')}`;
+  const title = foldForMatch(rawTitle);
+  const type = foldForMatch(rawType);
+  const all = foldForMatch(rawAll);
+  // Every test runs on the raw text and on the NFKC-folded text. Folding can break a Latin
+  // word boundary (Rye + trademark sign becomes RyeTM), so raw matches keep their old meaning
+  // and folding only adds matches (half-width katakana, full-width Latin).
+  const any = (re: RegExp, ...texts: string[]) => texts.some((t) => re.test(t));
+  if (any(ALWAYS_REJECT_RE, rawTitle, rawType, title, type)) return false;
+  const typeIsWhisky = any(WHISKY_RE, rawType, type);
+  if (!typeIsWhisky && any(NON_WHISKY_TYPE_REJECT_RE, rawTitle, rawType, title, type)) return false;
+  return any(WHISKY_RE, rawAll, all);
 }
 
 /** Narrow width fold used before size/proof/batch matching: full-width ASCII (U+FF01-FF5E)
@@ -109,6 +115,40 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
+const HAS_CJK_RE = /[\p{Script=Han}\p{Script=Katakana}\p{Script=Hiragana}]/u;
+
+type CharClass = 'han' | 'kata' | 'hira' | 'digit' | 'latin' | 'space';
+
+function charClass(ch: string, prev: CharClass | null): CharClass {
+  if (ch === ' ') return 'space';
+  if (ch === 'ー') return prev === 'hira' || prev === 'kata' ? prev : 'kata'; // ー joins the preceding kana run
+  if (/\p{Script=Han}/u.test(ch)) return 'han';
+  if (/\p{Script=Katakana}/u.test(ch)) return 'kata';
+  if (/\p{Script=Hiragana}/u.test(ch)) return 'hira';
+  if (/[0-9]/.test(ch)) return 'digit';
+  return 'latin';
+}
+
+/** Japanese titles are often written without spaces (`山崎12年`, `サントリー山崎12年`). For key
+ *  tokenizing, put a space wherever a CJK run meets a different class (Han, Katakana, Hiragana,
+ *  digit, Latin). Latin and digits are never split from each other (`b524`, `12yr`). Text with
+ *  no CJK is returned untouched, so ASCII keys do not change. */
+function splitCjkBoundaries(text: string): string {
+  if (!HAS_CJK_RE.test(text)) return text;
+  let out = '';
+  let prev: CharClass | null = null;
+  for (const ch of text) {
+    const cls = charClass(ch, prev);
+    if (prev && prev !== 'space' && cls !== 'space' && prev !== cls) {
+      const cjk = (c: CharClass) => c === 'han' || c === 'kata' || c === 'hira';
+      if (cjk(prev) || cjk(cls)) out += ' ';
+    }
+    out += ch;
+    prev = cls;
+  }
+  return out;
+}
+
 // Words that never identify a bottle: generic category/marketing words. Identity words
 // (`rye`, `jr`, `george`, `t`, years, `barrel`, `proof`) are deliberately NOT here, so
 // Stagg / Stagg Jr / George T. Stagg and different release years stay separate.
@@ -137,7 +177,7 @@ export function bottleKey(p: { title: string; variantTitle: string | null }): st
     if (m) stripped = stripped.replace(m, ' ');
   }
 
-  const tokens = normalizeText(stripped)
+  const tokens = splitCjkBoundaries(normalizeText(stripped))
     .replace(STRIP_PHRASES_RE, ' ')
     .split(' ')
     .filter((t) => t && !STOPWORDS.has(t));
