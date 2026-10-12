@@ -202,10 +202,28 @@ describe('Japanese bottle keys at script boundaries', () => {
   });
 
   it('splits at CJK boundaries only, never inside Latin or digit runs', () => {
-    expect(k('山崎12年')).toBe('12 山崎 年|p|b|s750');
+    expect(k('山崎12年')).toBe('12 山崎|p|b|s750');
     expect(k('白州B524 12年')).toContain('|bB524|');
     expect(k('山崎 12yr 700ml')).toContain('12yr');
     expect(k('ニッカ Coffey Grain')).toBe('coffey grain ニッカ|p|b|s750');
+  });
+
+  it('treats 年 and the whisky/bourbon category words as stopwords', () => {
+    const keys = ['山崎12年 700ml', '山崎 12年 700ml', 'サントリー山崎12年', 'サントリー山崎12年ウイスキー'].map((t) => k(t));
+    for (const key of keys) {
+      const tokens = key.split('|')[0].split(' ');
+      expect(tokens).toContain('12');
+      expect(tokens).not.toContain('年');
+    }
+    expect(k('山崎12年 700ml')).toBe(k('山崎 12年 700ml'));
+    expect(k('サントリー山崎12年')).toBe(k('サントリー山崎12年ウイスキー'));
+    for (const word of ['ウィスキー', 'ウヰスキー']) {
+      expect(k(`サントリー山崎12年${word}`)).toBe(k('サントリー山崎12年'));
+    }
+    expect(k('バーボン ワイルドターキー')).toBe(k('ワイルドターキー'));
+    // category words only: the bottle name and the age still separate bottles
+    expect(k('サントリー山崎12年ウイスキー')).not.toBe(k('サントリー白州12年ウイスキー'));
+    expect(k('サントリー山崎12年ウイスキー')).not.toBe(k('サントリー山崎18年ウイスキー'));
   });
 
   it('keeps the long-vowel mark with its kana run', () => {

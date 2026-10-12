@@ -151,11 +151,13 @@ function splitCjkBoundaries(text: string): string {
 
 // Words that never identify a bottle: generic category/marketing words. Identity words
 // (`rye`, `jr`, `george`, `t`, years, `barrel`, `proof`) are deliberately NOT here, so
-// Stagg / Stagg Jr / George T. Stagg and different release years stay separate.
+// Stagg / Stagg Jr / George T. Stagg and different release years stay separate. The Japanese
+// 年 (year), ウイスキー spellings (whisky) and バーボン (bourbon) are stopwords like their English forms.
 const STOPWORDS = new Set([
   'whiskey', 'whisky', 'the', 'kentucky', 'tennessee', 'straight',
   'default', 'title', 'year', 'years', 'old', 'yr',
   'bourbon', 'release', 'edition', 'bottle',
+  '年', 'ウイスキー', 'ウィスキー', 'ウヰスキー', 'バーボン',
 ]);
 
 // Whole phrases removed from the normalized text before tokenizing. Phrases only:
