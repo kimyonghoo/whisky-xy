@@ -7,11 +7,30 @@ export interface Robots {
 interface Rule { allow: boolean; regex: RegExp; length: number }
 interface Group { agents: string[]; rules: { allow: boolean; pattern: string }[]; delays: number[] }
 
-/** Decode percent-escapes of unreserved characters and upper-case the rest so `/%7Ea` equals `/~a`. */
+/**
+ * Canonical percent-encoded form for comparing robots patterns with the path that goes on the wire:
+ * non-ASCII is UTF-8 percent-encoded, the characters WHATWG URL encodes in paths are encoded, escapes
+ * of unreserved characters are decoded and the remaining escapes get upper-case hex.
+ * `*`, `$`, `?` and `/` are left alone.
+ */
 function normalize(s: string): string {
-  return s.replace(/%([0-9a-fA-F]{2})/g, (_m, hex: string) => {
-    const ch = String.fromCharCode(parseInt(hex, 16));
-    return /[A-Za-z0-9\-._~]/.test(ch) ? ch : `%${hex.toUpperCase()}`;
+  let out = '';
+  for (const ch of s) {
+    if (ch.codePointAt(0)! > 0x7f) {
+      try {
+        out += encodeURIComponent(ch);
+      } catch {
+        out += '%EF%BF%BD'; // lone surrogate
+      }
+    } else if (/[ "<>`{}]/.test(ch)) {
+      out += `%${ch.charCodeAt(0).toString(16).toUpperCase()}`;
+    } else {
+      out += ch;
+    }
+  }
+  return out.replace(/%([0-9a-fA-F]{2})/g, (_m, hex: string) => {
+    const c = String.fromCharCode(parseInt(hex, 16));
+    return /[A-Za-z0-9\-._~]/.test(c) ? c : `%${hex.toUpperCase()}`;
   });
 }
 
@@ -46,10 +65,12 @@ function parseGroups(text: string): Group[] {
         current = { agents: [], rules: [], delays: [] };
         groups.push(current);
       }
-      current.agents.push(value.toLowerCase());
+      current.agents.push(productToken(value));
       collectingAgents = true;
       continue;
     }
+    // Only rule lines end a group's User-agent list; Sitemap and unknown fields are skipped.
+    if (field !== 'allow' && field !== 'disallow' && field !== 'crawl-delay') continue;
     collectingAgents = false;
     if (!current) continue;
     if (field === 'allow' || field === 'disallow') {
@@ -57,7 +78,8 @@ function parseGroups(text: string): Group[] {
       if (value) current.rules.push({ allow: field === 'allow', pattern: normalize(value) });
     } else if (field === 'crawl-delay') {
       const n = Number(value);
-      if (value && Number.isFinite(n) && n >= 0) current.delays.push(Math.round(n * 1000));
+      // Infinity (e.g. 1e999) is kept so the fetcher refuses it; NaN and negatives are ignored.
+      if (value && n >= 0) current.delays.push(Math.round(n * 1000));
     }
   }
   return groups;

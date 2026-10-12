@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botUserAgent } from '@/lib/bot-ua';
-import { CrawlStopped, PageGone, createPoliteFetcher } from '@/lib/pagecrawl/fetcher';
+import { CrawlStopped, PageGone, PathDisallowed, createPoliteFetcher } from '@/lib/pagecrawl/fetcher';
 
 const ORIGIN = 'https://shop.example.jp';
 
@@ -60,6 +60,15 @@ async function stopReason(p: Promise<unknown>): Promise<string> {
   return 'no-throw';
 }
 
+async function pathRefused(p: Promise<unknown>): Promise<boolean> {
+  try {
+    await p;
+  } catch (e) {
+    return e instanceof PathDisallowed && !(e instanceof CrawlStopped);
+  }
+  return false;
+}
+
 describe('robots.txt loading', () => {
   it('requests /robots.txt first, counts it, and does not sleep before it', async () => {
     const { fetcher, calls, clock } = await create({});
@@ -113,10 +122,15 @@ describe('robots.txt loading', () => {
     expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('robots-unavailable');
   });
 
-  it('a challenge served as robots.txt fails closed', async () => {
-    const f = makeFetch({ '/robots.txt': () => new Response('<script src="/cdn-cgi/challenge-platform/x"></script>', { status: 200 }) });
+  it('a cf-mitigated challenge served as robots.txt fails closed', async () => {
+    const f = makeFetch({ '/robots.txt': () => new Response('', { status: 200, headers: { 'cf-mitigated': 'challenge' } }) });
     expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('challenge');
     expect(f.calls).toHaveLength(1);
+  });
+
+  it('robots.txt text mentioning challenge-platform is not a challenge', async () => {
+    const { fetcher } = await create(robots('User-agent: *\nDisallow: /cdn-cgi/challenge-platform/\n# cf-chl- cf-chl\n'));
+    expect(await fetcher.get('/ok')).toBe('<html>ok</html>');
   });
 
   it('a non-2xx robots.txt is robots-unavailable even when it looks like a challenge', async () => {
@@ -125,24 +139,50 @@ describe('robots.txt loading', () => {
     expect(f.calls).toHaveLength(1);
   });
 
-  it('maxRequests below 1 cannot even load robots', async () => {
+  it.each([
+    ['NaN maxRequests', { maxRequests: NaN }],
+    ['Infinity maxRequests', { maxRequests: Infinity }],
+    ['zero maxRequests', { maxRequests: 0 }],
+    ['301 maxRequests', { maxRequests: 301 }],
+    ['fractional maxRequests', { maxRequests: 2.5 }],
+    ['NaN minDelayMs', { minDelayMs: NaN }],
+    ['Infinity minDelayMs', { minDelayMs: Infinity }],
+    ['2999 minDelayMs', { minDelayMs: 2999 }],
+    ['negative minDelayMs', { minDelayMs: -1 }],
+  ])('%s throws RangeError before any request', async (_n, extra) => {
     const f = makeFetch({});
-    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, maxRequests: 0, sleep: async () => {}, now: () => 0 }))).toBe('budget');
+    await expect(
+      createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0, ...extra }),
+    ).rejects.toBeInstanceOf(RangeError);
+    expect(f.calls).toHaveLength(0);
+  });
+
+  it('accepts the boundary options minDelayMs 3000, maxRequests 1 and 300', async () => {
+    for (const extra of [{ minDelayMs: 3000 }, { maxRequests: 1 }, { maxRequests: 300 }]) {
+      const f = makeFetch({});
+      await createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0, ...extra });
+      expect(f.calls).toHaveLength(1);
+    }
+  });
+
+  it.each(['http://shop.example.jp', 'ftp://shop.example.jp', 'not a url'])('rejects origin %s without any request', async (origin) => {
+    const f = makeFetch({});
+    await expect(createPoliteFetcher({ origin, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 })).rejects.toThrow();
     expect(f.calls).toHaveLength(0);
   });
 
   it('uses the WhiskyPortalBot group over *', async () => {
     const { fetcher, calls } = await create(robots('User-agent: *\nDisallow: /\n\nUser-agent: WhiskyPortalBot\nDisallow: /cart\n'));
     expect(await fetcher.get('/products/1')).toBe('<html>ok</html>');
-    expect(await stopReason(fetcher.get('/cart'))).toBe('disallowed');
+    expect(await pathRefused(fetcher.get('/cart'))).toBe(true);
     expect(calls).toHaveLength(2);
   });
 });
 
 describe('disallowed paths and budget', () => {
-  it('a disallowed path throws disallowed without fetching or sleeping', async () => {
+  it('a disallowed path throws PathDisallowed (not CrawlStopped) without fetching or sleeping', async () => {
     const { fetcher, calls, clock } = await create({});
-    expect(await stopReason(fetcher.get('/cart'))).toBe('disallowed');
+    expect(await pathRefused(fetcher.get('/cart'))).toBe(true);
     expect(calls).toHaveLength(1);
     expect(clock.sleeps).toEqual([]);
     expect(fetcher.used()).toBe(1);
@@ -150,13 +190,13 @@ describe('disallowed paths and budget', () => {
 
   it('disallowed applies to the query string too', async () => {
     const { fetcher, calls } = await create(robots('User-agent: *\nDisallow: /*?sort=\n'));
-    expect(await stopReason(fetcher.get('/list?sort=price'))).toBe('disallowed');
+    expect(await pathRefused(fetcher.get('/list?sort=price'))).toBe(true);
     expect(calls).toHaveLength(1);
   });
 
   it('a disallowed path does not stop later allowed paths', async () => {
     const { fetcher } = await create({});
-    expect(await stopReason(fetcher.get('/cart'))).toBe('disallowed');
+    expect(await pathRefused(fetcher.get('/cart'))).toBe(true);
     expect(await fetcher.get('/ok')).toBe('<html>ok</html>');
   });
 
@@ -237,11 +277,29 @@ describe('stopping on server signals', () => {
     expect(calls).toHaveLength(2);
   });
 
-  it.each(['cf-chl', 'challenge-platform'])('a 2xx body containing %s is a challenge', async (marker) => {
-    const { fetcher, calls } = await create({ '/x': html(`<html><script src="/${marker}/a.js"></script></html>`) });
+  it.each(['<div id="cf-chl-widget"></div>', '<html><TITLE>Just a moment...</TITLE></html>'])('a 2xx body %s is a challenge', async (body) => {
+    const { fetcher, calls } = await create({ '/x': html(body) });
     expect(await stopReason(fetcher.get('/x'))).toBe('challenge');
     expect(await stopReason(fetcher.get('/y'))).toBe('challenge');
     expect(calls).toHaveLength(2);
+  });
+
+  it('a 2xx with cf-mitigated: challenge is a challenge', async () => {
+    const { fetcher } = await create({ '/x': html('<p>hi</p>', 200, { 'cf-mitigated': 'challenge' }) });
+    expect(await stopReason(fetcher.get('/x'))).toBe('challenge');
+  });
+
+  it('a 2xx page that merely loads a /cdn-cgi/challenge-platform/ script is normal', async () => {
+    const page = '<html><script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>cf-chl</html>';
+    const { fetcher } = await create({ '/x': html(page) });
+    expect(await fetcher.get('/x')).toBe(page);
+  });
+
+  it.each(['cf-chl', 'challenge-platform'])('a 403 or 503 body containing %s is a challenge', async (marker) => {
+    for (const status of [403, 503]) {
+      const { fetcher } = await create({ '/x': html(`<script src="/${marker}/a.js"></script>`, status) });
+      expect(await stopReason(fetcher.get('/x'))).toBe('challenge');
+    }
   });
 
   it('a 403 with a challenge body is challenge, not http-403', async () => {
@@ -434,5 +492,162 @@ describe('request shape', () => {
       AbortSignal.timeout = orig;
     }
     expect(spy).toEqual([20000, 20000]);
+  });
+});
+
+describe('the path on the wire is the path robots was matched against', () => {
+  const ROBOTS_WIRE =
+    'User-agent: *\nDisallow: /cart\nDisallow: /secret$\nAllow: /view/item/\nDisallow: /%E5%95%86%E5%93%81/\nDisallow: /商品B/\n';
+
+  it.each([
+    '/./cart',
+    '/x/../cart',
+    '/view/item/../../cart',
+    '/x/%2e%2e/cart',
+    '/x/%2E%2E/cart',
+    '/secret#frag',
+    '/商品/1',
+    '/%e5%95%86%e5%93%81/1',
+    '/%E5%95%86%E5%93%81B/1',
+    '/商品B/1',
+  ])('refuses %s without a request', async (path) => {
+    const { fetcher, calls } = await create(robots(ROBOTS_WIRE));
+    expect(await pathRefused(fetcher.get(path))).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(fetcher.used()).toBe(1);
+  });
+
+  it.each([
+    ['/ok/../view/item/1', '/view/item/1'],
+    ['/a/./b?x=1', '/a/b?x=1'],
+    ['/商品C/1', '/%E5%95%86%E5%93%81C/1'],
+    ['/%e5%95%86%e5%93%81C/1?q=商', '/%e5%95%86%e5%93%81C/1?q=%E5%95%86'],
+  ])('requests exactly the normalised URL for %s', async (path, wire) => {
+    const { fetcher, calls } = await create(robots(ROBOTS_WIRE));
+    await fetcher.get(path);
+    expect(calls[1].url).toBe(`${ORIGIN}${wire}`);
+  });
+
+  it('refuses a fragment even on an otherwise allowed path', async () => {
+    const { fetcher, calls } = await create({});
+    expect(await pathRefused(fetcher.get('/ok#frag'))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+});
+
+describe('concurrent get calls are serialised', () => {
+  it('Promise.all of four gets with maxRequests 3 sends at most 3 fetches, one at a time, with sleeps in sequence', async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const calls: string[] = [];
+    const sleeps: number[] = [];
+    const fetchFn = (async (input: string | URL | Request) => {
+      calls.push(String(input));
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return new Response(String(input).endsWith('/robots.txt') ? '' : 'ok', { status: 200 });
+    }) as typeof fetch;
+    const fetcher = await createPoliteFetcher({
+      origin: ORIGIN,
+      fetchFn,
+      maxRequests: 3,
+      sleep: async (ms) => { sleeps.push(ms); await new Promise((r) => setTimeout(r, 5)); },
+      now: () => 1_000_000,
+    });
+    const results = await Promise.allSettled([fetcher.get('/a'), fetcher.get('/b'), fetcher.get('/c'), fetcher.get('/d')]);
+    expect(calls).toHaveLength(3);
+    expect(maxInFlight).toBe(1);
+    expect(sleeps).toEqual([3000, 3000]);
+    expect(results.map((r) => r.status)).toEqual(['fulfilled', 'fulfilled', 'rejected', 'rejected']);
+    for (const r of results.slice(2)) {
+      expect((r as PromiseRejectedResult).reason).toBeInstanceOf(CrawlStopped);
+      expect((r as PromiseRejectedResult).reason.reason).toBe('budget');
+    }
+    expect(fetcher.used()).toBe(3);
+  });
+
+  it('after a stop, queued gets throw the same CrawlStopped without fetching', async () => {
+    const { fetcher, calls } = await create({ '/a': new Response('', { status: 429 }) });
+    const results = await Promise.allSettled([fetcher.get('/a'), fetcher.get('/b'), fetcher.get('/c')]);
+    expect(calls).toHaveLength(2);
+    const reasons = results.map((r) => (r.status === 'rejected' ? r.reason : null));
+    expect(reasons[0]).toBeInstanceOf(CrawlStopped);
+    expect(reasons[0].reason).toBe('http-429');
+    expect(reasons[1]).toBe(reasons[0]);
+    expect(reasons[2]).toBe(reasons[0]);
+  });
+
+  it('a rejection does not break the queue', async () => {
+    const { fetcher } = await create({ '/gone': new Response('', { status: 404 }) });
+    const results = await Promise.allSettled([fetcher.get('/cart'), fetcher.get('/gone'), fetcher.get('/ok')]);
+    expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected', 'fulfilled']);
+    expect((results[0] as PromiseRejectedResult).reason).toBeInstanceOf(PathDisallowed);
+    expect((results[1] as PromiseRejectedResult).reason).toBeInstanceOf(PageGone);
+  });
+});
+
+describe('Crawl-delay limit', () => {
+  const roboFor = (delay: string) => robots(`User-agent: *\nCrawl-delay: ${delay}\n`);
+
+  it.each(['61', '1e7', '3000000', '1e999'])('Crawl-delay %s stops with crawl-delay after robots and before any page request', async (delay) => {
+    const f = makeFetch(roboFor(delay));
+    const clock = makeClock();
+    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: clock.sleep, now: clock.now }))).toBe('crawl-delay');
+    expect(f.calls).toHaveLength(1);
+    expect(clock.sleeps).toEqual([]);
+  });
+
+  it('exactly 60 s is honoured', async () => {
+    const { fetcher, clock } = await create(roboFor('60'));
+    await fetcher.get('/a');
+    expect(clock.sleeps).toEqual([60000]);
+  });
+});
+
+describe('response charset', () => {
+  const SJIS = [0x8e, 0x52, 0x8d, 0xe8]; // 山崎
+  const EUC = [0xbb, 0xb3, 0xba, 0xea]; // 山崎
+  const ascii = (s: string) => Array.from(Buffer.from(s, 'latin1'));
+  const bytesResponse = (bytes: number[], headers: Record<string, string> = {}) =>
+    new Response(new Uint8Array(bytes), { status: 200, headers });
+
+  it('decodes Shift_JIS from the Content-Type charset', async () => {
+    const { fetcher } = await create({ '/s': () => bytesResponse(SJIS, { 'content-type': 'text/html; charset=Shift_JIS' }) });
+    expect(await fetcher.get('/s')).toBe('山崎');
+  });
+
+  it('decodes EUC-JP from the Content-Type charset', async () => {
+    const { fetcher } = await create({ '/e': () => bytesResponse(EUC, { 'content-type': 'text/html; charset="EUC-JP"' }) });
+    expect(await fetcher.get('/e')).toBe('山崎');
+  });
+
+  it('sniffs <meta charset> when Content-Type has none', async () => {
+    const body = [...ascii('<html><head><meta charset="shift_jis"></head><body>'), ...SJIS];
+    const { fetcher } = await create({ '/m': () => bytesResponse(body, { 'content-type': 'text/html' }) });
+    expect(await fetcher.get('/m')).toContain('山崎');
+  });
+
+  it('sniffs <meta http-equiv content=...charset=>', async () => {
+    const body = [...ascii('<head><meta http-equiv="Content-Type" content="text/html; charset=EUC-JP"></head>'), ...EUC];
+    const { fetcher } = await create({ '/h': () => bytesResponse(body) });
+    expect(await fetcher.get('/h')).toContain('山崎');
+  });
+
+  it('defaults to UTF-8, and falls back to it for an unknown charset', async () => {
+    const utf8 = Array.from(Buffer.from('山崎', 'utf8'));
+    const { fetcher } = await create({
+      '/u': () => bytesResponse(utf8),
+      '/x': () => bytesResponse(utf8, { 'content-type': 'text/html; charset=no-such-charset' }),
+    });
+    expect(await fetcher.get('/u')).toBe('山崎');
+    expect(await fetcher.get('/x')).toBe('山崎');
+  });
+
+  it('keeps the byte cap on bytes, not characters', async () => {
+    // 1.1M characters but about 3.3 MB of UTF-8, over the 3 MiB cap.
+    const { fetcher } = await create({ '/big': () => html('山'.repeat(1_100_000)) });
+    await expect(fetcher.get('/big')).rejects.toThrow(/too large/i);
   });
 });

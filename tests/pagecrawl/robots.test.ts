@@ -95,6 +95,33 @@ describe('parseRobots', () => {
     expect(r.isAllowed('/b')).toBe(false);
   });
 
+  it('Sitemap and unknown lines do not end a group User-agent list', () => {
+    const r = parseRobots('User-agent: WhiskyPortalBot\nSitemap: https://x/s.xml\nFoo: bar\nUser-agent: *\nDisallow: /\n', UA);
+    expect(r.isAllowed('/x')).toBe(false);
+    const other = parseRobots('User-agent: Googlebot\nSitemap: https://x/s.xml\nUser-agent: *\nDisallow: /cart\n', 'Googlebot');
+    expect(other.isAllowed('/cart')).toBe(false);
+  });
+
+  it('matches a versioned User-agent line such as WhiskyPortalBot/1.0', () => {
+    const r = parseRobots('User-agent: WhiskyPortalBot/1.0\nDisallow: /\n', UA);
+    expect(r.isAllowed('/x')).toBe(false);
+  });
+
+  it('keeps an infinite Crawl-delay so the caller can refuse it', () => {
+    expect(parseRobots('User-agent: *\nCrawl-delay: 1e999\n', UA).crawlDelayMs).toBe(Infinity);
+  });
+
+  it('compares non-ASCII paths and patterns in percent-encoded form, both ways', () => {
+    const enc = parseRobots('User-agent: *\nDisallow: /%E5%95%86%E5%93%81/\n', UA);
+    expect(enc.isAllowed('/商品/1')).toBe(false);
+    expect(enc.isAllowed('/%e5%95%86%e5%93%81/1')).toBe(false);
+    expect(enc.isAllowed('/%E5%95%86%E5%93%81B/1')).toBe(true);
+    const raw = parseRobots('User-agent: *\nDisallow: /商品/\n', UA);
+    expect(raw.isAllowed('/%E5%95%86%E5%93%81/1')).toBe(false);
+    expect(raw.isAllowed('/商品/1')).toBe(false);
+    expect(raw.isAllowed('/商品B/1')).toBe(true);
+  });
+
   it('compares percent-encoded unreserved characters as equal', () => {
     const r = parseRobots('User-agent: *\nDisallow: /~secret\n', UA);
     expect(r.isAllowed('/%7Esecret')).toBe(false);
