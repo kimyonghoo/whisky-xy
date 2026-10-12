@@ -9,6 +9,7 @@ import { matchesPhrase, parseQuery, queryPhrase, type QueryTerm, type Vocab } fr
 import { getKrLinks } from '@/lib/krlinks';
 import { getLatestFx } from '@/lib/fx';
 import { compareKr } from '@/lib/compare';
+import { usInStockPools } from '@/lib/krcompare';
 import { confirmedSince, stockState, type StockState } from '@/lib/freshness';
 
 export interface SearchParams {
@@ -236,29 +237,26 @@ export async function searchListings(
   );
   // The selected city always stays (the page explains an empty one); other cities only when they have results.
   const kept = sections.filter((s) => s.city === p.city || s.groups.length > 0);
-  await attachKr(db, kept);
+  await attachKr(db, kept, now);
   return { sections: kept };
 }
 
 /**
  * Fills `group.kr` for linked bottles. Every group of a bottle, in any section, compares against the
- * US-wide lowest confirmed in-stock price; `baseCity` names the city that price is from.
+ * US-wide lowest confirmed in-stock price over all public stores (the /compare basis), never the
+ * search's filtered or capped rows; `baseCity` names the city that price is from.
  */
-async function attachKr(db: Db, sections: CitySection[]): Promise<void> {
-  const groups = sections.flatMap((s) => s.groups.map((g) => ({ g, city: s.city })));
+async function attachKr(db: Db, sections: CitySection[], now: Date): Promise<void> {
+  const groups = sections.flatMap((s) => s.groups);
   if (groups.length === 0) return;
-  const [links, fx] = await Promise.all([getKrLinks(db, [...new Set(groups.map((x) => x.g.bottleKey))]), getLatestFx(db)]);
+  const [links, fx] = await Promise.all([getKrLinks(db, [...new Set(groups.map((g) => g.bottleKey))]), getLatestFx(db)]);
   if (links.size === 0) return;
-  const national = new Map<string, { cents: number; city: CityId }>();
-  for (const { g, city } of groups) {
-    const cur = national.get(g.bottleKey);
-    if (g.bestAvailableCents !== null && (!cur || g.bestAvailableCents < cur.cents)) national.set(g.bottleKey, { cents: g.bestAvailableCents, city });
-  }
-  for (const { g } of groups) {
+  const pools = await usInStockPools(db, [...links.keys()], now);
+  for (const g of groups) {
     const link = links.get(g.bottleKey);
     if (!link) continue;
-    const base = national.get(g.bottleKey);
-    const compare = base && fx ? compareKr(base.cents, fx.usdKrw, link.lowPriceKrw) : null;
-    g.kr = { link, compare, fx, baseCity: base?.city ?? null };
+    const base = pools.get(g.bottleKey)?.[0];
+    const compare = base && fx ? compareKr(base.taxIncludedCents, fx.usdKrw, link.lowPriceKrw) : null;
+    g.kr = { link, compare, fx, baseCity: base?.store.city ?? null };
   }
 }

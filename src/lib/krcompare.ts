@@ -8,6 +8,7 @@ import { getLatestFx } from '@/lib/fx';
 import { compareKr, type KrComparison } from '@/lib/compare';
 import type { ListingRow } from '@/lib/search';
 import { confirmedSince, stockState } from '@/lib/freshness';
+import { getCity } from '@/lib/geo';
 
 export interface KrRankRow {
   bottleKey: string;
@@ -33,6 +34,43 @@ export interface KrRanking {
 
 const cheaper = (a: ListingRow, b: ListingRow) => a.taxIncludedCents - b.taxIncludedCents || a.id - b.id;
 
+/** Public stores in live cities: the pool every US-side Korea comparison is measured against. */
+function comparisonStores() {
+  return STORES.filter((s) => s.publicAllowed && getCity(s.city)?.status === 'live');
+}
+
+/**
+ * Every confirmed in-stock (available, checked within 48 h) row of the given bottles across all
+ * public live-city stores, grouped by bottleKey and cheapest tax-included first. Independent of any
+ * search filter, so /compare and the search chip share one basis.
+ */
+export async function usInStockPools(db: Db, bottleKeys: string[], now: Date = new Date()): Promise<Map<string, ListingRow[]>> {
+  const byKey = new Map<string, ListingRow[]>();
+  if (bottleKeys.length === 0) return byKey;
+  const stores = comparisonStores();
+  const found = await db
+    .select()
+    .from(listings)
+    .where(
+      and(
+        inArray(listings.bottleKey, bottleKeys),
+        inArray(listings.storeId, stores.map((s) => s.id)),
+        eq(listings.available, true),
+        gte(listings.checkedAt, confirmedSince(now)),
+      ),
+    );
+  for (const l of found) {
+    const store = stores.find((s) => s.id === l.storeId);
+    if (!store) continue;
+    const row: ListingRow = { ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate), stock: 'instock' };
+    const pool = byKey.get(l.bottleKey);
+    if (pool) pool.push(row);
+    else byKey.set(l.bottleKey, [row]);
+  }
+  for (const pool of byKey.values()) pool.sort(cheaper);
+  return byKey;
+}
+
 /**
  * Every linked bottle with a confirmed in-stock US row, ranked by how much buying in the US saves.
  * "Available" rows not checked for 48 h (unverified) are never a price base.
@@ -41,28 +79,7 @@ export async function listKrComparisons(db: Db, now: Date = new Date()): Promise
   const [links, fx] = await Promise.all([listKrLinks(db), getLatestFx(db)]);
   if (links.length === 0) return { fx, rows: [], linked: 0, notInStock: 0 };
 
-  const publicStores = STORES.filter((s) => s.publicAllowed);
-  const found = await db
-    .select()
-    .from(listings)
-    .where(
-      and(
-        inArray(listings.bottleKey, links.map((l) => l.bottleKey)),
-        inArray(listings.storeId, publicStores.map((s) => s.id)),
-        eq(listings.available, true),
-        gte(listings.checkedAt, confirmedSince(now)),
-      ),
-    );
-
-  const byKey = new Map<string, ListingRow[]>();
-  for (const l of found) {
-    const store = publicStores.find((s) => s.id === l.storeId);
-    if (!store) continue;
-    const row: ListingRow = { ...l, store, taxIncludedCents: withTaxCents(l.priceCents, store.taxRate), stock: 'instock' };
-    const pool = byKey.get(l.bottleKey);
-    if (pool) pool.push(row);
-    else byKey.set(l.bottleKey, [row]);
-  }
+  const byKey = await usInStockPools(db, links.map((l) => l.bottleKey), now);
 
   const notInStock = links.filter((l) => !byKey.has(l.bottleKey)).length;
   if (!fx) return { fx, rows: [], linked: links.length, notInStock };
@@ -71,7 +88,7 @@ export async function listKrComparisons(db: Db, now: Date = new Date()): Promise
   for (const link of links) {
     const pool = byKey.get(link.bottleKey);
     if (!pool) continue;
-    const best = [...pool].sort(cheaper)[0];
+    const best = pool[0];
     rows.push({
       bottleKey: link.bottleKey,
       title: best.title,

@@ -3,6 +3,7 @@ import { createTestDb } from './helpers/db';
 import { listings, fxRates } from '@/lib/db/schema';
 import { upsertKrLink } from '@/lib/krlinks';
 import { compareKr } from '@/lib/compare';
+import { listKrComparisons } from '@/lib/krcompare';
 import { ilike } from 'drizzle-orm';
 import { searchListings, escapeLike, SECTION_ROW_LIMIT, type CitySection, type SearchOptions, type SearchParams } from '@/lib/search';
 import { getStore } from '@/lib/stores';
@@ -240,6 +241,55 @@ describe('searchListings Korea comparison', () => {
     expect(g2.kr?.compare).toEqual(g1.kr?.compare);
     expect(g1.kr?.baseCity).toBe('la');
     expect(g2.kr?.baseCity).toBe('la');
+  });
+
+  it('a store-scoped search still compares against the true US best in another city', async () => {
+    const d = await createTestDb();
+    const b = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 12000 });
+    const la = seed({ storeId: 'flask', title: 'Stagg Bourbon', priceCents: 9500 });
+    await d.insert(listings).values([b, la]);
+    await upsertKrLink(d, ds(b.bottleKey, 649000), now);
+    await d.insert(fxRates).values({ date: '2026-10-10', usdKrw: 1380, fetchedAt: now });
+    const r = await run(d, { q: '', city: 'brooklyn', storeId: 'dewinespot' });
+    expect(r.sections.map((s) => s.city)).toEqual(['brooklyn']);
+    const g = r.sections[0].groups[0];
+    expect(g.rows.map((x) => x.storeId)).toEqual(['dewinespot']);
+    const best = withTaxCents(9500, getStore('flask')!.taxRate);
+    expect(g.kr?.compare).toEqual(compareKr(best, 1380, 649000));
+    expect(g.kr?.baseCity).toBe('la');
+    // Same basis as the /compare ranking.
+    const ranking = await listKrComparisons(d);
+    expect(ranking.rows[0].compare).toEqual(g.kr?.compare);
+    expect(ranking.rows[0].best.store.city).toBe(g.kr?.baseCity);
+  });
+
+  it('a price-filtered search still compares against the cheaper row the filter left out', async () => {
+    const d = await createTestDb();
+    const cheap = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 5000 });
+    const dear = seed({ storeId: 'flask', title: 'Stagg Bourbon', priceCents: 12000 });
+    await d.insert(listings).values([cheap, dear]);
+    await upsertKrLink(d, ds(cheap.bottleKey, 649000), now);
+    await d.insert(fxRates).values({ date: '2026-10-10', usdKrw: 1380, fetchedAt: now });
+    const r = await run(d, { q: 'stagg', city: 'la', minCents: 10000 });
+    expect(rowsOf(r.sections[0]).map((x) => x.storeId)).toEqual(['flask']);
+    const g = r.sections[0].groups[0];
+    const best = withTaxCents(5000, getStore('dewinespot')!.taxRate);
+    expect(g.kr?.compare).toEqual(compareKr(best, 1380, 649000));
+    expect(g.kr?.baseCity).toBe('brooklyn');
+  });
+
+  it('never bases the comparison on an unverified (> 48 h) row, as /compare does', async () => {
+    const d = await createTestDb();
+    const old = new Date(Date.now() - 72 * 3_600_000);
+    const stale = { ...seed({ storeId: 'flask', title: 'Stagg Bourbon', priceCents: 5000 }), checkedAt: old };
+    const fresh = seed({ storeId: 'dewinespot', title: 'Stagg Bourbon', priceCents: 12000 });
+    await d.insert(listings).values([stale, fresh]);
+    await upsertKrLink(d, ds(fresh.bottleKey, 649000), now);
+    await d.insert(fxRates).values({ date: '2026-10-10', usdKrw: 1380, fetchedAt: now });
+    const r = await run(d, { q: 'stagg', city: 'la' });
+    const g = r.sections[0].groups[0];
+    expect(g.kr?.compare).toEqual(compareKr(withTaxCents(12000, getStore('dewinespot')!.taxRate), 1380, 649000));
+    expect(g.kr?.baseCity).toBe('brooklyn');
   });
 
   it('compare is null when there is no fx rate', async () => {
