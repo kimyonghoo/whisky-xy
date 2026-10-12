@@ -19,8 +19,10 @@ const notoSerifKr = Noto_Serif_KR({
   display: 'swap',
   variable: '--font-noto-serif-kr',
 });
+// 600 roman for the wordmark capitals; 400 italic only for its `hisky` tail.
 const cormorant = Cormorant_Garamond({
-  weight: '600',
+  weight: ['400', '600'],
+  style: ['normal', 'italic'],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-cormorant',

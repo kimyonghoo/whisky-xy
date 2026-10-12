@@ -17,7 +17,7 @@ Every screen follows this doc. Tokens live in `src/app/globals.css`, primitives 
 
 **Mark.** `BrandMark` (`src/components/Wordmark.tsx`): a cut-crystal rocks glass — rim ellipse, tapered body, heavy base, a whisky line and a diamond-cut band (50 % opacity) — in thin gold lines (`currentColor`, 1.2 px stroke). While a page loads, sherry whisky rises inside it (§8.14). `src/app/icon.svg` is the same glass on black, simplified for 16 px: no cut band, heavier strokes, filled with sherry below the whisky line so it reads as a drink at any size.
 
-**Wordmark.** `ROUTE W` in Cormorant Garamond 600 capitals, tracked 0.16–0.2 em, in `foreground` next to the gold mark.
+**Wordmark.** `ROUTE W` + `hisky`: the name in tracked Cormorant Garamond 600 capitals, then `hisky` (`site.wordmarkTail`) written straight on after the W in untracked Cormorant italic 400 in the accent colour, as if added in passing — it reads "Route Whisky". Base styling of the capitals: `ROUTE W` in Cormorant Garamond 600 capitals, tracked 0.16–0.2 em, in `foreground` next to the gold mark.
 
 **The "no kitsch" rule.** Luxury comes from restraint. The following count as failures even when everything works:
 - gold gradients, gold-filled panels or large gold areas;

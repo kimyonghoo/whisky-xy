@@ -40,7 +40,11 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-/** Mark + `ROUTE W` in tracked Cormorant Garamond capitals. The name comes from the dictionary. */
+/**
+ * Mark + `ROUTE W` in tracked Cormorant Garamond capitals, with `hisky` written on after the W in an
+ * untracked accent italic, as if added in passing, so it reads "Route Whisky". Both parts come from the
+ * dictionary (`site.title`, `site.wordmarkTail`).
+ */
 export function Wordmark({ d }: { d: Dict }) {
   return (
     <span className="flex items-center gap-2 sm:gap-3">
@@ -48,6 +52,9 @@ export function Wordmark({ d }: { d: Dict }) {
       {/* Phones have only the menu button beside it (city and language sit on a second row), so the name always fits. */}
       <span className="font-display text-[0.9375rem] leading-none font-semibold tracking-[0.16em] whitespace-nowrap text-foreground uppercase sm:text-[1.0625rem] sm:tracking-[0.2em]">
         {d.site.title}
+        <span className="-ml-[0.16em] text-[1.04em] font-normal tracking-normal text-primary normal-case italic sm:-ml-[0.2em]">
+          {d.site.wordmarkTail}
+        </span>
       </span>
     </span>
   );

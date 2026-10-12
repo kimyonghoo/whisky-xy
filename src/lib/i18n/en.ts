@@ -33,6 +33,7 @@ export const en: Dict = {
   nav: { search: 'Search', map: 'Store map', compare: 'vs. Korea', watchlist: 'Watchlist', label: 'Main menu', home: 'Home', menu: 'Menu' },
   site: {
     title: 'Route W',
+    wordmarkTail: 'hisky',
     titleKo: '루트 W',
     slogan: 'Your whisky sanctuary navigator, Route W',
     description: 'Whisky prices from retailers in Brooklyn, New Jersey and Los Angeles, compared with sales tax included.',
