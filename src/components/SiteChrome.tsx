@@ -70,7 +70,7 @@ export async function SiteFooter() {
           <li>{d.footer.tax}</li>
           <li>{d.footer.coverage(storeCount)}</li>
         </ul>
-        <p className="pl-6.5 text-xs font-semibold tracking-wide">{d.site.title}</p>
+        <p className="pl-6.5 text-xs font-semibold tracking-wide">{d.site.slogan}</p>
       </div>
     </footer>
   );

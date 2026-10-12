@@ -51,10 +51,11 @@ describe('Korean copy tone (합니다체)', () => {
   });
 });
 
-describe('Whisky Index copy values', () => {
+describe('Route W copy values', () => {
   it('names the site', () => {
-    expect(ko.site.title).toBe('Whisky Index');
-    expect(ko.site.titleKo).toBe('위스키 인덱스');
+    expect(ko.site.title).toBe('Route W');
+    expect(ko.site.titleKo).toBe('루트 W');
+    expect(ko.site.slogan).toBe('위스키 성지 네비게이션, Route W');
   });
 
   it('uses the hero copy verbatim', () => {

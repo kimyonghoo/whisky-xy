@@ -40,7 +40,7 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-/** Mark + `WHISKY INDEX` in tracked Cormorant Garamond capitals. The name comes from the dictionary. */
+/** Mark + `ROUTE W` in tracked Cormorant Garamond capitals. The name comes from the dictionary. */
 export function Wordmark({ d }: { d: Dict }) {
   return (
     <span className="flex items-center gap-2 sm:gap-3">

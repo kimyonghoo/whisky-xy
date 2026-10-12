@@ -1,10 +1,10 @@
-# Design System: Whisky Index
+# Design System: Route W
 
 Every screen follows this doc. Tokens live in `src/app/globals.css`, primitives in `src/components/ui/*`, product patterns in `src/components/*`, and copy in `src/lib/i18n/ko.ts` and `src/lib/i18n/en.ts`. If a screen needs something that isn't here, add it here first.
 
 ---
 
-## 1. Brand: Whisky Index
+## 1. Brand: Route W
 
 **What it is.** A whisky price index: today's prices and stock at trusted retailers, sorted honestly by tax-included price. It is going commercial, and it should feel like a private lounge or a luxury retailer: **trustworthy first, premium second**. A wrong trip to a store is the worst outcome, so clarity always beats decoration.
 
@@ -13,11 +13,11 @@ Every screen follows this doc. Tokens live in `src/app/globals.css`, primitives 
 - **The visitor in the store**, on a phone in New York or Los Angeles, who may not know whisky.
 - **Future visitors in Asia** (Tokyo, Osaka, Sapporo, Taipei open later).
 
-**Name.** `Whisky Index` (Korean: 위스키 인덱스). "Index" means a price index. The name comes from `site.title` / `site.titleKo` in the dictionaries; components never spell it.
+**Name.** `Route W` (Korean reading: 루트 W) — the route to whisky sanctuaries, the liquor stores worth the trip. **Slogan** (`site.slogan`): KO "위스키 성지 네비게이션, Route W", EN "Your whisky sanctuary navigator, Route W"; it is the home page title and the footer line. Names come from the dictionaries; components never spell them.
 
 **Mark.** `BrandMark` (`src/components/Wordmark.tsx`): a cut-crystal rocks glass — rim ellipse, tapered body, heavy base, a whisky line and a diamond-cut band (50 % opacity) — in thin gold lines (`currentColor`, 1.2 px stroke). While a page loads, sherry whisky rises inside it (§8.14). `src/app/icon.svg` is the same glass on black, simplified for 16 px: no cut band, heavier strokes, filled with sherry below the whisky line so it reads as a drink at any size.
 
-**Wordmark.** `WHISKY INDEX` in Cormorant Garamond 600 capitals, tracked 0.16–0.2 em, in `foreground` next to the gold mark.
+**Wordmark.** `ROUTE W` in Cormorant Garamond 600 capitals, tracked 0.16–0.2 em, in `foreground` next to the gold mark.
 
 **The "no kitsch" rule.** Luxury comes from restraint. The following count as failures even when everything works:
 - gold gradients, gold-filled panels or large gold areas;
@@ -324,7 +324,7 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 - **Say what to do next**, calmly and specifically. No exclamation marks.
 - **Latin capitals are labels, not sentences:** `CURATED`, `YOUR CITY`, `ELSEWHERE IN UNITED STATES`, `01 · SEARCH`, `COMING SOON`.
 - **Numbers and units:** `$129.00`; `세금 포함 약 $140.45`; `세전 $X`; `N곳` stores; `N종` bottles; `N분/시간/일 전 확인`.
-- **Names:** never translate product or store names. Cities are in Korean (브루클린, 뉴저지, 로스앤젤레스, 도쿄, 오사카, 삿포로, 타이베이). The site is `Whisky Index` (위스키 인덱스).
+- **Names:** never translate product or store names. Cities are in Korean (브루클린, 뉴저지, 로스앤젤레스, 도쿄, 오사카, 삿포로, 타이베이). The site is `Route W` (the name stays in Latin letters in Korean copy).
 
 ### English (`en.ts`)
 - The same tone: understated luxury-retail English, sentence case, no exclamation marks, no hype.

@@ -33,7 +33,7 @@ export async function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const d = dictFor(await getLocale());
   return {
-    title: { default: d.site.title, template: `%s · ${d.site.title}` },
+    title: { default: d.site.slogan, template: `%s · ${d.site.title}` },
     description: d.site.description,
   };
 }

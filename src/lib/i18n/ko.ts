@@ -29,8 +29,9 @@ export const ko = {
   },
   nav: { search: '검색', map: '매장 지도', compare: '한국 대비', watchlist: '관심 목록', label: '주요 메뉴', home: '홈으로', menu: '메뉴' },
   site: {
-    title: 'Whisky Index',
-    titleKo: '위스키 인덱스',
+    title: 'Route W',
+    titleKo: '루트 W',
+    slogan: '위스키 성지 네비게이션, Route W',
     description: '브루클린·뉴저지·로스앤젤레스 리테일러의 위스키 시세를 세금 포함 기준으로 비교합니다.',
     skipToContent: '본문으로 건너뛰기',
   },

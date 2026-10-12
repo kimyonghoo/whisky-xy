@@ -32,8 +32,9 @@ export const en: Dict = {
   },
   nav: { search: 'Search', map: 'Store map', compare: 'vs. Korea', watchlist: 'Watchlist', label: 'Main menu', home: 'Home', menu: 'Menu' },
   site: {
-    title: 'Whisky Index',
-    titleKo: '위스키 인덱스',
+    title: 'Route W',
+    titleKo: '루트 W',
+    slogan: 'Your whisky sanctuary navigator, Route W',
     description: 'Whisky prices from retailers in Brooklyn, New Jersey and Los Angeles, compared with sales tax included.',
     skipToContent: 'Skip to content',
   },

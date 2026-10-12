@@ -37,7 +37,8 @@ describe('dictionaries', () => {
   });
 
   it('keeps the brand, the clerk line and the curated bottle names', () => {
-    expect(en.site.title).toBe('Whisky Index');
+    expect(en.site.title).toBe('Route W');
+    expect(en.site.slogan).toBe('Your whisky sanctuary navigator, Route W');
     expect(en.card.clerkQuestion).toBe(ko.card.clerkQuestion);
     expect(en.search.examples).toEqual(ko.search.examples);
     expect(en.city.brooklyn).toBe('Brooklyn');
