@@ -1,11 +1,17 @@
 import type { Currency } from '@/lib/stores';
 
+/** Thousands separators, whitespace and the currency's own symbol(s); a foreign symbol is left in and fails the parse. */
+const CURRENCY_STRIP: Record<Currency, RegExp> = {
+  USD: /[$,\s]/g,
+  JPY: /[¥￥,\s]/g,
+};
+
 /**
  * Parse a price string into the currency's minor unit without float math:
  * USD "1,299.97" -> 129997 cents; JPY "27,500" -> 27500 yen (yen has no fraction).
  */
 export function parsePriceMinor(s: string, currency: Currency): number {
-  const cleaned = s.trim().replace(/[$¥￥,\s]/g, '');
+  const cleaned = s.trim().replace(CURRENCY_STRIP[currency], '');
   if (!/^\d+(\.\d*)?$/.test(cleaned)) {
     throw new Error(`Invalid price: ${JSON.stringify(s)}`);
   }

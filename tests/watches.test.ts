@@ -87,6 +87,7 @@ describe('parseWatchForm', () => {
   it('rejects bad price, size, empty region choice and overlong text', () => {
     let fd = base(); fd.set('maxPrice', 'abc'); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('maxPrice', '0'); expect(parseWatchForm(fd)).toHaveProperty('error');
+    fd = base(); fd.set('maxPrice', '¥100'); expect(parseWatchForm(fd)).toMatchObject({ field: 'maxPrice' });
     fd = base(); fd.set('sizeMl', '75.5'); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('sizeMl', '-1'); expect(parseWatchForm(fd)).toHaveProperty('error');
     fd = base(); fd.set('citiesSubmitted', '1'); expect(parseWatchForm(fd)).toHaveProperty('error');

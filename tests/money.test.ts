@@ -16,6 +16,18 @@ describe('parsePriceMinor', () => {
     expect(parsePriceMinor('129.99', 'USD')).toBe(12999);
     expect(parsePriceMinor('129.99', 'USD')).toBe(parsePriceToCents('129.99'));
   });
+  it('strips only its own currency symbol', () => {
+    expect(parsePriceMinor('$1,299.97', 'USD')).toBe(129997);
+    expect(parsePriceMinor('¥27,500', 'JPY')).toBe(27500);
+    expect(parsePriceMinor('￥27,500', 'JPY')).toBe(27500);
+    expect(parsePriceMinor(' ¥ 27 500 ', 'JPY')).toBe(27500);
+  });
+  it('rejects a foreign currency symbol', () => {
+    expect(() => parsePriceMinor('¥100', 'USD')).toThrow('Invalid price');
+    expect(() => parsePriceMinor('￥100', 'USD')).toThrow('Invalid price');
+    expect(() => parsePriceMinor('$100', 'JPY')).toThrow('Invalid price');
+    expect(() => parsePriceToCents('¥100')).toThrow('Invalid price');
+  });
 });
 
 describe('money', () => {
