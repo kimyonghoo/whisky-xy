@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Notice } from '@/components/Notice';
+import { countTagClass } from '@/components/SectionHeader';
 import type { FocusRequest, ViewRequest } from './StoreMap';
 import { NumberDot, OfferLine, StoreActions, StoreBadges } from './StoreParts';
 
@@ -159,7 +160,7 @@ export function StoreMapPanel({
           <h2 id="stores-h" className="font-serif text-xl font-medium">
             {d.map.listHeading}
           </h2>
-          <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular">{d.map.storeCount(stores.length)}</span>
+          <span className={countTagClass}>{d.map.storeCount(stores.length)}</span>
         </div>
         <ol className="flex flex-col gap-3">
           {stores.map((s) => {

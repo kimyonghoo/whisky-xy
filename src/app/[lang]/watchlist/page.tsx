@@ -15,6 +15,7 @@ import type { Watch } from '@/lib/db/schema';
 import type { Dict } from '@/lib/i18n';
 import { getDict } from '@/lib/i18n/server';
 import { PageHeader } from '@/components/PageHeader';
+import { countTagClass } from '@/components/SectionHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KeyGate } from './KeyGate';
@@ -108,7 +109,7 @@ async function WatchlistView({ searchParams, d }: { searchParams: Promise<RawPar
             <h2 id="list-h" className="font-serif text-xl font-medium">
               {d.watch.listHeading}
             </h2>
-            <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular">
+            <span className={countTagClass}>
               {d.watch.count(items.length)}
             </span>
           </div>

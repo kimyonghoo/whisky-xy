@@ -52,6 +52,8 @@ export const en: Dict = {
     submitCaps: 'SEARCH',
     /** Accessible name of that button: contains the visible caps (label in name). */
     submitCapsLabel: 'Search',
+    /** The same button while a search runs; still contains the visible caps. */
+    submitCapsPending: 'Searching…',
     curatedLabel: 'CURATED',
     /** One per style: Islay, Speyside, Japanese, Campbeltown, bourbon. Each must return results. */
     examples: ['Lagavulin 16', 'Macallan 18', 'Yamazaki 12', 'Springbank 15', "Blanton's"],
@@ -199,7 +201,7 @@ export const en: Dict = {
     srSummary: (verdict: string, kr: string, us: string, diff: string) => `${verdict}. ${kr}, ${us}, ${diff}.`,
   },
   ranking: {
-    eyebrow: 'vs. Korea',
+    eyebrow: 'Price comparison',
     title: 'US prices against Korea',
     lead: 'The lowest Dailyshot price in Korea set against the lowest US store price with tax, both in won. A price comparison only: duties and duty-free allowances are not included.',
     loading: 'Loading the comparison…',
@@ -242,7 +244,7 @@ export const en: Dict = {
     noneLinked: 'No product linked yet.',
     searchHeading: 'Find on Dailyshot',
     searchLabel: 'Product name',
-    searchPlaceholder: 'Korean or English (e.g. 스태그)',
+    searchPlaceholder: 'Korean or English name (e.g. Stagg)',
     searchHint: 'Searching by the Korean name is more precise.',
     searchSubmit: 'Find',
     searching: 'Searching…',

@@ -11,6 +11,7 @@ import { LocaleLink } from '@/components/LocaleLink';
 import { buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/PageHeader';
+import { countTagClass } from '@/components/SectionHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { Notice } from '@/components/Notice';
 import { formatRate } from '@/components/KrCompareChip';
@@ -18,7 +19,7 @@ import { SavingsChart, SavingsLegend } from './SavingsChart';
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = await getDict();
-  return { title: d.ranking.eyebrow, description: d.ranking.lead };
+  return { title: d.ranking.title, description: d.ranking.lead };
 }
 
 /** Public, read-only. Never triggers a live Dailyshot request: it reads stored links only. */
@@ -87,7 +88,7 @@ async function CompareView({ d }: { d: Dict }) {
           <h2 id="rank-h" className="font-serif text-xl font-medium sm:text-2xl">
             {d.ranking.listHeading}
           </h2>
-          <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular">
+          <span className={countTagClass}>
             {d.ranking.count(r.rows.length)}
           </span>
         </div>

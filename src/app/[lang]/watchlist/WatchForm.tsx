@@ -243,7 +243,7 @@ function FormBody({
       </fieldset>
 
       <details open={advancedOpen} className="group/adv rounded-md border">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm font-semibold pointer-coarse:min-h-11">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-4 py-3 text-sm font-semibold pointer-coarse:min-h-11">
           {d.watch.fields.advanced}
           <ChevronDown aria-hidden className="size-4 transition-transform group-open/adv:rotate-180" />
         </summary>

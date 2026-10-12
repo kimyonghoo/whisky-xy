@@ -1,8 +1,6 @@
 import { BottleImage } from '@/components/BottleImage';
 import { SpecChips, type BottleSpec } from '@/components/SpecChips';
 
-export { SpecChips, type BottleSpec };
-
 /**
  * Bottle identity: photo + exact English title + spec chips.
  * "hero" is the buy-card header (photo first, big title); "compact" is for lists.

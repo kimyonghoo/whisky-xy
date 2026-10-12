@@ -140,7 +140,7 @@ export function SearchForm({
             type="submit"
             disabled={pending}
             // The visible label is English caps; the accessible name keeps it (label in name) and adds the page language.
-            aria-label={pending ? d.search.pending : d.search.submitCapsLabel}
+            aria-label={pending ? d.search.submitCapsPending : d.search.submitCapsLabel}
             className="flex h-11 shrink-0 items-center gap-2 rounded-md px-1.5 text-xs font-medium tracking-[0.18em] text-primary sm:px-2 sm:tracking-[0.24em] transition-colors hover:text-primary-hover disabled:opacity-60"
           >
             {pending && <LoaderCircle aria-hidden className="size-4 motion-safe:animate-spin" />}

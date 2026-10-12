@@ -49,6 +49,8 @@ export const ko = {
     submitCaps: 'SEARCH',
     /** Accessible name of that button: contains the visible caps (label in name), then the Korean word. */
     submitCapsLabel: 'SEARCH 검색',
+    /** The same button while a search runs; still contains the visible caps. */
+    submitCapsPending: 'SEARCH 검색 중…',
     curatedLabel: 'CURATED',
     /** One per style: Islay, Speyside, Japanese, Campbeltown, bourbon. Each must return results. */
     examples: ['Lagavulin 16', 'Macallan 18', 'Yamazaki 12', 'Springbank 15', "Blanton's"],
@@ -196,7 +198,7 @@ export const ko = {
     srSummary: (verdict: string, kr: string, us: string, diff: string) => `${verdict}. ${kr}, ${us}, ${diff}.`,
   },
   ranking: {
-    eyebrow: '한국 대비',
+    eyebrow: '시세 비교',
     title: '한국 대비 미국 시세',
     lead: '데일리샷의 한국 최저가와 미국 매장의 세금 포함 최저가를 원화로 환산해 비교합니다. 관세와 면세 한도는 반영하지 않은 가격 비교입니다.',
     loading: '비교 목록을 불러오는 중…',

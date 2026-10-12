@@ -53,7 +53,10 @@ describe('dictionaries', () => {
   });
 
   it('gives the caps SEARCH button an accessible name that contains its visible label', () => {
-    for (const d of [ko, en]) expect(d.search.submitCapsLabel.toUpperCase()).toContain(d.search.submitCaps);
+    for (const d of [ko, en]) {
+      expect(d.search.submitCapsLabel.toUpperCase()).toContain(d.search.submitCaps);
+      expect(d.search.submitCapsPending.toUpperCase()).toContain(d.search.submitCaps);
+    }
     expect(ko.search.submitCapsLabel).toMatch(/검색/);
   });
 
@@ -68,6 +71,24 @@ describe('dictionaries', () => {
     const heading = (d: typeof ko | typeof en) => [d.store.headingPrefix, 'Astor Wines', d.store.headingSuffix].filter(Boolean).join(' ');
     expect(heading(ko)).toBe('Astor Wines 매장의 위스키');
     expect(heading(en)).toBe('Whisky at Astor Wines');
+  });
+
+  // lang.names holds each language's own name (한국어); site.titleKo is the Korean brand name (not rendered on /en).
+  it('shows no Hangul in English UI copy outside the language name', () => {
+    const texts: string[] = [];
+    const walk = (v: unknown, path: string) => {
+      if (path === 'lang.names' || path === 'site.titleKo') return;
+      if (typeof v === 'string') texts.push(v);
+      else if (typeof v === 'function') walk((v as (...a: unknown[]) => unknown)(...Array.from({ length: Math.max(v.length, 1) }, () => 3)), path);
+      else if (Array.isArray(v)) v.forEach((x) => walk(x, path));
+      else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, path ? `${path}.${k}` : k);
+    };
+    walk(en, '');
+    expect(texts.filter((t) => /[가-힣]/.test(t))).toEqual([]);
+  });
+
+  it('does not repeat the comparison eyebrow inside its title', () => {
+    for (const d of [ko, en]) expect(d.ranking.title).not.toContain(d.ranking.eyebrow);
   });
 
   it('formats won per locale', () => {
