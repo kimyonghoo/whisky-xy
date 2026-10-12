@@ -5,7 +5,8 @@ import { KR_STALE_AFTER_MS, barPct, formatKrw } from '@/lib/kr-view';
 import { searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { freshness } from '@/lib/freshness';
-import type { Dict } from '@/lib/i18n';
+import type { Dict, Locale } from '@/lib/i18n';
+import { displayBottleName } from '@/lib/ko-name';
 import { cn } from '@/lib/utils';
 import { BottleImage } from '@/components/BottleImage';
 import { SpecChips } from '@/components/SpecChips';
@@ -22,19 +23,21 @@ import { LocaleLink } from '@/components/LocaleLink';
  * on ONE zero-based KRW scale shared by every row, with direct value labels. Hand-built HTML,
  * no chart library. Bars are decorative (aria-hidden); each row carries a full sr-only sentence.
  */
-export function SavingsChart({ rows, now, d }: { rows: KrRankRow[]; now: Date; d: Dict }) {
+export function SavingsChart({ rows, now, locale, d }: { rows: KrRankRow[]; now: Date; locale: Locale; d: Dict }) {
   const max = Math.max(0, ...rows.flatMap((r) => [r.link.lowPriceKrw, r.compare.usKrw]));
   return (
     <ol className="flex flex-col gap-3">
       {rows.map((r, i) => (
-        <SavingsRow key={r.bottleKey} row={r} rank={i + 1} max={max} now={now} d={d} />
+        <SavingsRow key={r.bottleKey} row={r} rank={i + 1} max={max} now={now} locale={locale} d={d} />
       ))}
     </ol>
   );
 }
 
-function SavingsRow({ row, rank, max, now, d }: { row: KrRankRow; rank: number; max: number; now: Date; d: Dict }) {
+function SavingsRow({ row, rank, max, now, locale, d }: { row: KrRankRow; rank: number; max: number; now: Date; locale: Locale; d: Dict }) {
   const { compare, link, best } = row;
+  // Every ranked bottle is linked, so /ko shows the Dailyshot Korean name with the store's English under it.
+  const name = displayBottleName({ english: row.title, nameKo: link.nameKo, locale });
   const v = VERDICT_STYLE[compare.verdict];
   const kr = formatKrw(link.lowPriceKrw, d);
   const us = formatKrw(compare.usKrw, d);
@@ -57,17 +60,25 @@ function SavingsRow({ row, rank, max, now, d }: { row: KrRankRow; rank: number; 
         <RankMarker rank={rank} />
         <BottleImage src={row.imageUrl} alt="" className="size-14 sm:size-16" />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <h3 id={titleId} className="text-base leading-snug font-semibold tracking-tight sm:text-lg">
-            <LocaleLink
-              href={searchHref({ q: row.title })}
-              aria-label={d.ranking.searchThis(row.title)}
-              className="group inline-flex items-start gap-0.5 rounded-sm underline-offset-4 hover:underline"
-              lang="en"
-            >
-              <span className="line-clamp-2">{row.title}</span>
-              <ChevronRight aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-foreground sm:mt-1" />
-            </LocaleLink>
-          </h3>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h3 id={titleId} className="text-base leading-snug font-semibold tracking-tight sm:text-lg">
+              {/* Search stays on the store's English title, whatever the displayed name. */}
+              <LocaleLink
+                href={searchHref({ q: row.title })}
+                aria-label={d.ranking.searchThis(name.primary)}
+                className="group inline-flex items-start gap-0.5 rounded-sm underline-offset-4 hover:underline"
+                lang={name.original ? undefined : 'en'}
+              >
+                <span className="line-clamp-2">{name.primary}</span>
+                <ChevronRight aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-foreground sm:mt-1" />
+              </LocaleLink>
+            </h3>
+            {name.original && (
+              <p lang="en" className="line-clamp-2 text-xs leading-snug text-muted-foreground sm:text-sm">
+                {name.original}
+              </p>
+            )}
+          </div>
           <SpecChips spec={{ sizeMl: row.sizeMl, proof: row.proof, batch: row.batch }} />
           <p aria-hidden className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-medium text-muted-foreground">
             <span className="sr-only">{d.ranking.usStoreLabel}</span>

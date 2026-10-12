@@ -4,8 +4,8 @@ import type { BottleGroup, CitySection } from '@/lib/search';
 import { capGroups, nextShowCount, parseShowCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { getCity, type CityId } from '@/lib/geo';
-import type { Dict } from '@/lib/i18n';
-import { getDict } from '@/lib/i18n/server';
+import type { Dict, Locale } from '@/lib/i18n';
+import { getDict, getLocale } from '@/lib/i18n/server';
 import { BottleResult } from '@/components/BottleResult';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ShowMoreLink } from '@/components/search/ShowMoreLink';
@@ -19,11 +19,11 @@ interface ListProps {
   fx: FxRate | null;
 }
 
-function GroupList({ groups, q, admin, now, fx, city, d }: ListProps & { groups: BottleGroup[]; city: CityId; d: Dict }) {
+function GroupList({ groups, q, admin, now, fx, city, locale, d }: ListProps & { groups: BottleGroup[]; city: CityId; locale: Locale; d: Dict }) {
   return (
     <div className="flex flex-col gap-4">
       {groups.map((g) => (
-        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} fx={fx} city={city} d={d} />
+        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} fx={fx} city={city} locale={locale} d={d} />
       ))}
     </div>
   );
@@ -39,7 +39,7 @@ export async function CitySections({
   raw,
   ...list
 }: ListProps & { sections: CitySection[]; selected: CityId; raw: RawParams }) {
-  const d = await getDict();
+  const [d, locale] = await Promise.all([getDict(), getLocale()]);
   const mine = sections.find((s) => s.city === selected);
   const others = sections.filter((s) => s.city !== selected);
   const selectedCity = getCity(selected);
@@ -67,7 +67,7 @@ export async function CitySections({
           {mine.groups.length === 0 ? (
             <p className="rounded-lg border px-4 py-6 text-center text-muted-foreground">{d.search.sectionEmpty}</p>
           ) : (
-            <GroupList groups={mineCap.visible} {...list} city={selected} d={d} />
+            <GroupList groups={mineCap.visible} {...list} city={selected} locale={locale} d={d} />
           )}
           {mineCap.hiddenCount > 0 && (
             <ShowMoreLink
@@ -99,7 +99,7 @@ export async function CitySections({
                   <ChevronDown aria-hidden className="ml-auto size-4 text-primary transition-transform group-open/city:rotate-180" />
                 </summary>
                 <div className="flex flex-col gap-4 p-3 pt-1 sm:p-4 sm:pt-1">
-                  <GroupList groups={cap.visible} {...list} city={selected} d={d} />
+                  <GroupList groups={cap.visible} {...list} city={selected} locale={locale} d={d} />
                   {cap.hiddenCount > 0 && (
                     <ShowMoreLink
                       href={searchHref(raw, { others: String(nextShowCount(othersShow, sec.groups.length)) })}

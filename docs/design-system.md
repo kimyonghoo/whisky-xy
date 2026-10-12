@@ -151,7 +151,7 @@ No runtime font CDN, no font `<script>`.
 **Rules**
 - Every comparable number (prices, counts, dates) uses `tabular`.
 - `word-break: keep-all` globally; `overflow-wrap: anywhere` for long English names.
-- Product and store names stay in their original English and carry `lang="en"` where large.
+- Store names stay in their original English and carry `lang="en"` where large. Product names do too on `/en`; on `/ko` they show a Korean reading with the English kept under it (§8.3, §11).
 - `text-balance` on big headings.
 
 ---
@@ -250,7 +250,13 @@ Shown instead of results for a coming-soon city: a calm, finished-looking announ
 - Card links use `prefetch={false}` (a card triggers a live store check).
 
 ### 8.3 Bottle header: `BottleHeader`, `BottleImage`, `SpecChips`
-- Identity before price: photo → exact English title → spec chips (`750 ml`, `101 proof`, batch; formatted by `spec.size` / `spec.proof`).
+- Identity before price: photo → title → spec chips (`750 ml`, `101 proof`, batch; formatted by `spec.size` / `spec.proof`).
+- **Title by locale** (`displayBottleName` in `src/lib/ko-name.ts`, the one place this is decided):
+  - `/en`: the store's exact English title, no second line.
+  - `/ko`: the Korean reading is the title: the Dailyshot name (`kr_links.name_ko`) when the bottle is linked, else the glossary reading (`koreanBottleName`). The store's exact English title follows as a smaller second line (`text-muted-foreground`; `xs → sm` in lists, `base` on the hero; `lang="en"`), so it can be matched on the shelf and on the store's site.
+  - `/ko` with a brand the glossary doesn't know: the English title alone (`lang="en"`), no second line.
+- `title` (the displayed name) also feeds the photo's `alt` and list `aria-label`s. Search, links to search and the Dailyshot query keep the English title.
+- The same title + English line pattern applies to `/compare` rows (`SavingsChart`) and the `/map?bottle=` header (`PageHeader` `original`). ClerkMode and `/link-kr` (admin: the English name is what gets linked) stay English.
 - `BottleImage` puts a photo under a **display-case spotlight** (`.bottle-spot`): a warm radial light (`--spot-core` → `--spot-mid` → transparent) with the photo multiplied over it, so a store's white background becomes the light and fades into the card — never a white box. The tile is not isolated on purpose, so the photo blends through to the surface behind it. No photo → a dark `muted` tile with a faint line glass icon.
 - `hero`: full-width 4:3 photo and a serif 28–36 px title (buy card). `compact`: 72–96 px photo, two-line title (lists).
 - Images are hotlinked https-only (`safeHttpsUrl`) with `referrerPolicy="no-referrer"`.
@@ -348,12 +354,12 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 - **Say what to do next**, calmly and specifically. No exclamation marks.
 - **Latin capitals are labels, not sentences:** `CURATED`, `YOUR CITY`, `ELSEWHERE IN UNITED STATES`, `01 · SEARCH`, `COMING SOON`.
 - **Numbers and units:** `$129.00`; `세금 포함 약 $140.45`; `세전 $X`; `N곳` stores; `N종` bottles; `N분/시간/일 전 확인`.
-- **Names:** never translate product or store names. Cities are in Korean (브루클린, 뉴저지, 로스앤젤레스, 도쿄, 오사카, 삿포로, 타이베이). The site is `Route W` (the name stays in Latin letters in Korean copy).
+- **Names:** never translate store names. Product names show a Korean reading on `/ko` (Dailyshot's name, else the glossary in `src/lib/ko-name.ts`: brand and distillery names, `N년` ages and category terms in Korean; sub-names, numbers, batch codes and proof as written), always with the store's original English kept (a second line, or "Korean (English)" in share and page titles via `bottleName.withOriginal`). The glossary is data: extend `KO_BRANDS` / `KO_TERMS` there. Cities are in Korean (브루클린, 뉴저지, 로스앤젤레스, 도쿄, 오사카, 삿포로, 타이베이). The site is `Route W` (the name stays in Latin letters in Korean copy).
 
 ### English (`en.ts`)
 - The same tone: understated luxury-retail English, sentence case, no exclamation marks, no hype.
 - Same structure: `tests/i18n.test.ts` requires exactly the keys of `ko` and the same function arities.
-- Korean appears on `/en` only as data (Dailyshot product names) and the language switch's own name (한국어).
+- Korean appears on `/en` only as data (Dailyshot product names) and the language switch's own name (한국어). Product names on `/en` are the stores' English titles, never converted.
 
 ### Both
 - **ClerkMode** stays English in both locales: "Do you have this bottle?".

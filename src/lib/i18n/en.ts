@@ -1,6 +1,6 @@
 // English UI copy. Mirrors ./ko.ts key for key (tests/i18n.test.ts).
 // Tone: a fine-wine merchant's — calm, exact, understated; no exclamation marks.
-// Store and product names are never translated.
+// Store names are never translated. Product names stay English here (/ko adds a Korean reading).
 import type { Dict } from '@/lib/i18n';
 
 export const en: Dict = {
@@ -291,6 +291,8 @@ export const en: Dict = {
     backToSearch: 'Back to search',
     backToResults: 'Back to results',
   },
+  /** Shape-compatible with ko; /en never has a Korean reading, so this is not used there. */
+  bottleName: { withOriginal: (name: string, original: string) => `${name} (${original})` },
   /** Bottle facts as printed on the label (also shown to the clerk), so they read the same in both locales. */
   spec: { size: (ml: number) => `${ml} ml`, proof: (proof: number) => `${proof} proof` },
   stock: { inStock: 'In stock', unverified: 'Stock unconfirmed', soldOut: 'Sold out', unreliable: 'Stock display unreliable' },

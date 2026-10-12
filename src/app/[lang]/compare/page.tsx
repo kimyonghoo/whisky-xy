@@ -6,7 +6,7 @@ import { getDb } from '@/lib/db/client';
 import { listKrComparisons } from '@/lib/krcompare';
 import { fxDateLabel, isFxStale } from '@/lib/kr-view';
 import type { Dict } from '@/lib/i18n';
-import { getDict } from '@/lib/i18n/server';
+import { getDict, getLocale } from '@/lib/i18n/server';
 import { LocaleLink } from '@/components/LocaleLink';
 import { buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -85,6 +85,7 @@ async function CompareView({ d }: { d: Dict }) {
 
   const fxDate = fxDateLabel(r.fx.date);
   const rate = formatRate(r.fx.usdKrw);
+  const locale = await getLocale();
   return (
     <>
       <section aria-labelledby="rank-h" className="flex flex-col gap-4">
@@ -102,7 +103,7 @@ async function CompareView({ d }: { d: Dict }) {
           </Notice>
         )}
         <SavingsLegend d={d} />
-        <SavingsChart rows={r.rows} now={now} d={d} />
+        <SavingsChart rows={r.rows} now={now} locale={locale} d={d} />
         {r.notInStock > 0 && <p className="text-sm text-muted-foreground">{d.ranking.notInStock(r.notInStock)}</p>}
       </section>
       <footer className="flex flex-col gap-1 border-t pt-5 text-sm text-muted-foreground">

@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { cardMeta, mapsUrl, safeHttpsUrl, telHref, parseCardId } from '@/lib/card';
 import { getStore } from '@/lib/stores';
 import type { Listing } from '@/lib/db/schema';
+import { displayBottleName } from '@/lib/ko-name';
+import { ko } from '@/lib/i18n/ko';
+import { en } from '@/lib/i18n/en';
 
 const dewinespot = getStore('dewinespot')!;
 
@@ -28,6 +31,12 @@ describe('cardMeta', () => {
   });
   it('shows sold out', () => {
     expect(cardMeta(listing({ available: false }), dewinespot).description).toContain('품절');
+  });
+  it('quotes the Korean name with the English in parentheses on /ko; English alone on /en', () => {
+    const l = listing();
+    const now = new Date('2026-10-10T16:00:00Z');
+    expect(cardMeta(l, dewinespot, now, ko, displayBottleName({ english: l.title, locale: 'ko' })).title).toBe("블랑톤 오리지널 (Blanton's Original)");
+    expect(cardMeta(l, dewinespot, now, en, displayBottleName({ english: l.title, locale: 'en' })).title).toBe("Blanton's Original");
   });
   it('drops non-https image', () => {
     expect(cardMeta(listing({ imageUrl: 'javascript:alert(1)' }), dewinespot).image).toBeNull();

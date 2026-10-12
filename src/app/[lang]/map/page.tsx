@@ -9,7 +9,9 @@ import { buildMapStores, initialView, parseBottleParam } from '@/lib/map-view';
 import { STORES } from '@/lib/stores';
 import { CITY_COOKIE, citiesOf, resolveCity } from '@/lib/geo';
 import type { Dict } from '@/lib/i18n';
-import { getDict } from '@/lib/i18n/server';
+import { getDict, getLocale } from '@/lib/i18n/server';
+import { getKrNames } from '@/lib/krlinks';
+import { displayBottleName } from '@/lib/ko-name';
 import { LocaleLink } from '@/components/LocaleLink';
 import { buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,18 +77,27 @@ async function MapView({ searchParams, d }: { searchParams: Promise<RawParams>; 
   if (soon) return <ComingSoonNotice city={city} backCity={resolveCity({ cookie: cookieCity }).city} />;
   // Stock counts change every crawl: per-request data, never part of a prerender.
   await connection();
-  const db = await getDb();
-  const [availability, bottle] = await Promise.all([
+  const [db, locale] = await Promise.all([getDb(), getLocale()]);
+  const [availability, bottle, krNames] = await Promise.all([
     storeAvailability(db),
     bottleKey ? bottleStoreOffers(db, bottleKey) : Promise.resolve(null),
+    // The Dailyshot Korean name, one query, only on /ko with a bottle.
+    bottleKey && locale === 'ko' ? getKrNames(db, [bottleKey]) : Promise.resolve(null),
   ]);
+  const name = bottle && displayBottleName({ english: bottle.title, nameKo: bottleKey ? krNames?.get(bottleKey) : null, locale });
   const stores = buildMapStores(STORES, availability, bottle, d);
   const carrying = stores.filter((s) => !s.dimmed).length;
 
   return (
     <>
-      {bottle ? (
-        <PageHeader eyebrow={d.map.bottleEyebrow} title={bottle.title} titleLang="en" lead={d.map.bottleLead(carrying, stores.length)}>
+      {name ? (
+        <PageHeader
+          eyebrow={d.map.bottleEyebrow}
+          title={name.primary}
+          titleLang={name.original ? undefined : 'en'}
+          original={name.original}
+          lead={d.map.bottleLead(carrying, stores.length)}
+        >
           <div className="mt-1 flex flex-wrap gap-2">
             <LocaleLink href="/map" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
               <X aria-hidden />

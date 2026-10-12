@@ -4,7 +4,8 @@ import { ROWS_PER_GROUP, summarizeGroup } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
 import { approxKrw, formatKrw, fxDateLabel } from '@/lib/kr-view';
 import type { FxRate } from '@/lib/db/schema';
-import type { Dict } from '@/lib/i18n';
+import type { Dict, Locale } from '@/lib/i18n';
+import { displayBottleName } from '@/lib/ko-name';
 import type { CityId } from '@/lib/geo';
 import { Card } from '@/components/ui/card';
 import { BottleHeader } from '@/components/BottleHeader';
@@ -24,6 +25,7 @@ export function BottleResult({
   now,
   fx = null,
   city,
+  locale,
   d,
 }: {
   group: BottleGroup;
@@ -34,10 +36,13 @@ export function BottleResult({
   now: Date;
   /** Latest USD→KRW rate; when present the lowest price also shows a rounded 원화 amount. */
   fx?: FxRate | null;
+  /** The page's locale: on /ko the title is the Korean reading, with the English name under it. */
+  locale: Locale;
   /** The page's dictionary (a Server Component: no context; the caller has it from getDict). */
   d: Dict;
 }) {
   const s = summarizeGroup(group);
+  const name = displayBottleName({ english: group.displayTitle, nameKo: group.kr?.link.nameKo, locale });
   const krw = s.cheapest && fx ? formatKrw(approxKrw(s.cheapest.taxIncludedCents, fx.usdKrw), d) : null;
   const ranks = new Map<number, number>();
   let n = 0;
@@ -52,7 +57,7 @@ export function BottleResult({
   return (
     <Card as="article">
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
-        <BottleHeader title={group.displayTitle} subtitle={group.displayVariant} imageUrl={group.imageUrl} spec={group}>
+        <BottleHeader title={name.primary} original={name.original} subtitle={group.displayVariant} imageUrl={group.imageUrl} spec={group}>
           <div className="flex flex-wrap items-center gap-1.5">
             {s.cities.map((r) => (
               <CityChip key={r} city={r} />
@@ -85,8 +90,8 @@ export function BottleResult({
           )}
         </div>
       </div>
-      <KrCompareChip q={q} kr={group.kr} bottleKey={group.bottleKey} displayTitle={group.displayTitle} admin={admin} now={now} d={d} />
-      <ol className="divide-y border-t" aria-label={group.displayTitle}>
+      <KrCompareChip q={q} kr={group.kr} bottleKey={group.bottleKey} displayTitle={group.displayTitle} name={name.primary} admin={admin} now={now} d={d} />
+      <ol className="divide-y border-t" aria-label={name.primary}>
         {head.map(line)}
       </ol>
       {rest.length > 0 && (

@@ -5,6 +5,7 @@ export function PageHeader({
   eyebrow,
   title,
   titleLang,
+  original,
   lead,
   children,
   className,
@@ -13,6 +14,8 @@ export function PageHeader({
   title: string;
   /** e.g. "en" when the title is an English product name. */
   titleLang?: string;
+  /** The store's English name under a Korean bottle title (/ko). */
+  original?: string | null;
   lead?: string;
   children?: React.ReactNode;
   className?: string;
@@ -23,6 +26,11 @@ export function PageHeader({
       <h1 lang={titleLang} className="font-serif text-[1.75rem] leading-tight font-medium text-balance sm:text-4xl">
         {title}
       </h1>
+      {original && (
+        <p lang="en" className="-mt-1 text-base leading-snug text-muted-foreground">
+          {original}
+        </p>
+      )}
       {lead && <p className="max-w-2xl text-[0.9375rem] leading-relaxed text-muted-foreground sm:text-base">{lead}</p>}
       {children}
     </header>

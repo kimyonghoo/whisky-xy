@@ -37,6 +37,7 @@ export function KrCompareChip({
   kr,
   bottleKey,
   displayTitle,
+  name = displayTitle,
   admin,
   now,
   q,
@@ -46,7 +47,10 @@ export function KrCompareChip({
   q: string;
   kr: BottleGroup['kr'];
   bottleKey: string;
+  /** The store's English title: it seeds the Dailyshot query on /link-kr. */
   displayTitle: string;
+  /** The displayed name (Korean on /ko), for accessible labels. */
+  name?: string;
   admin: boolean;
   now: Date;
 }) {
@@ -57,7 +61,7 @@ export function KrCompareChip({
       <div className="px-4 pb-4 sm:px-5">
         <LocaleLink
           href={href}
-          aria-label={d.compare.linkLabel(displayTitle)}
+          aria-label={d.compare.linkLabel(name)}
           className={buttonVariants({ variant: 'outline', size: 'sm', className: 'border-dashed' })}
         >
           <Link2 aria-hidden />
@@ -77,7 +81,7 @@ export function KrCompareChip({
           {admin && (
             <LocaleLink
               href={href}
-              aria-label={d.compare.relinkLabel(displayTitle)}
+              aria-label={d.compare.relinkLabel(name)}
               className={buttonVariants({ variant: 'outline', size: 'xs', className: 'ml-auto' })}
             >
               <Link2 aria-hidden />

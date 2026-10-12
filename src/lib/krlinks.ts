@@ -40,6 +40,16 @@ export async function getKrLinks(db: Db, bottleKeys: string[]): Promise<Map<stri
   return new Map(rows.map((r) => [r.bottleKey, r]));
 }
 
+/** Dailyshot Korean names by bottle key, in one query (pages that show names but load no links). */
+export async function getKrNames(db: Db, bottleKeys: string[]): Promise<Map<string, string>> {
+  if (bottleKeys.length === 0) return new Map();
+  const rows = await db
+    .select({ bottleKey: krLinks.bottleKey, nameKo: krLinks.nameKo })
+    .from(krLinks)
+    .where(inArray(krLinks.bottleKey, bottleKeys));
+  return new Map(rows.map((r) => [r.bottleKey, r.nameKo]));
+}
+
 export async function listKrLinks(db: Db): Promise<KrLink[]> {
   return db.select().from(krLinks).orderBy(krLinks.bottleKey);
 }

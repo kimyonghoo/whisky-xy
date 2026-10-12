@@ -289,6 +289,8 @@ export const ko = {
     backToSearch: '검색으로',
     backToResults: '검색 결과로 돌아가기',
   },
+  /** A bottle name quoted in share and page titles: the Korean reading with the store's English name. */
+  bottleName: { withOriginal: (name: string, original: string) => `${name} (${original})` },
   /** Bottle facts as printed on the label (also shown to the clerk), so they read the same in both locales. */
   spec: { size: (ml: number) => `${ml} ml`, proof: (proof: number) => `${proof} proof` },
   stock: { inStock: '재고 있음', unverified: '재고 확인 필요', soldOut: '품절', unreliable: '재고 표시 부정확' },

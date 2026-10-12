@@ -10,8 +10,12 @@ import { getStore } from '@/lib/stores';
 import { cardMeta, mapsUrl, nyDate, parseCardId, safeHttpsUrl, telHref } from '@/lib/card';
 import { freshness, stockState } from '@/lib/freshness';
 import { formatUsd, withTaxCents } from '@/lib/money';
-import type { Dict } from '@/lib/i18n';
-import { getDict } from '@/lib/i18n/server';
+import type { Db } from '@/lib/db/client';
+import type { Listing } from '@/lib/db/schema';
+import type { Dict, Locale } from '@/lib/i18n';
+import { getDict, getLocale } from '@/lib/i18n/server';
+import { getKrNames } from '@/lib/krlinks';
+import { displayBottleName, quotedBottleName, type DisplayName } from '@/lib/ko-name';
 import { LocaleLink } from '@/components/LocaleLink';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
@@ -29,15 +33,21 @@ import { ClerkMode } from './ClerkMode';
 
 type Props = { params: Promise<{ id: string }> };
 
+/** The displayed name; the Dailyshot Korean name is looked up (one query) on /ko only. */
+async function bottleName(db: Db, listing: Listing, locale: Locale): Promise<DisplayName> {
+  const nameKo = locale === 'ko' ? (await getKrNames(db, [listing.bottleKey])).get(listing.bottleKey) : null;
+  return displayBottleName({ english: listing.title, nameKo, locale });
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = parseCardId((await params).id);
   if (id === null) return {};
   await connection();
-  const d = await getDict();
-  const listing = await getListing(await getDb(), id);
+  const [d, locale, db] = await Promise.all([getDict(), getLocale(), getDb()]);
+  const listing = await getListing(db, id);
   const store = listing && getStore(listing.storeId);
   if (!listing || !store) return {};
-  const m = cardMeta(listing, store, new Date(), d);
+  const m = cardMeta(listing, store, new Date(), d, await bottleName(db, listing, locale));
   return {
     title: m.title,
     description: m.description,
@@ -65,7 +75,7 @@ async function CardView({ params, d }: Props & { d: Dict }) {
   const { listing, status } = result;
   const store = getStore(listing.storeId);
   if (!store) notFound();
-  const history = await getPriceHistory(db, id);
+  const [history, name] = await Promise.all([getPriceHistory(db, id), bottleName(db, listing, await getLocale())]);
 
   const image = safeHttpsUrl(listing.imageUrl);
   const storeUrl = safeHttpsUrl(listing.url);
@@ -96,7 +106,8 @@ async function CardView({ params, d }: Props & { d: Dict }) {
       <BottleHeader
         variant="hero"
         headingLevel="h1"
-        title={listing.title}
+        title={name.primary}
+        original={name.original}
         subtitle={listing.variantTitle}
         imageUrl={image}
         spec={listing}
@@ -212,9 +223,10 @@ async function CardView({ params, d }: Props & { d: Dict }) {
         )}
       </section>
 
+      {/* The clerk reads the store's English name, never the Korean reading. */}
       <ClerkMode title={listing.title} imageUrl={image} detail={detail} price={formatUsd(listing.priceCents)} />
 
-      <ShareCardButton path={`/card/${listing.id}`} title={listing.title} className="w-full" />
+      <ShareCardButton path={`/card/${listing.id}`} title={quotedBottleName(name, d)} className="w-full" />
 
       <details className="group/hist rounded-lg border bg-card">
         <summary className="flex min-h-14 items-center gap-2 rounded-lg px-5 font-serif text-base font-medium">

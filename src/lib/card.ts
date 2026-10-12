@@ -4,6 +4,7 @@ import { formatUsd } from '@/lib/money';
 import { ko } from '@/lib/i18n/ko';
 import type { Dict } from '@/lib/i18n';
 import { stockState } from '@/lib/freshness';
+import { quotedBottleName, type DisplayName } from '@/lib/ko-name';
 
 export function mapsUrl(address: string): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -40,10 +41,17 @@ export function nyDate(d: Date): string {
   return `${get('month')}/${get('day')}`;
 }
 
-export function cardMeta(listing: Listing, store: Store, now: Date = new Date(), d: Dict = ko): { title: string; description: string; image: string | null } {
+/** `name` is the displayed name (`displayBottleName`); on /ko the title quotes it as "Korean (English)". */
+export function cardMeta(
+  listing: Listing,
+  store: Store,
+  now: Date = new Date(),
+  d: Dict = ko,
+  name?: DisplayName,
+): { title: string; description: string; image: string | null } {
   const stock = { instock: d.stock.inStock, unverified: d.stock.unverified, soldout: d.stock.soldOut }[stockState(listing, now)];
   return {
-    title: listing.title,
+    title: name ? quotedBottleName(name, d) : listing.title,
     description: `${d.card.asOf(nyDate(listing.checkedAt), formatUsd(listing.priceCents))} · ${stock} · ${store.name} · ${store.address}`,
     image: safeHttpsUrl(listing.imageUrl),
   };
