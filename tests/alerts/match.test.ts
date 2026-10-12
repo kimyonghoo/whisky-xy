@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { PRIVATE_STORE } from '../helpers/private-store';
 import { watchMatches, selectAlerts, formatAlert, type AlertCandidate } from '@/lib/alerts/match';
 import { getStore } from '@/lib/stores';
 import { normalizeText } from '@/lib/whisky/parse';
 import type { Listing, Watch } from '@/lib/db/schema';
 import type { ChangeEvent } from '@/lib/crawl/ingest';
+
+vi.mock('@/lib/stores', async (orig) => (await import('../helpers/private-store')).withPrivateStore(await orig<typeof import('@/lib/stores')>()));
 
 const dewinespot = getStore('dewinespot')!;
 const flask = getStore('flask')!;
@@ -63,6 +66,15 @@ describe('selectAlerts', () => {
     expect(selectAlerts([w], [ev('price_drop', 18000, 19000)], byId)).toHaveLength(0);
     expect(selectAlerts([stagg], [ev('price_drop', 18000, 19000)], byId)).toHaveLength(0);
     expect(selectAlerts([stagg], [ev('sold_out', 17500)], byId)).toHaveLength(0);
+    expect(selectAlerts([stagg], [ev('new', 17500)], byId)).toHaveLength(1);
+  });
+  it('never alerts on a listing of a private store, for any event kind', () => {
+    const priv = new Map<number, Listing>([[1, listing('Stagg Kentucky Straight Bourbon Whiskey', { storeId: PRIVATE_STORE.id })]]);
+    const w2 = { ...stagg, maxPriceCents: 20000 };
+    expect(selectAlerts([stagg], [ev('new', 17500)], priv)).toEqual([]);
+    expect(selectAlerts([stagg], [ev('restock', 17500)], priv)).toEqual([]);
+    expect(selectAlerts([w2], [ev('price_drop', 19900, 21000)], priv)).toEqual([]);
+    // sanity: the same events do alert for a public store
     expect(selectAlerts([stagg], [ev('new', 17500)], byId)).toHaveLength(1);
   });
 });

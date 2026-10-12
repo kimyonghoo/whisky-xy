@@ -1,7 +1,7 @@
 import type { Db } from '@/lib/db/client';
 import type { Listing } from '@/lib/db/schema';
 import { getListing } from '@/lib/listings';
-import { getStore } from '@/lib/stores';
+import { getStore, isPublicStoreId } from '@/lib/stores';
 import { fetchLiveProduct, type FetchFn } from '@/lib/shopify/client';
 import { recordLiveCheck } from '@/lib/crawl/ingest';
 import { claimLiveCheck } from '@/lib/live-budget';
@@ -27,6 +27,9 @@ export async function recheckListing(
 ): Promise<{ listing: Listing; status: RecheckStatus } | null> {
   const listing = await getListing(db, id);
   if (!listing) return null;
+  // A private (or unregistered) store's listing must be unreachable by id: same answer as a missing
+  // row, checked before the cache/cooldown paths (which would return the row) and any network call.
+  if (!isPublicStoreId(listing.storeId)) return null;
   const now = opts.now ?? new Date();
 
   if (now.getTime() - listing.checkedAt.getTime() < MIN_RECHECK_INTERVAL_MS) {

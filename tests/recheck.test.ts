@@ -6,6 +6,14 @@ import { listings, priceHistory } from '@/lib/db/schema';
 import { recheckListing, resetRecheckCooldowns } from '@/lib/recheck';
 import { claimLiveCheck, LIVE_BURST, LIVE_REFILL_MS } from '@/lib/live-budget';
 
+import { PRIVATE_STORE, PUBLIC_JPY_STORE } from './helpers/private-store';
+
+// The public JPY store: live recheck must refuse it (see fetchLiveProduct) without crashing the caller.
+vi.mock('@/lib/stores', async (orig) => {
+  const { withPrivateStore, PUBLIC_JPY_STORE: jpy } = await import('./helpers/private-store');
+  return withPrivateStore(await orig<typeof import('@/lib/stores')>(), [jpy]);
+});
+
 const NOW = new Date('2026-10-10T12:00:00Z');
 const OLD = new Date('2026-10-10T10:00:00Z');
 
@@ -71,6 +79,32 @@ describe('recheckListing', () => {
     expect(r?.status).toBe('gone');
     expect(r?.listing.available).toBe(false);
     expect(r?.listing.priceCents).toBe(10000);
+  });
+
+  it('null for a private-store listing, with no store request, even when the row is fresh or old', async () => {
+    const db = await createTestDb();
+    const fetchFn = fakeFetch({ variants: [{ id: 777, price: 1, available: true }] });
+    for (const [variantId, checkedAt] of [['777', OLD], ['778', new Date(NOW.getTime() - 5_000)]] as const) {
+      const [row] = await db
+        .insert(listings)
+        .values({ ...seed({ storeId: PRIVATE_STORE.id, title: 'Private Bottle', priceCents: 10000 }), variantId, checkedAt })
+        .returning();
+      expect(await recheckListing(db, row.id, { fetchFn, now: NOW })).toBeNull();
+    }
+    expect(fetchFn).toHaveBeenCalledTimes(0);
+  });
+
+  it('a non-USD listing is reported failed, not thrown, and the store is never contacted', async () => {
+    const db = await createTestDb();
+    const [row] = await db
+      .insert(listings)
+      .values({ ...seed({ storeId: PUBLIC_JPY_STORE.id, title: 'Yen Bottle', priceCents: 27500 }), variantId: '888', checkedAt: OLD })
+      .returning();
+    const fetchFn = fakeFetch({ variants: [{ id: 888, price: 2750000, available: true }] });
+    const r = await recheckListing(db, row.id, { fetchFn, now: NOW });
+    expect(r?.status).toBe('failed');
+    expect(r?.listing.priceCents).toBe(27500);
+    expect(fetchFn).toHaveBeenCalledTimes(0);
   });
 
   it('null for unknown id', async () => {

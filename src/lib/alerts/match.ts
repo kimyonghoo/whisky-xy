@@ -38,7 +38,8 @@ export function selectAlerts(
     const listing = listingsById.get(event.listingId);
     if (!listing) continue;
     const store = getStore(listing.storeId);
-    if (!store) continue;
+    // Private stores are crawled but never announced.
+    if (!store || !store.publicAllowed) continue;
     for (const watch of watches) {
       if (!watchMatches(watch, listing, store)) continue;
       const max = watch.maxPriceCents;

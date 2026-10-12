@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [d, locale, db] = await Promise.all([getDict(), getLocale(), getDb()]);
   const listing = await getListing(db, id);
   const store = listing && getStore(listing.storeId);
-  if (!listing || !store) return {};
+  if (!listing || !store || !store.publicAllowed) return {};
   const m = cardMeta(listing, store, new Date(), d, await bottleName(db, listing, locale));
   return {
     title: m.title,
@@ -74,7 +74,8 @@ async function CardView({ params, d }: Props & { d: Dict }) {
   if (!result) notFound();
   const { listing, status } = result;
   const store = getStore(listing.storeId);
-  if (!store) notFound();
+  // Private stores are crawled but never shown: a 404, same as a missing id.
+  if (!store || !store.publicAllowed) notFound();
   const [history, name] = await Promise.all([getPriceHistory(db, id), bottleName(db, listing, await getLocale())]);
 
   const image = safeHttpsUrl(listing.imageUrl);

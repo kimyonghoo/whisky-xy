@@ -6,7 +6,10 @@ import type { Db } from '@/lib/db/client';
 import { parseCardId, MAX_DB_ID } from '@/lib/card';
 import { isCrossSiteRequest } from '@/lib/request-origin';
 
+import { PRIVATE_STORE } from './helpers/private-store';
+
 let testDb: Db;
+vi.mock('@/lib/stores', async (orig) => (await import('./helpers/private-store')).withPrivateStore(await orig<typeof import('@/lib/stores')>()));
 vi.mock('@/lib/db/client', async (orig) => ({
   ...(await orig<typeof import('@/lib/db/client')>()),
   getDb: async () => testDb,
@@ -47,6 +50,19 @@ describe('POST /api/recheck/[id]', () => {
 
   it('404 for an unknown id', async () => {
     expect((await post(String(MAX_DB_ID))).status).toBe(404);
+  });
+
+  it('404 for a private-store listing, and the store is never contacted', async () => {
+    const [row] = await testDb
+      .insert(listings)
+      .values({ ...seed({ storeId: PRIVATE_STORE.id, title: 'Private Bottle', priceCents: 10000 }), variantId: '556', checkedAt: new Date(Date.now() - 3_600_000) })
+      .returning();
+    const { fetchLiveProduct } = await import('@/lib/shopify/client');
+    vi.mocked(fetchLiveProduct).mockClear();
+    const res = await post(String(row.id), { origin: SITE });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'not found' });
+    expect(fetchLiveProduct).not.toHaveBeenCalled();
   });
 
   it('403 for a cross-site browser POST, before any store request', async () => {

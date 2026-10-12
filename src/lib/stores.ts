@@ -99,3 +99,8 @@ export const STORES: Store[] = [
 export function getStore(id: string): Store | undefined {
   return STORES.find((s) => s.id === id);
 }
+
+/** True only for a registered store that may be shown publicly. Unknown ids are not public. */
+export function isPublicStoreId(storeId: string): boolean {
+  return getStore(storeId)?.publicAllowed === true;
+}
