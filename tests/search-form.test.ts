@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { parseDollarsToCents, parseSearchForm, sizeLabel } from '@/lib/search-form';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { parseDollarsToCents, parseSearchForm, searchFormValues, sizeLabel } from '@/lib/search-form';
+import { SearchForm } from '@/components/search/SearchForm';
 
 describe('parseDollarsToCents', () => {
   it('parses exactly', () => {
@@ -47,5 +50,25 @@ describe('parseSearchForm', () => {
   });
   it('handles arrays and no longer reads region or city', () => {
     expect(parseSearchForm({ q: ['a', 'b'], region: 'la', city: 'nj' })).toEqual({ q: 'a' });
+  });
+});
+
+describe('searchFormValues', () => {
+  it('carries the given (resolved) city as the hidden field, with the parsed filters', () => {
+    const raw = { q: 'stagg', min: '50', size: '750', inStock: '1', store: 'flask' };
+    expect(searchFormValues(raw, parseSearchForm(raw), 'la')).toEqual({
+      q: 'stagg', city: 'la', size: '750', min: '50', max: '', inStock: true, store: 'flask',
+    });
+  });
+  it('leaves the city out when the landing page has none', () => {
+    expect(searchFormValues({}, parseSearchForm({}), undefined).city).toBeUndefined();
+  });
+});
+
+describe('SearchForm hidden city field', () => {
+  it('renders the city so a submitted search URL names it', () => {
+    const values = searchFormValues({ q: 'stagg' }, parseSearchForm({ q: 'stagg' }), 'nj');
+    const html = renderToStaticMarkup(createElement(SearchForm, { values, filterCount: 0 }));
+    expect(html).toContain('<input type="hidden" name="city" value="nj"/>');
   });
 });

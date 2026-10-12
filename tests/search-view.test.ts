@@ -9,6 +9,8 @@ import {
   activeFilterCount,
   distinctBottleCount,
   searchHref,
+  bottleMapHref,
+  watchPrefillHref,
 } from '@/lib/search-view';
 import { identifyingVariant, type BottleGroup, type ListingRow } from '@/lib/search';
 import { getStore } from '@/lib/stores';
@@ -143,5 +145,14 @@ describe('searchHref', () => {
   });
   it('returns / with no params', () => {
     expect(searchHref({})).toBe('/');
+  });
+});
+
+describe('row link builders', () => {
+  it("map link names the bottle and the page's city, encoded", () => {
+    expect(bottleMapHref('a/b c', 'la')).toBe('/map?bottle=a%2Fb+c&city=la');
+  });
+  it("watch link prefills the query and keeps the page's city", () => {
+    expect(watchPrefillHref('jack & coke', 'nj')).toBe('/watchlist?q=jack+%26+coke&city=nj');
   });
 });

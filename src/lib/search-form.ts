@@ -1,5 +1,6 @@
 import { getStore } from '@/lib/stores';
 import type { SearchFilters } from '@/lib/search';
+import type { CityId } from '@/lib/geo';
 import { WATCH_LIMITS } from '@/lib/watch-form';
 
 /** Parse a dollar string like "64.5" or "1,299.97" into integer cents without float math. */
@@ -42,4 +43,34 @@ export function parseSearchForm(raw: Raw): SearchFilters {
   if (min !== undefined) params.minCents = min;
   if (max !== undefined) params.maxCents = max;
   return params;
+}
+
+/** What the search form shows and carries as hidden fields. */
+export interface SearchFormValues {
+  q: string;
+  /** The page's city, a hidden field so a new query (and the URL it makes) stays in that city. */
+  city?: string;
+  /** Bottle size in ml as a string, '' = any. */
+  size: string;
+  min: string;
+  max: string;
+  inStock: boolean;
+  /** Store-scoped search (`?store=`): kept as a hidden field so a new query stays in that store. */
+  store?: string;
+}
+
+/**
+ * Form values for a page. `city` must already be whitelisted: the resolved city on results pages
+ * (so every submitted search URL names it), or a valid `?city=` on the landing page.
+ */
+export function searchFormValues(raw: Raw, filters: SearchFilters, city: CityId | undefined): SearchFormValues {
+  return {
+    q: filters.q,
+    city,
+    size: filters.sizeMl != null ? String(filters.sizeMl) : '',
+    min: first(raw.min) ?? '',
+    max: first(raw.max) ?? '',
+    inStock: Boolean(filters.inStockOnly),
+    store: filters.storeId,
+  };
 }

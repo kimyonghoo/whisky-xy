@@ -1,6 +1,8 @@
 import { ChevronRight, Map as MapIcon, Star } from 'lucide-react';
 import type { ListingRow } from '@/lib/search';
 import type { Dict } from '@/lib/i18n';
+import type { CityId } from '@/lib/geo';
+import { bottleMapHref, watchPrefillHref } from '@/lib/search-view';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
@@ -33,9 +35,26 @@ export function RankMarker({ rank }: { rank: number | null }) {
  * The main area opens the buy card; secondary actions sit beside it.
  * Card links never prefetch: rendering a card triggers a live store check.
  */
-export function StoreLine({ row, rank, bottleKey, q, now, d }: { row: ListingRow; rank: number | null; bottleKey: string; q: string; now: Date; d: Dict }) {
-  const watchHref = `/watchlist?q=${encodeURIComponent(q || row.title)}`;
-  const mapHref = `/map?bottle=${encodeURIComponent(bottleKey)}`;
+export function StoreLine({
+  row,
+  rank,
+  bottleKey,
+  q,
+  city,
+  now,
+  d,
+}: {
+  row: ListingRow;
+  rank: number | null;
+  bottleKey: string;
+  q: string;
+  /** The page's city: the map and watch links keep it so they open where the visitor is looking. */
+  city: CityId;
+  now: Date;
+  d: Dict;
+}) {
+  const watchHref = watchPrefillHref(q || row.title, city);
+  const mapHref = bottleMapHref(bottleKey, city);
   const best = rank === 1;
   return (
     <li className={cn('flex flex-col gap-2.5 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-5', best && 'relative before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary')}>

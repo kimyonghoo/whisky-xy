@@ -19,11 +19,11 @@ interface ListProps {
   fx: FxRate | null;
 }
 
-function GroupList({ groups, q, admin, now, fx, d }: ListProps & { groups: BottleGroup[]; d: Dict }) {
+function GroupList({ groups, q, admin, now, fx, city, d }: ListProps & { groups: BottleGroup[]; city: CityId; d: Dict }) {
   return (
     <div className="flex flex-col gap-4">
       {groups.map((g) => (
-        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} fx={fx} d={d} />
+        <BottleResult key={g.bottleKey} group={g} q={q} admin={admin} now={now} fx={fx} city={city} d={d} />
       ))}
     </div>
   );
@@ -67,7 +67,7 @@ export async function CitySections({
           {mine.groups.length === 0 ? (
             <p className="rounded-lg border px-4 py-6 text-center text-muted-foreground">{d.search.sectionEmpty}</p>
           ) : (
-            <GroupList groups={mineCap.visible} {...list} d={d} />
+            <GroupList groups={mineCap.visible} {...list} city={selected} d={d} />
           )}
           {mineCap.hiddenCount > 0 && (
             <ShowMoreLink
@@ -98,7 +98,7 @@ export async function CitySections({
                   <ChevronDown aria-hidden className="ml-auto size-4 text-primary transition-transform group-open/city:rotate-180" />
                 </summary>
                 <div className="flex flex-col gap-4 p-3 pt-1 sm:p-4 sm:pt-1">
-                  <GroupList groups={cap.visible} {...list} d={d} />
+                  <GroupList groups={cap.visible} {...list} city={selected} d={d} />
                   {cap.hiddenCount > 0 && (
                     <ShowMoreLink
                       href={searchHref(raw, { others: String(nextShowCount(othersShow, sec.groups.length)) })}

@@ -6,7 +6,8 @@ import { getDb } from '@/lib/db/client';
 import { ADMIN_COOKIE, isAdmin } from '@/lib/admin';
 import { SECTION_ROW_LIMIT, interpretQuery, searchListings, type SearchParams } from '@/lib/search';
 import { literalPhrase, queryPhrase } from '@/lib/search-query';
-import { parseSearchForm, sizeLabel } from '@/lib/search-form';
+import { parseSearchForm, searchFormValues, sizeLabel, type SearchFormValues } from '@/lib/search-form';
+import { withCity } from '@/lib/city-cookie';
 import { getLatestFx } from '@/lib/fx';
 import { activeFilterCount, distinctBottleCount, searchHref } from '@/lib/search-view';
 import { formatUsd } from '@/lib/money';
@@ -23,7 +24,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { CityChip } from '@/components/CityChip';
 import { CitySections } from '@/components/search/CitySections';
 import { ResultsRegion, SearchShell } from '@/components/search/SearchShell';
-import { SearchForm, type SearchFormValues } from '@/components/search/SearchForm';
+import { SearchForm } from '@/components/search/SearchForm';
+import { PinCityInUrl } from '@/components/search/PinCityInUrl';
 
 type RawParams = Record<string, string | string[] | undefined>;
 
@@ -45,7 +47,7 @@ function firstString(v: string | string[] | undefined): string {
 }
 
 /** `CURATED` + underlined example searches (the hero and the no-results state). */
-function Examples({ className, d }: { className?: string; d: Dict }) {
+function Examples({ className, city, d }: { className?: string; city?: string; d: Dict }) {
   return (
     <div className={cn('flex flex-wrap items-center justify-center gap-x-4 gap-y-1', className)}>
       <p lang="en" className="text-[0.6875rem] tracking-[0.2em] text-faint">
@@ -55,7 +57,7 @@ function Examples({ className, d }: { className?: string; d: Dict }) {
         {d.search.examples.map((ex) => (
           <li key={ex}>
             <LocaleLink
-              href={searchHref({ q: ex })}
+              href={searchHref({ q: ex, city })}
               prefetch={false}
               lang="en"
               className="group/ex inline-flex min-h-9 items-center text-[0.8125rem] text-secondary-foreground transition-colors hover:text-primary pointer-coarse:min-h-11"
@@ -114,7 +116,7 @@ function Hero({ values, d }: { values: SearchFormValues; d: Dict }) {
               <SearchForm values={values} filterCount={0} variant="hero" />
             </SearchShell>
           </div>
-          <Examples className="mt-5 sm:mt-6" d={d} />
+          <Examples className="mt-5 sm:mt-6" city={values.city} d={d} />
         </div>
       </section>
       <section aria-labelledby="how-h" className="border-y">
@@ -158,19 +160,11 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   const store = filters.storeId ? getStore(filters.storeId) : undefined;
   const cityParam = firstString(raw.city);
   const urlCity = resolveCity({ city: cityParam, region: firstString(raw.region), storeCity: store?.city });
-  const values: SearchFormValues = {
-    q: filters.q,
-    city: isCityId(cityParam) ? cityParam : undefined,
-    size: filters.sizeMl != null ? String(filters.sizeMl) : '',
-    min: firstString(raw.min),
-    max: firstString(raw.max),
-    inStock: Boolean(filters.inStockOnly),
-    store: filters.storeId,
-  };
 
   // `?store=` without a query lists that store's whole catalogue (capped per section like any search).
   // A coming-soon city never reaches the cookie: only live cities are ever stored there.
-  if (!filters.q && !store && !urlCity.soon) return <Hero values={values} d={d} />;
+  // The landing page is prerendered without the cookie: it carries only a valid `?city=`.
+  if (!filters.q && !store && !urlCity.soon) return <Hero values={searchFormValues(raw, filters, isCityId(cityParam) ? cityParam : undefined)} d={d} />;
   // Results show relative times ("3시간 전 확인"), so they must render per request.
   await connection();
 
@@ -178,14 +172,17 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
   const cookieCity = jar.get(CITY_COOKIE)?.value;
   const { city, soon } = resolveCity({ city: cityParam, region: firstString(raw.region), storeCity: store?.city, cookie: cookieCity });
   const params: SearchParams = { ...filters, city: city.id };
-  // Links keep the city only when the URL already named one (a legacy ?region= is upgraded to ?city=).
-  const keepCity = cityParam || raw.region ? city.id : undefined;
-  const linkRaw = keepCity ? { ...raw, city: keepCity } : raw;
+  // The resolved (whitelisted) city travels in every link and in the form, so a shared URL opens on
+  // it (spec §5.5); a store page pins the store's city. `PinCityInUrl` fixes up the current address.
+  const keepCity = city.id;
+  const linkRaw = { ...raw, city: keepCity };
+  const values = searchFormValues(raw, filters, keepCity);
   const reset = { show: undefined, others: undefined };
 
   if (soon) {
     return (
       <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+        <PinCityInUrl city={keepCity} />
         <SearchShell>
           <SearchForm values={values} filterCount={0} />
           <ComingSoonNotice city={city} backCity={resolveCity({ cookie: cookieCity }).city} />
@@ -217,6 +214,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
 
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+      <PinCityInUrl city={keepCity} />
       {store && <StoreScopeHeader d={d} store={store} clearHref={searchHref(linkRaw, { store: undefined, ...reset })} />}
       <SearchShell>
         <SearchForm key={searchHref(linkRaw, reset)} values={values} filterCount={panelFilters} />
@@ -257,7 +255,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                   {d.store.searchAll}
                 </LocaleLink>
               )}
-              <LocaleLink href="/map" className={buttonVariants({ variant: 'outline' })}>
+              <LocaleLink href={withCity('/map', keepCity)} className={buttonVariants({ variant: 'outline' })}>
                 <MapPin aria-hidden />
                 {d.nav.map}
               </LocaleLink>
@@ -287,7 +285,7 @@ async function SearchView({ searchParams }: { searchParams: Promise<RawParams> }
                   {d.search.filtersReset}
                 </LocaleLink>
               )}
-              <Examples className="mt-2" d={d} />
+              <Examples className="mt-2" city={keepCity} d={d} />
             </EmptyState>
           ) : (
             <>

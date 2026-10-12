@@ -32,3 +32,16 @@ export function withCity(href: string, city: CityId): string {
   params.set('city', city);
   return `${path}?${params.toString()}${hash}`;
 }
+
+/**
+ * The query string (`?…`) a page about `city` should show when the current one doesn't name it
+ * (no `?city=`, a different or invalid one, or a legacy `?region=`), else null. Every other param
+ * is kept. Shared links then open on that city.
+ */
+export function pinnedCitySearch(search: string, city: CityId): string | null {
+  const params = new URLSearchParams(search);
+  if (params.get('city') === city && !params.has('region')) return null;
+  params.delete('region');
+  params.set('city', city);
+  return `?${params.toString()}`;
+}

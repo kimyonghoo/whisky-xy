@@ -24,7 +24,7 @@ function group(rows: ListingRow[]): BottleGroup {
   };
 }
 
-const render = (g: BottleGroup) => renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} d={ko} />);
+const render = (g: BottleGroup) => renderToStaticMarkup(<BottleResult group={g} q="weller" city="brooklyn" now={now} d={ko} />);
 
 describe('BottleResult status branches', () => {
   it('ranks only confirmed rows; an unverified row shows "재고 확인 필요" and no rank', () => {
@@ -55,7 +55,7 @@ describe('BottleResult status branches', () => {
   it('shows a rounded 원화 amount under the lowest price when a rate exists', () => {
     const g = group([row(1, 'dewinespot', 9000, 'instock', 2)]);
     const fx = { date: '2026-10-11', usdKrw: 1400, fetchedAt: now };
-    const html = renderToStaticMarkup(<BottleResult group={g} q="weller" now={now} fx={fx} d={ko} />);
+    const html = renderToStaticMarkup(<BottleResult group={g} q="weller" city="brooklyn" now={now} fx={fx} d={ko} />);
     expect(html).toContain(ko.group.krwApprox('126,000원'));
     expect(render(g)).not.toContain('원');
   });
@@ -63,5 +63,14 @@ describe('BottleResult status branches', () => {
   it('says all sold out when nothing is available', () => {
     const html = render(group([row(3, 'grainvine', 9500, 'soldout', 2)]));
     expect(html).toContain(ko.group.allSoldOut);
+  });
+});
+
+describe('BottleResult row links', () => {
+  it("carry the page's city into the map and watch links (a URL-only city is not lost)", () => {
+    const g = group([row(1, 'flask', 9000, 'instock', 2)]);
+    const html = renderToStaticMarkup(<BottleResult group={g} q="weller" city="la" now={now} d={ko} />);
+    expect(html).toContain('href="/ko/map?bottle=k&amp;city=la"');
+    expect(html).toContain('href="/ko/watchlist?q=weller&amp;city=la"');
   });
 });

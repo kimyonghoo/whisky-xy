@@ -85,6 +85,16 @@ export function activeFilterCount(p: SearchFilters | SearchParams): number {
   );
 }
 
+/** A result row's map link: the stores carrying that bottle, opened on the page's city. */
+export function bottleMapHref(bottleKey: string, city: CityId): string {
+  return `/map?${new URLSearchParams({ bottle: bottleKey, city })}`;
+}
+
+/** A result row's "watch" link: the watchlist form prefilled with the query, keeping the page's city. */
+export function watchPrefillHref(q: string, city: CityId): string {
+  return `/watchlist?${new URLSearchParams({ q, city })}`;
+}
+
 /** Query params the search page understands, in canonical order. */
 const SEARCH_KEYS = ['q', 'store', 'city', 'size', 'min', 'max', 'inStock', 'show', 'others'] as const;
 export type SearchKey = (typeof SEARCH_KEYS)[number];

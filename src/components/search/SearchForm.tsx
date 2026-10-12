@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, LoaderCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { searchHref } from '@/lib/search-view';
-import { SIZE_OPTIONS, sizeLabel } from '@/lib/search-form';
+import { SIZE_OPTIONS, sizeLabel, type SearchFormValues } from '@/lib/search-form';
 import { localizePath } from '@/lib/i18n';
 import { useDict, useLocale } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils';
@@ -13,18 +13,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { useSearchNav } from '@/components/search/SearchShell';
 import { LocaleLink } from '@/components/LocaleLink';
 
-export interface SearchFormValues {
-  q: string;
-  /** Explicit `?city=` from the URL, kept as a hidden field so a new query stays in that city. */
-  city?: string;
-  /** Bottle size in ml as a string, '' = any. */
-  size: string;
-  min: string;
-  max: string;
-  inStock: boolean;
-  /** Store-scoped search (`?store=`): kept as a hidden field so a new query stays in that store. */
-  store?: string;
-}
+export type { SearchFormValues };
 
 const chip =
   'inline-flex h-10 items-center gap-1.5 rounded-md border border-border-strong bg-card px-3.5 text-sm font-medium text-foreground transition-colors select-none hover:bg-muted pointer-coarse:min-h-11';

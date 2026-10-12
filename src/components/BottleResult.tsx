@@ -5,6 +5,7 @@ import { formatUsd } from '@/lib/money';
 import { approxKrw, formatKrw, fxDateLabel } from '@/lib/kr-view';
 import type { FxRate } from '@/lib/db/schema';
 import type { Dict } from '@/lib/i18n';
+import type { CityId } from '@/lib/geo';
 import { Card } from '@/components/ui/card';
 import { BottleHeader } from '@/components/BottleHeader';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -22,10 +23,13 @@ export function BottleResult({
   admin = false,
   now,
   fx = null,
+  city,
   d,
 }: {
   group: BottleGroup;
   q: string;
+  /** The page's (selected) city, carried into each row's map and watch links. */
+  city: CityId;
   admin?: boolean;
   now: Date;
   /** Latest USD→KRW rate; when present the lowest price also shows a rounded 원화 amount. */
@@ -42,7 +46,7 @@ export function BottleResult({
   const head = group.rows.slice(0, ROWS_PER_GROUP);
   const rest = group.rows.slice(ROWS_PER_GROUP);
   const line = (r: (typeof group.rows)[number]) => (
-    <StoreLine key={r.id} row={r} rank={ranks.get(r.id) ?? null} bottleKey={group.bottleKey} q={q} now={now} d={d} />
+    <StoreLine key={r.id} row={r} rank={ranks.get(r.id) ?? null} bottleKey={group.bottleKey} q={q} city={city} now={now} d={d} />
   );
 
   return (

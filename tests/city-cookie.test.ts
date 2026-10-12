@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getCity } from '@/lib/geo';
-import { cityCookieFor, langCookieFor, withCity } from '@/lib/city-cookie';
+import { cityCookieFor, langCookieFor, pinnedCitySearch, withCity } from '@/lib/city-cookie';
 
 describe('cityCookieFor', () => {
   it('never stores a coming-soon city', () => {
@@ -35,5 +35,22 @@ describe('withCity', () => {
 
   it('keeps a fragment and drops a duplicate city param', () => {
     expect(withCity('/ko/compare?city=la&city=nj#top', 'brooklyn')).toBe('/ko/compare?city=brooklyn#top');
+  });
+});
+
+describe('pinnedCitySearch', () => {
+  it('adds the city when the URL has none, keeping the other params', () => {
+    expect(pinnedCitySearch('?q=stagg', 'la')).toBe('?q=stagg&city=la');
+    expect(pinnedCitySearch('', 'brooklyn')).toBe('?city=brooklyn');
+  });
+  it("pins a store page to the store's city over a different or invalid ?city=", () => {
+    expect(pinnedCitySearch('?store=flask&city=brooklyn', 'la')).toBe('?store=flask&city=la');
+    expect(pinnedCitySearch('?q=x&city=xyz', 'nj')).toBe('?q=x&city=nj');
+  });
+  it('upgrades a legacy ?region= to ?city=', () => {
+    expect(pinnedCitySearch('?q=stagg&region=ca', 'la')).toBe('?q=stagg&city=la');
+  });
+  it('leaves an already pinned URL alone', () => {
+    expect(pinnedCitySearch('?q=stagg&city=la', 'la')).toBeNull();
   });
 });
