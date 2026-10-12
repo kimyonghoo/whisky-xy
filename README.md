@@ -2,7 +2,7 @@
 
 위스키 성지 네비게이션, Route W
 
-신뢰할 수 있는 리테일러의 위스키 **가격과 재고**를 세금 포함 기준으로 정렬해 보여주는 시세 서비스입니다. 같은 병끼리 묶어 도시별로 비교하고, 한국 가격(데일리샷)과 견줘 얼마나 유리한지 보여주며, 위스키를 모르는 사람도 매장에서 헷갈리지 않는 **구매 카드 링크**와 관심 병 **텔레그램 알림**을 제공합니다. 상용 서비스로 키울 예정이라 화면은 딥 블랙과 골드 포인트의 다크 테마이며, UI는 [`docs/design-system.md`](docs/design-system.md)를 따릅니다.
+신뢰할 수 있는 리테일러의 위스키 **가격과 재고**를 세금 포함 기준으로 정렬해 보여주는 시세 서비스입니다. 같은 병끼리 묶어 도시별로 비교하고, 한국 가격(데일리샷)과 견줘 얼마나 유리한지 보여주며, 위스키를 모르는 사람도 매장에서 헷갈리지 않는 **구매 카드 링크**와 관심 병 **텔레그램 알림**을 제공합니다. 상용 서비스로 키울 예정이라 화면은 크림색 라이트 모드(기본)와 딥 블랙 다크 모드를 지원하고, 포인트 색은 다섯 가지 위스키 색(버번, 올로로소, 마데이라, 페드로 히메네스, 포트) 중에서 고를 수 있습니다(헤더의 화면 설정). UI는 [`docs/design-system.md`](docs/design-system.md)를 따릅니다.
 
 설계 배경은 [`docs/superpowers/specs/2026-10-11-whisky-index-rebrand-design.md`](docs/superpowers/specs/2026-10-11-whisky-index-rebrand-design.md)(리브랜드·도시·다국어)와 [`docs/superpowers/specs/2026-10-10-whisky-portal-design.md`](docs/superpowers/specs/2026-10-10-whisky-portal-design.md)(기존 포털), 배포 절차는 [`docs/SETUP.md`](docs/SETUP.md)에 있습니다.
 
@@ -88,7 +88,7 @@ npm run dev                  # http://localhost:3000 → /ko
 | `TELEGRAM_CHAT_IDS` | 알림 사용 시 | 알림을 받을 채팅 ID, 쉼표로 구분 |
 | `SITE_URL` | 권장 | 공개 사이트 주소. 알림의 카드 링크와 크롤러 User-Agent에 사용 |
 | `ADMIN_KEY` | 관리 화면 사용 시 | `/watchlist`, `/link-kr` 보호용 비밀 키. **32자 이상** 무작위 문자열(아래 참고). 비어 있거나 32자 미만이면 관리 화면은 열리지 않음(서버 로그에 경고). 쿠키에는 키가 아니라 서명된 30일 세션만 저장됨 |
-| `NEXT_PUBLIC_MAP_TILE_URL` | 공개 출시 전 필수 | 지도 타일 URL(`https://.../{z}/{x}/{y}...` 형식). 비우면 OpenStreetMap 공개 타일(다크 테마에 맞게 CSS로 반전해 표시) |
+| `NEXT_PUBLIC_MAP_TILE_URL` | 공개 출시 전 필수 | 지도 타일 URL(`https://.../{z}/{x}/{y}...` 형식). 비우면 OpenStreetMap 공개 타일(라이트 모드는 그대로, 다크 모드는 CSS로 반전해 표시) |
 | `NEXT_PUBLIC_MAP_TILE_ATTRIBUTION` | 타일 URL 설정 시 | 위 타일 제공자가 요구하는 출처 표기(일반 텍스트) |
 
 `ADMIN_KEY` 생성 예:

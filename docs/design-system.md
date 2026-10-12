@@ -30,42 +30,63 @@ Gold is a line and a label. Structure comes from black space, thin warm lines an
 
 ---
 
-## 2. Colour tokens (dark only)
+## 2. Colour tokens (light and dark)
 
-The site has one theme: deep black. There is no light mode and no theme switch (`color-scheme: dark`). Every text pair below meets **WCAG AA (≥ 4.5:1)**; `tests/contrast.test.ts` parses `:root` and fails the build if a token change breaks a pair.
+Two modes on `<html data-theme>`: **light** (warm cream, the default) and **dark** (deep black, the original theme). The accent is a **cask colour** on `<html data-cask>` (§2a). In `globals.css`, `:root, [data-theme="light"]` holds the light neutrals, `[data-theme="dark"]` the dark ones, and `[data-theme="…"][data-cask="…"]` the accent per mode; bare `:root` resolves to light + oloroso. Each mode sets its own `color-scheme`. Components use tokens only, never raw colours, so every screen follows the mode.
 
-| Token | Value | Use | Contrast |
-|---|---|---|---|
-| `background` | `#0a0a0a` | page | — |
-| `card` | `#141414` | raised surfaces: cards, inputs | — |
-| `popover` | `#161616` | menus, popups, map popups | — |
-| `muted` / `secondary` | `#1a1917` | hover rows, skeletons, empty image tiles | — |
-| `accent` | `#1f1d1a` | vendored shadcn hover | — |
-| `foreground` | `#f2efe8` | body text, warm off-white | 17.2 on bg, 16.0 on card |
-| `muted-foreground` | `#a39c90` | secondary text | 7.3 on bg, 6.8 on card |
-| `faint` | `#8a8478` | the quietest text (준비 중, English sub-names, placeholders) | 5.3 on bg, 4.7 on `primary-soft` |
-| `border` / `border-strong` | `#1f1c18` / `#2c2720` | hairlines / control and tag outlines | — |
-| `input` | `#3a342b` | form control borders, checkbox boxes | — |
-| `primary` | `#d4af6a` | **gold**: links, eyebrow labels, the search underline, selected states, outline buttons | 9.6 on bg, 8.9 on card |
-| `primary-hover` | `#e0c084` | hover on gold text/lines | — |
-| `primary-soft` | `#1d1912` | a barely-warm tint for a **selected** row or chip (city menu, nav item, checked city chip). Never a decorative wash | — |
-| `primary-foreground` | `#0a0a0a` | text on the few small gold fills (map markers) | 9.6 |
-| `honey` | `#b8924f` | decorative only (the `must` verdict ring, the selected-marker ring); **never text** | — |
-| `ring` | `#d4af6a` | focus outline | 9.6 on bg, 8.9 on card |
-| `on-solid` | `#ffffff` | text on the small solid status fills (verdict badges, `solid` badge). Never a surface | ≥ 5.4 on each fill |
+Every text pair below meets **WCAG AA (≥ 4.5:1)** in both modes and with every cask; `tests/contrast.test.ts` resolves the cascade for all 10 mode × cask combinations and fails the build if a token change breaks a pair. Contrast figures are light / dark.
 
-**Gold rules**
-- Gold may fill only small marks: map markers and their list numbers, the city-trigger dot. Everything else is gold **outline or text**.
-- The default `Button` is a gold outline on black; there is no gold-filled button.
-- Rank #1, filter counts, current-link badges and step numbers are gold **outlined**.
+| Token | Light | Dark | Use | Contrast (light / dark) |
+|---|---|---|---|---|
+| `background` | `#f7f2ea` | `#0a0a0a` | page | — |
+| `card` | `#fffdf9` | `#141414` | raised surfaces: cards, inputs | — |
+| `popover` | `#fffdf9` | `#161616` | menus, popups, map popups (light: lifted by `shadow-overlay`) | — |
+| `muted` / `secondary` | `#efe7da` | `#1a1917` | hover rows, skeletons, empty image tiles | — |
+| `accent` | `#ebe2d3` | `#1f1d1a` | vendored shadcn hover | — |
+| `foreground` | `#1f1712` | `#f2efe8` | body text, warm ink | 15.8 / 17.2 on bg |
+| `muted-foreground` | `#6b5d50` | `#a39c90` | secondary text | 5.7 / 7.3 on bg, 5.2 / 6.5 on muted |
+| `faint` | `#6e6155` | `#8a8478` | the quietest text (준비 중, English sub-names, placeholders) | ≥ 4.5 on bg, card, muted, popover and every cask's `primary-soft` |
+| `border` / `border-strong` | `#e6dccd` / `#d8cab6` | `#1f1c18` / `#2c2720` | hairlines / control and tag outlines | — |
+| `input` | `#9a8a74` | `#3a342b` | form control borders, checkbox boxes | 3.3 on card (light) |
+| `on-solid` | `#ffffff` | `#ffffff` | text on the small solid status fills (verdict badges, `solid` badge). Never a surface | ≥ 5.4 on each fill |
+| `--spot-core` / `--spot-mid` | `#fffdf9` / `#f3ece1` | `#ebe5d9` / `#c9bfae` | the photo spotlight (§8.3) | — |
+| shadows | warm `rgb(64 44 24 / .28–.32)` | `rgb(0 0 0 / .8–.9)` | `shadow-raised`, `shadow-overlay` (via `--elevation-*`) | — |
 
-**Light areas.** None by design. The only light pixels are the product-photo spotlight, a warm light that fades into the surface (§8.3). The map tiles are inverted to dark (§8.11). ClerkMode is dark too (§8.7).
+The accent tokens (`primary`, `primary-hover`, `primary-soft`, `primary-foreground`, `ring`, `honey`, `verdict-must-line`, `chart-1`, `sidebar-primary`, `sidebar-ring` and the pour tokens) come from the cask (§2a):
+- `primary`: links, eyebrow labels, the search underline, selected states, outline buttons. `primary-hover`: hover on accent text/lines (darker in light, lighter in dark).
+- `primary-soft`: a barely-tinted **selected** row or chip (city menu, nav item, checked city chip). Never a decorative wash.
+- `primary-foreground`: text on the few small accent fills (map markers): cream `#fffdf9` in light, black `#0a0a0a` in dark.
+- `honey`: decorative only (the `must` verdict ring, the selected-marker ring); **never text**. `ring`: the focus outline (= `primary`).
+
+**Accent rules**
+- The accent may fill only small marks: map markers and their list numbers, the city-trigger dot, the theme-menu glass. Everything else is accent **outline or text**.
+- The default `Button` is an accent outline; there is no accent-filled button.
+- Rank #1, filter counts, current-link badges and step numbers are accent **outlined**.
+
+**Light areas.** In light mode the whole page is light. In dark mode the only light pixels are the product-photo spotlight, a warm light that fades into the surface (§8.3); the map tiles are inverted to dark (§8.11). ClerkMode follows the mode (§8.7).
+
+### 2a. Casks (accent colours) and the theme menu
+
+Five cask accents, each with a light value (the deep whisky colour itself) and a dark value (a light tint of it that reads on black). **Default: light + oloroso.** Dark + bourbon is the original gold theme.
+
+| `data-cask` | Name (ko / en) | Sub (ko / en) | Light `primary` / `primary-soft` / `honey` | Dark `primary` / `primary-soft` / `honey` | Swatch `--cask-*` |
+|---|---|---|---|---|---|
+| `bourbon` | 버번 / Bourbon | 꿀빛 호박색 / Honey amber | `#7d5716` / `#f3e8d2` / `#a87a2c` | `#d4af6a` / `#1d1912` / `#b8924f` | `#b7832a` |
+| `oloroso` | 올로로소 / Oloroso | 마호가니 / Mahogany | `#7a2f14` / `#f3e2d8` / `#a4573a` | `#e0a07a` / `#22140e` / `#b87652` | `#7a2f14` |
+| `madeira` | 마데이라 / Madeira | 구운 캐러멜 / Burnt caramel | `#86461a` / `#f4e6d4` / `#b0703c` | `#e2ae74` / `#22180e` / `#b8844e` | `#9a5420` |
+| `px` | 페드로 히메네스 / Pedro Ximénez | 짙은 적갈색 / Raisin brown | `#4f1c0c` / `#eedfd6` / `#8a5040` | `#cf9a86` / `#1e1210` / `#a8705c` | `#3f150a` |
+| `port` | 포트 / Port | 루비 / Ruby | `#7d1f2e` / `#f3dde0` / `#b04a5a` | `#e08a95` / `#221114` / `#b4606c` | `#7d1f2e` |
+
+- Each cask × mode also sets the pour (`--pour-deep/-mid/-light/-glint/-liquid`, §8.14); dark + oloroso keeps the original sherry pour. In light mode the pour runs from light to dark.
+- The swatches (`--cask-*`, Tailwind `bg-cask-*`) are mode-independent and appear only as the small drops in the theme menu. Never text.
+- **Persistence without flash.** Cookies `rw_theme` (`light|dark`) and `rw_cask` (one of the five ids), 1 year, `Path=/`, `SameSite=Lax`, whitelist-validated on every read (`src/lib/theme.ts`). The layout never reads them (that would make every page dynamic): it renders `data-theme="light" data-cask="oloroso"` and an inline `<script>` in `<head>` (`themeBootScript()`, built only from the whitelists) swaps in the stored values and the `theme-color` meta before first paint. `viewport.colorScheme` is `light dark`; `themeColor` defaults to the light background.
+- **`ThemeMenu`** (header, beside `KO / EN`): an icon button with a small rocks glass filled with the current accent; accessible name `theme.label` (화면 설정 / Display); 36 px, 44 px on coarse pointers. It opens a Base UI popover (`ThemeMenuContent`): **화면 모드 / Mode**, a two-button segmented control (라이트 / 다크) with `aria-pressed` (pressed: accent text on `primary-soft` with a 2 px accent underline); then **위스키 색 / Whisky colour**, five buttons, each a drop swatch, the name (KO in /ko with the English name as a small echo; EN in /en), the sub line, and a check on the current one (`aria-pressed`; Up/Down/Home/End move between them). A pick applies at once (on `<html>`, plus the cookie and the `theme-color` meta); no reload.
 
 ---
 
 ## 3. Semantic status colours
 
-Each status comes as a set: `-fg` (text/icon), `-bg` (a low-chroma dark tint) and `-line` (a mid-tone border). **Colour is never the only signal.** Every status always carries an icon and a word as well.
+Each status comes as a set: `-fg` (text/icon), `-bg` (a low-chroma tint: dark in dark mode, pale in light mode) and `-line` (a mid-tone border). **Colour is never the only signal.** Every status always carries an icon and a word as well. The table lists the dark values; the light set (dark `-fg` on a pale tint, e.g. `instock-fg #17643a` on `#e6f2ea`, `caution-fg #7a5200` on `#f8ecd0`, `stale-fg #8f3d17` on `#f9e6dc`, `info-fg #1f5486` on `#e3edf7`, `danger-fg #a3231b` on `#fae4e1`, all ≥ 5.9:1) is in `globals.css`.
 
 | Status | Tokens | Icon | Word (ko / en) | Meaning | Contrast |
 |---|---|---|---|---|---|
@@ -95,6 +116,7 @@ Five **ordinal** tiers computed by `compareKr()` (`src/lib/compare.ts`). Labels 
 - Intensity tracks the tier; `small` is deliberately neutral; `worse` is the only red; `must` is the only tier with honey (ring only).
 - Never colour alone: icon + word + colour, and the money line ("394,386원(61%) 절약", "한국이 50,000원(8%) 더 저렴") is always visible.
 - The Korea reference bar on `/compare` is slate `kr-bar #6f8cab` (5.3 on card), a different hue from every verdict.
+- Light mode keeps the same solids (`on-solid` stays ≥ 5.3) and uses pale bands with dark inks (`must` ink `#0f5a36` on `#f3ecdc`, `big` `#17643a` on `#e6f2ea`, `good` `#2d6a45` on `#edf5ef`, `small` `#5f544a` on `#f1ece4`, `worse` `#a3231b` on `#fae4e1`, all ≥ 5.8:1); `kr-bar` is `#5a7898` (4.5 on card). The `must` ring is the cask's `honey`.
 - The US base is the **US-wide** lowest in-stock tax-included price, whichever city it comes from (the row names the city).
 
 ---
@@ -107,7 +129,7 @@ Five **ordinal** tiers computed by `compareKr()` (`src/lib/compare.ts`). Labels 
 | Noto Serif KR 500/700 | `font-serif` | `next/font/google` (self-hosted at build, Korean slices on demand) | page titles, section headings, city names, empty-state titles |
 | Cormorant Garamond 600 | `font-display` | `next/font/google` | the wordmark only |
 
-No runtime font CDN, no `<script>`.
+No runtime font CDN, no font `<script>`.
 
 **Type scale** (mobile → ≥ sm):
 
@@ -140,7 +162,7 @@ No runtime font CDN, no `<script>`.
 - **Page gutters:** 16 px on mobile, 24 px at ≥ sm. **Max widths:** `max-w-4xl` lists, `max-w-xl` buy card, `max-w-5xl` header/footer/home bands.
 - **Radius** (`--radius` = 6 px): `sm` 3 px for tags and checkboxes, `md` ~4.5 px for buttons, chips, menus, folds, `lg` 6 px for cards and panels. Circles only for rank numbers, map markers and the city dot. **No pills** for chips or filters.
 - **Lines do the separating.** Cards are `border` (`#1f1c18`) on `card`; controls and tags use `border-strong`. Page headers end in a hairline (`border-b`), result sections start with one (`border-t`).
-- **Elevation:** `shadow-card` is zero. `shadow-raised` lifts popovers, the filter panel and the docked action bar off the black; `shadow-overlay` is for menus/modals. Nothing else casts a shadow.
+- **Elevation:** `shadow-card` is zero. `shadow-raised` lifts popovers, the filter panel and the docked action bar off the page (black-based in dark, a soft warm brown in light); `shadow-overlay` is for menus/modals. Nothing else casts a shadow.
 
 ---
 
@@ -162,6 +184,7 @@ No runtime font CDN, no `<script>`.
 | Site chrome | `SiteHeader`, `SiteFooter`, `SkipLink`, `NavLinks`, `MobileMenu` | §8.13 |
 | City | `CitySelect`, `CityMenuContent`, `CityChip`, `citySubLabel` | §6a, §6b |
 | Language | `LangSwitch` | §6c |
+| Display (mode, cask) | `ThemeMenu`, `ThemeMenuContent` | §2a |
 | Coming soon | `ComingSoonNotice` | §6d |
 | City sections | `CitySections` | §6e |
 | Price display | `PriceBlock` | §8.1 |
@@ -253,7 +276,7 @@ See §3. `StockBadge` = stock + the unreliable flag. Sizes: `sm` in lists, `md` 
 ### 8.7 Actions and ClerkMode
 - One `default` (gold outline) action per region; secondary actions `outline`; tertiary `ghost` / `link`.
 - Buy card: **길찾기 (default) + 전화하기 (outline)** at `xl`; on phones they dock to the bottom edge (`data-sticky-actions`).
-- **ClerkMode** (`점원에게 보여주기`, an `outline` button) opens a full-screen dark dialog: huge off-white title (17:1), spec line, price, and "Do you have this bottle?" in a 2 px gold frame. It stays English for the clerk; the close hint is in the page language. Keeps the screen awake where supported.
+- **ClerkMode** (`점원에게 보여주기`, an `outline` button) opens a full-screen dialog on `background` (it follows the mode): huge off-white title (17:1), spec line, price, and "Do you have this bottle?" in a 2 px gold frame. It stays English for the clerk; the close hint is in the page language. Keeps the screen awake where supported.
 - External links open in a new tab with `rel="noopener noreferrer"` and an ExternalLink icon.
 
 ### 8.8 Share
@@ -269,8 +292,8 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 
 ### 8.11 Store map (`/map`)
 - List + map synced by number (marker = list `NumberDot`, small gold fills with a black edge). Phones: map above the list; ≥ lg: list left, sticky map right. City quick-jumps per live city.
-- **Tiles:** standard OSM tiles (no paid provider). They are drawn for light pages, so the tile layer alone gets `.map-tiles-dark` (`invert(1) hue-rotate(180deg)` with slightly reduced brightness, contrast and saturation): the map turns dark, water stays blue-grey and labels keep their original contrast, light on dark. Markers, popups and controls are not filtered. A configured provider (`NEXT_PUBLIC_MAP_TILE_URL`) is shown as-is.
-- Popups (`popover`, `border-strong`, `lg` radius), zoom buttons (`card`, hairline, gold on hover/focus) and the attribution (dark translucent, gold links) are restyled at the end of `globals.css`. Popups render React, never HTML strings.
+- **Tiles:** standard OSM tiles (no paid provider). They are drawn for light pages, so light mode shows them as-is. In dark mode the tile layer alone gets `.map-tiles-dark` (`[data-theme="dark"]` only; `invert(1) hue-rotate(180deg)` with slightly reduced brightness, contrast and saturation): the map turns dark, water stays blue-grey and labels keep their original contrast, light on dark. Markers, popups and controls are never filtered. A configured provider (`NEXT_PUBLIC_MAP_TILE_URL`) is shown as-is in both modes.
+- Popups (`popover`, `border-strong`, `lg` radius), zoom buttons (`card`, hairline, accent on hover/focus) and the attribution (translucent `background`, accent links) are restyled with tokens at the end of `globals.css`, so they follow the mode. Popups render React, never HTML strings.
 - `?bottle=`: stores without it are greyed with the sold-out tokens (never opacity on text); a legend explains the two marker styles.
 
 ### 8.12 Savings ranking (`/compare`, `SavingsChart`)
@@ -278,7 +301,8 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 - Each row has an sr-only sentence; bars and duplicated numbers are `aria-hidden`. Legend: the two bars, the scale note and the five tiers.
 
 ### 8.13 Header and footer
-- Desktop: one 64 px row — mark + wordmark, centred nav (active item: `foreground` with a 1 px gold underline), city selector and `KO / EN` on the right. Phones: mark + menu button, then a second row (no divider) with the city selector as plain text (dot, name, chevron; gold on hover/open, no box) and the language switch. The pour runs along the top edge of the screen on phones, under the header on desktop.
+- Desktop: one 64 px row — mark + wordmark, centred nav (active item: `foreground` with a 1 px accent underline), then on the right the city selector, `KO / EN` and the theme menu (§2a). Phones: mark + menu button, then a second row (no divider) with the city selector as plain text (dot, name, chevron; accent on hover/open, no box) on the left and `KO / EN` plus the theme menu on the right. The pour runs along the top edge of the screen on phones, under the header on desktop.
+- The sticky header is translucent `background` (90 %, 80 % with backdrop blur), so it matches the page in both modes.
 - Footer: a `muted/50` band with the disclaimer, tax note, coverage line and the name.
 - Skip link: gold outline on `popover`, visible on focus.
 
@@ -286,7 +310,7 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 
 ### 8.14 The pour (navigation progress)
 - `src/lib/pour.ts` sets `<html data-pour="filling|done">`; `PourProgress` (in the header) starts it on in-app link clicks and GET form submits and ends it when the router's URL changes. The search form and the city menu start it themselves; the search ends it with its transition (re-running the same search keeps the URL).
-- Look: a 2 px oloroso-sherry line along the header's bottom edge (the screen's top edge below `lg`) (`--pour-deep` → `--pour-mid` → `--pour-light`) that slows towards 85 %, with a glinting drop (`--pour-glint`) at its leading edge; the brand glass fills with `--pour-liquid` in step, with a gentle surface wave. On arrival the line completes and both fade.
+- Look (colours from the cask, §2a): a 2 px whisky line along the header's bottom edge (the screen's top edge below `lg`) (`--pour-deep` → `--pour-mid` → `--pour-light`) that slows towards 85 %, with a glinting drop (`--pour-glint`) at its leading edge; the brand glass fills with `--pour-liquid` in step, with a gentle surface wave. On arrival the line completes and both fade.
 - Navigations under 150 ms cancel silently (prefetched pages never flash it); a 15 s safety ends a navigation that never arrives. Reduced motion: the global rule jumps animations to their end state, so a static line and a filled glass show instead.
 - Decorative only (`aria-hidden`): busy state is still announced by each page (`aria-busy` on results, button labels).
 
