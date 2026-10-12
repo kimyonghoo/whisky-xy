@@ -349,6 +349,19 @@ div.leaflet-container .leaflet-bar {
   background: var(--pour-glint);
   box-shadow: 0 0 10px 3px color-mix(in srgb, var(--pour-light) 55%, transparent);
 }
+/* Phones: the header has two rows (mark, then city and language), so the pour runs along the top edge
+   of the screen instead of under the city row. */
+@media (width < 64rem) {
+  .pour-line {
+    top: 0;
+    bottom: auto;
+  }
+  .pour-line::after {
+    top: -1px;
+    width: 5px;
+    height: 5px;
+  }
+}
 html[data-pour="filling"] .pour-line {
   opacity: 1;
   animation: pour-line 9s cubic-bezier(0.1, 0.6, 0.2, 1) 120ms both;

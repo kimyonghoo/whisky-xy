@@ -15,8 +15,10 @@ import { cn } from '@/lib/utils';
 /** Store counts per city, fixed at build time (the store list is static data). */
 const STORE_COUNT = Object.fromEntries(CITIES.map((c) => [c.id, storesIn(c.id).length])) as Record<CityId, number>;
 
+// Desktop: a hairline box beside the nav. Below `lg` it sits in the header's second row, where a box
+// between the header lines looked boxed-in, so it is plain text there (dot, name, chevron) that turns gold.
 const triggerClass =
-  'group/city inline-flex h-9 max-w-full items-center gap-2 rounded-md border border-border-strong px-3 text-[0.8125rem] font-medium whitespace-nowrap text-foreground transition-colors hover:border-primary/50 hover:bg-muted data-popup-open:border-primary/60 data-popup-open:bg-muted pointer-coarse:min-h-11';
+  'group/city inline-flex h-9 max-w-full items-center gap-2 rounded-md border border-border-strong px-3 text-[0.8125rem] font-medium whitespace-nowrap text-foreground transition-colors hover:border-primary/50 hover:bg-muted data-popup-open:border-primary/60 data-popup-open:bg-muted pointer-coarse:min-h-11 max-lg:-ml-1 max-lg:border-transparent max-lg:px-1 max-lg:hover:border-transparent max-lg:hover:bg-transparent max-lg:hover:text-primary max-lg:data-popup-open:border-transparent max-lg:data-popup-open:bg-transparent max-lg:data-popup-open:text-primary';
 
 function TriggerFace({ city, d }: { city: City; d: Dict }) {
   return (

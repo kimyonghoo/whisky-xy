@@ -278,7 +278,7 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 - Each row has an sr-only sentence; bars and duplicated numbers are `aria-hidden`. Legend: the two bars, the scale note and the five tiers.
 
 ### 8.13 Header and footer
-- Desktop: one 64 px row — mark + wordmark, centred nav (active item: `foreground` with a 1 px gold underline), city selector and `KO / EN` on the right. Phones: mark + menu button, then a second full-width row with the city selector and language switch.
+- Desktop: one 64 px row — mark + wordmark, centred nav (active item: `foreground` with a 1 px gold underline), city selector and `KO / EN` on the right. Phones: mark + menu button, then a second row (no divider) with the city selector as plain text (dot, name, chevron; gold on hover/open, no box) and the language switch. The pour runs along the top edge of the screen on phones, under the header on desktop.
 - Footer: a `muted/50` band with the disclaimer, tax note, coverage line and the name.
 - Skip link: gold outline on `popover`, visible on focus.
 
@@ -286,7 +286,7 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 
 ### 8.14 The pour (navigation progress)
 - `src/lib/pour.ts` sets `<html data-pour="filling|done">`; `PourProgress` (in the header) starts it on in-app link clicks and GET form submits and ends it when the router's URL changes. The search form and the city menu start it themselves; the search ends it with its transition (re-running the same search keeps the URL).
-- Look: a 2 px oloroso-sherry line along the header's bottom edge (`--pour-deep` → `--pour-mid` → `--pour-light`) that slows towards 85 %, with a glinting drop (`--pour-glint`) at its leading edge; the brand glass fills with `--pour-liquid` in step, with a gentle surface wave. On arrival the line completes and both fade.
+- Look: a 2 px oloroso-sherry line along the header's bottom edge (the screen's top edge below `lg`) (`--pour-deep` → `--pour-mid` → `--pour-light`) that slows towards 85 %, with a glinting drop (`--pour-glint`) at its leading edge; the brand glass fills with `--pour-liquid` in step, with a gentle surface wave. On arrival the line completes and both fade.
 - Navigations under 150 ms cancel silently (prefetched pages never flash it); a 15 s safety ends a navigation that never arrives. Reduced motion: the global rule jumps animations to their end state, so a static line and a filled glass show instead.
 - Decorative only (`aria-hidden`): busy state is still announced by each page (`aria-busy` on results, button labels).
 

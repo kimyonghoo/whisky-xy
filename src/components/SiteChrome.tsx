@@ -40,7 +40,7 @@ export async function SiteHeader() {
             <MobileMenu />
           </Suspense>
         </div>
-        <div className="col-span-2 -mx-4 flex min-h-12 items-center justify-between gap-3 border-t px-4 sm:-mx-6 sm:px-6 lg:col-span-1 lg:mx-0 lg:min-h-0 lg:border-t-0 lg:px-0">
+        <div className="col-span-2 -mx-4 flex min-h-11 items-center justify-between gap-3 px-4 pb-1 sm:-mx-6 sm:px-6 lg:col-span-1 lg:mx-0 lg:min-h-0 lg:px-0 lg:pb-0">
           <Suspense fallback={<CitySelectFallback />}>
             <HeaderCity />
           </Suspense>
