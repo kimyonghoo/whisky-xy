@@ -42,8 +42,8 @@ export const ko = {
   },
   search: {
     heroEyebrow: 'New York · Los Angeles · Tokyo · Taipei',
-    heroTitle: '가장 정확한 한 병의 시세.',
-    heroLead: '신뢰할 수 있는 리테일러의 오늘 가격과 재고를 대조하여, 세금 포함 기준으로 정직하게 정렬합니다.',
+    heroTitle: '위스키 성지를 찾아서',
+    heroLead: '오늘 어느 리쿼샵에서 사야 가장 좋은지, 세금까지 더한 가격과 재고로 알려 드립니다.',
     placeholder: '증류소, 숙성 연수, 보틀명으로 검색',
     inputLabel: '위스키 검색',
     submit: '검색',

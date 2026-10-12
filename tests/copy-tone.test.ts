@@ -59,8 +59,8 @@ describe('Whisky Index copy values', () => {
 
   it('uses the hero copy verbatim', () => {
     expect(ko.search.heroEyebrow).toBe('New York · Los Angeles · Tokyo · Taipei');
-    expect(ko.search.heroTitle).toBe('가장 정확한 한 병의 시세.');
-    expect(ko.search.heroLead).toBe('신뢰할 수 있는 리테일러의 오늘 가격과 재고를 대조하여, 세금 포함 기준으로 정직하게 정렬합니다.');
+    expect(ko.search.heroTitle).toBe('위스키 성지를 찾아서');
+    expect(ko.search.heroLead).toBe('오늘 어느 리쿼샵에서 사야 가장 좋은지, 세금까지 더한 가격과 재고로 알려 드립니다.');
     expect(ko.search.placeholder).toBe('증류소, 숙성 연수, 보틀명으로 검색');
     expect(ko.search.curatedLabel).toBe('CURATED');
   });

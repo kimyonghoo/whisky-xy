@@ -45,8 +45,8 @@ export const en: Dict = {
   },
   search: {
     heroEyebrow: 'New York · Los Angeles · Tokyo · Taipei',
-    heroTitle: 'The true price of every bottle.',
-    heroLead: 'Today’s prices and stock from trusted retailers, set side by side and ranked honestly with tax included.',
+    heroTitle: 'In Search of Whisky Sanctuaries',
+    heroLead: 'Which liquor store to buy from today, told by tax-included prices and live stock.',
     placeholder: 'Search by distillery, age or bottling',
     inputLabel: 'Search whisky',
     submit: 'Search',
