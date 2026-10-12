@@ -29,7 +29,9 @@ export async function recheckListing(
   if (!listing) return null;
   // A private (or unregistered) store's listing must be unreachable by id: same answer as a missing
   // row, checked before the cache/cooldown paths (which would return the row) and any network call.
-  if (!isPublicStoreId(listing.storeId)) return null;
+  // Only ever the registered store's domain is contacted; nothing comes from user input.
+  const store = getStore(listing.storeId);
+  if (!store || !isPublicStoreId(store.id)) return null;
   const now = opts.now ?? new Date();
 
   if (now.getTime() - listing.checkedAt.getTime() < MIN_RECHECK_INTERVAL_MS) {
@@ -41,13 +43,9 @@ export async function recheckListing(
     return { listing, status: 'failed' };
   }
 
-  // Only ever the registered store's domain; nothing comes from user input.
-  const store = getStore(listing.storeId);
-  if (!store) {
-    console.warn(`recheck: listing ${id} has unregistered store ${listing.storeId}`);
-    failedAt.set(id, now.getTime());
-    return { listing, status: 'failed' };
-  }
+  // Live recheck is USD-only (fetchLiveProduct refuses other currencies; this keeps a non-USD
+  // listing from spending a live-budget token first). The stored row is shown as is.
+  if (store.currency !== 'USD') return { listing, status: 'failed' };
 
   // Per-store budget shared by card opens and "다시 확인" across all instances (I3).
   // Fail closed (show stored data) if the budget table is unavailable, e.g. deploy before migrate.

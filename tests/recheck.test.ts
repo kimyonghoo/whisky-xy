@@ -105,6 +105,8 @@ describe('recheckListing', () => {
     expect(r?.status).toBe('failed');
     expect(r?.listing.priceCents).toBe(27500);
     expect(fetchFn).toHaveBeenCalledTimes(0);
+    // it did not spend a live-budget token either: the whole burst is still claimable
+    for (let i = 0; i < LIVE_BURST; i++) expect(await claimLiveCheck(db, PUBLIC_JPY_STORE.id, NOW)).toBe(true);
   });
 
   it('null for unknown id', async () => {

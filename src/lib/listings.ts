@@ -1,7 +1,13 @@
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, priceHistory, type Listing, type PriceHistoryRow } from '@/lib/db/schema';
 import { confirmedSince, stockState } from '@/lib/freshness';
+import { STORES } from '@/lib/stores';
+
+/** Ids of the stores that may be shown publicly. Private stores are crawled but never read by a public query. */
+export function publicStoreIds(): string[] {
+  return STORES.filter((s) => s.publicAllowed).map((s) => s.id);
+}
 
 export async function getListing(db: Db, id: number): Promise<Listing | null> {
   const rows = await db.select().from(listings).where(eq(listings.id, id)).limit(1);
@@ -48,7 +54,7 @@ export interface BottleOffers {
   offers: Map<string, BottleStoreOffer>;
 }
 
-/** Per-store offers for one bottleKey (map view). Null when no store lists the bottle. */
+/** Per-store offers for one bottleKey (map view). Null when no public store lists the bottle. */
 export async function bottleStoreOffers(db: Db, bottleKey: string, now: Date = new Date()): Promise<BottleOffers | null> {
   const rows = await db
     .select({
@@ -60,7 +66,8 @@ export async function bottleStoreOffers(db: Db, bottleKey: string, now: Date = n
       checkedAt: listings.checkedAt,
     })
     .from(listings)
-    .where(eq(listings.bottleKey, bottleKey))
+    // Public stores only: the representative title below must never come from a private store.
+    .where(and(eq(listings.bottleKey, bottleKey), inArray(listings.storeId, publicStoreIds())))
     .orderBy(desc(listings.available), listings.priceCents, listings.id);
   if (rows.length === 0) return null;
   const offers = new Map<string, BottleStoreOffer>();

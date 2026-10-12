@@ -7,6 +7,7 @@ import { withTaxCents } from '@/lib/money';
 import { normalizeText } from '@/lib/whisky/parse';
 import { matchesPhrase, parseQuery, queryPhrase, type QueryTerm, type Vocab } from '@/lib/search-query';
 import { getKrLinks } from '@/lib/krlinks';
+import { publicStoreIds } from '@/lib/listings';
 import { getLatestFx } from '@/lib/fx';
 import { compareKr } from '@/lib/compare';
 import { usInStockPools } from '@/lib/krcompare';
@@ -149,13 +150,13 @@ export interface SearchOptions {
 const VOCAB_TTL_MS = 60 * 60_000;
 const vocabCache = new WeakMap<Db, { at: number; vocab: Promise<Vocab> }>();
 
-/** Every word in listings' search text with its listing count, cached per db for an hour (feeds typo fixes). */
+/** Every word in public listings' search text with its listing count, cached per db for an hour (feeds typo fixes). */
 export function getVocab(db: Db, now = Date.now()): Promise<Vocab> {
   const hit = vocabCache.get(db);
   if (hit && now - hit.at < VOCAB_TTL_MS) return hit.vocab;
   const vocab = db
     .execute<{ w: string; n: number }>(
-      sql`select w, count(*)::int as n from (select distinct id, unnest(string_to_array(${listings.searchText}, ' ')) as w from ${listings}) t where w <> '' group by w`,
+      sql`select w, count(*)::int as n from (select distinct id, unnest(string_to_array(${listings.searchText}, ' ')) as w from ${listings} where ${inArray(listings.storeId, publicStoreIds())}) t where w <> '' group by w`,
     )
     .then((res) => {
       const rows = (Array.isArray(res) ? res : (res as { rows: { w: string; n: number }[] }).rows) as { w: string; n: number }[];
