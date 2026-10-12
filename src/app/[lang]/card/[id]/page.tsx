@@ -21,6 +21,7 @@ import { FreshnessIndicator } from '@/components/FreshnessIndicator';
 import { PriceBlock } from '@/components/PriceBlock';
 import { Notice } from '@/components/Notice';
 import { CityChip } from '@/components/CityChip';
+import { ComingSoonForUrlCity } from '@/components/ComingSoonCompact';
 import { CardSkeleton } from '@/components/Skeletons';
 import { ShareCardButton } from '@/components/CopyLinkButton';
 import { RecheckButton } from './RecheckButton';
@@ -88,6 +89,9 @@ async function CardView({ params, d }: Props & { d: Dict }) {
         <ArrowLeft aria-hidden />
         {d.card.backToSearch}
       </LocaleLink>
+      <Suspense fallback={null}>
+        <ComingSoonForUrlCity />
+      </Suspense>
 
       <BottleHeader
         variant="hero"

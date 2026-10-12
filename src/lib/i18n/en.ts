@@ -12,6 +12,8 @@ export const en: Dict = {
     title: 'In preparation',
     body: (city: string) => `Retailer prices and stock for ${city} will be published shortly. In the meantime, prices are available for the cities we already cover.`,
     back: (city: string) => `View prices in ${city}`,
+    /** Compact notice on pages that don't change by city (/compare, cards, watchlist, link-kr). */
+    pageNote: 'This page covers the stores in the cities we already serve.',
   },
   citySelect: {
     label: 'Choose a city',

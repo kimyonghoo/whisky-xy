@@ -22,6 +22,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/PageHeader';
+import { ComingSoonForUrlCity } from '@/components/ComingSoonCompact';
 import { EmptyState } from '@/components/EmptyState';
 import { Notice } from '@/components/Notice';
 import { BottleHeader } from '@/components/BottleHeader';
@@ -48,6 +49,9 @@ export default async function LinkKrPage({ searchParams }: { searchParams: Promi
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">
       <PageHeader eyebrow={d.linkKr.eyebrow} title={d.linkKr.title} lead={d.linkKr.lead} />
+      <Suspense fallback={null}>
+        <ComingSoonForUrlCity />
+      </Suspense>
       {/* Cookie + searchParams are request data: they stream in behind this boundary. */}
       <Suspense fallback={<PanelSkeleton d={d} />}>
         <LinkKrView searchParams={searchParams} d={d} />

@@ -15,6 +15,7 @@ import type { Watch } from '@/lib/db/schema';
 import type { Dict } from '@/lib/i18n';
 import { getDict } from '@/lib/i18n/server';
 import { PageHeader } from '@/components/PageHeader';
+import { ComingSoonForUrlCity } from '@/components/ComingSoonCompact';
 import { countTagClass } from '@/components/SectionHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,6 +37,9 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">
       <PageHeader eyebrow={d.watch.eyebrow} title={d.watch.title} lead={d.watch.lead} />
+      <Suspense fallback={null}>
+        <ComingSoonForUrlCity />
+      </Suspense>
       {/* Cookie + searchParams are request data: they stream in behind this boundary. */}
       <Suspense fallback={<WatchlistSkeleton d={d} />}>
         <WatchlistView searchParams={searchParams} d={d} />

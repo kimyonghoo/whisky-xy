@@ -11,6 +11,7 @@ import { LocaleLink } from '@/components/LocaleLink';
 import { buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/PageHeader';
+import { ComingSoonForUrlCity } from '@/components/ComingSoonCompact';
 import { countTagClass } from '@/components/SectionHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { Notice } from '@/components/Notice';
@@ -28,6 +29,9 @@ export default async function ComparePage() {
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">
       <PageHeader eyebrow={d.ranking.eyebrow} title={d.ranking.title} lead={d.ranking.lead} />
+      <Suspense fallback={null}>
+        <ComingSoonForUrlCity />
+      </Suspense>
       {/* DB read + relative times are per-request: they stream in behind this boundary. */}
       <Suspense fallback={<CompareSkeleton d={d} />}>
         <CompareView d={d} />

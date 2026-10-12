@@ -9,6 +9,8 @@ export const ko = {
     title: '오픈을 준비하고 있습니다',
     body: (city: string) => `${city}의 리테일러 가격과 재고는 곧 공개됩니다. 그동안 운영 중인 도시의 시세를 확인하실 수 있습니다.`,
     back: (city: string) => `${city} 시세 보기`,
+    /** Compact notice on pages that don't change by city (/compare, cards, watchlist, link-kr). */
+    pageNote: '이 화면은 현재 운영 중인 도시의 매장을 기준으로 합니다.',
   },
   citySelect: {
     label: '도시 선택',
