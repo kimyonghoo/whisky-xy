@@ -100,6 +100,7 @@ export function SearchForm({
       method="get"
       action={localizePath(locale, '/')}
       role="search"
+      data-pour-manual={nav ? '' : undefined}
       onSubmit={onSubmit}
       onChange={onChange}
       className="relative flex flex-col gap-3"

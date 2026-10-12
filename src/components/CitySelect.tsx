@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startPour } from '@/lib/pour';
 import { Popover } from '@base-ui/react/popover';
 import { Tabs } from '@base-ui/react/tabs';
 import { Check, ChevronDown } from 'lucide-react';
@@ -168,6 +169,7 @@ export function CitySelect({ initial }: { initial: CityId }) {
     }
     if (id === current.id) return;
     const query = params.toString();
+    startPour();
     router.push(withCity(`${pathname}${query ? `?${query}` : ''}`, id));
   }
 

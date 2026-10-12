@@ -3,9 +3,9 @@ import { safeHttpsUrl } from '@/lib/card';
 import { cn } from '@/lib/utils';
 
 /**
- * Product photo on a dark tile. The tile itself is never light: while a photo loads, or when a
- * store's image fails, the visitor sees the dark tile, not a white box. Store photos keep their own
- * (often white) background as content, letterboxed on the dark tile.
+ * Product photo under a display-case spotlight (`.bottle-spot` in globals.css): the photo is
+ * multiplied over a warm light that fades into the surface, so a store's white background becomes
+ * the light instead of a white box. Without a photo the tile stays dark with a glass icon.
  * Hotlinked from the store CDN on purpose (never copied); https-only.
  */
 export function BottleImage({
@@ -21,7 +21,13 @@ export function BottleImage({
 }) {
   const url = safeHttpsUrl(src);
   return (
-    <div className={cn('flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted', className)}>
+    <div
+      className={cn(
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-md',
+        url ? 'bottle-spot' : 'border border-border bg-muted',
+        className,
+      )}
+    >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -30,7 +36,7 @@ export function BottleImage({
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
           referrerPolicy="no-referrer"
-          className="size-full object-contain p-1.5"
+          className="size-full object-contain p-2"
         />
       ) : (
         <GlassWater aria-hidden className="size-1/3 text-faint" strokeWidth={1.25} />

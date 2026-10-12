@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useTransition } from 'react';
+import { createContext, useContext, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { endPour, startPour } from '@/lib/pour';
 
 type Ctx = { pending: boolean; navigate: (href: string) => void };
 
@@ -19,7 +20,14 @@ export function useSearchNav(): Ctx | null {
 export function SearchShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const navigate = (href: string) => startTransition(() => router.push(href));
+  const navigate = (href: string) => {
+    startPour();
+    startTransition(() => router.push(href));
+  };
+  // Re-running the same search keeps the URL, so the pour ends with the transition, not the URL change.
+  useEffect(() => {
+    if (!pending) endPour();
+  }, [pending]);
   return <SearchNav.Provider value={{ pending, navigate }}>{children}</SearchNav.Provider>;
 }
 

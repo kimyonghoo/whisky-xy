@@ -9,6 +9,7 @@ import { Wordmark } from '@/components/Wordmark';
 import { MobileMenu, MobileMenuFallback, NavLinks, NavLinksFallback } from '@/components/NavLinks';
 import { CitySelect, CitySelectFallback } from '@/components/CitySelect';
 import { LangSwitch, LangSwitchFallback } from '@/components/LangSwitch';
+import { PourProgress } from '@/components/PourProgress';
 
 /** Reads the remembered city at request time; the client component prefers a valid `?city=`. */
 async function HeaderCity() {
@@ -48,6 +49,9 @@ export async function SiteHeader() {
           </Suspense>
         </div>
       </div>
+      <Suspense fallback={null}>
+        <PourProgress />
+      </Suspense>
     </header>
   );
 }

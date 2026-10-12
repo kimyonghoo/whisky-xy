@@ -15,7 +15,7 @@ Every screen follows this doc. Tokens live in `src/app/globals.css`, primitives 
 
 **Name.** `Whisky Index` (Korean: 위스키 인덱스). "Index" means a price index. The name comes from `site.title` / `site.titleKo` in the dictionaries; components never spell it.
 
-**Mark.** `BrandMark` (`src/components/Wordmark.tsx`): a pot still inside a two-ring compass, drawn in thin gold lines (`currentColor`, 1.2 px stroke, inner ring at 40 % opacity). `src/app/icon.svg` is the same art on black, simplified for 16 px (no inner ring, heavier strokes).
+**Mark.** `BrandMark` (`src/components/Wordmark.tsx`): a cut-crystal rocks glass — rim ellipse, tapered body, heavy base, a whisky line and a diamond-cut band (50 % opacity) — in thin gold lines (`currentColor`, 1.2 px stroke). While a page loads, sherry whisky rises inside it (§8.14). `src/app/icon.svg` is the same glass on black, simplified for 16 px: no cut band, heavier strokes, filled with sherry below the whisky line so it reads as a drink at any size.
 
 **Wordmark.** `WHISKY INDEX` in Cormorant Garamond 600 capitals, tracked 0.16–0.2 em, in `foreground` next to the gold mark.
 
@@ -59,7 +59,7 @@ The site has one theme: deep black. There is no light mode and no theme switch (
 - The default `Button` is a gold outline on black; there is no gold-filled button.
 - Rank #1, filter counts, current-link badges and step numbers are gold **outlined**.
 
-**Light areas.** None by design. The only light pixels on the site are store product photos (content), shown on dark tiles (§8.3). The map tiles are inverted to dark (§8.11). ClerkMode is dark too (§8.7).
+**Light areas.** None by design. The only light pixels are the product-photo spotlight, a warm light that fades into the surface (§8.3). The map tiles are inverted to dark (§8.11). ClerkMode is dark too (§8.7).
 
 ---
 
@@ -228,7 +228,7 @@ Shown instead of results for a coming-soon city: a calm, finished-looking announ
 
 ### 8.3 Bottle header: `BottleHeader`, `BottleImage`, `SpecChips`
 - Identity before price: photo → exact English title → spec chips (`750 ml`, `101 proof`, batch; formatted by `spec.size` / `spec.proof`).
-- `BottleImage` is a **dark tile** (`muted`, hairline border). Store photos keep their own (often white) background as content, letterboxed on the dark tile; while a photo loads or when it fails, the tile stays dark — never a white box. No photo → a faint line glass icon.
+- `BottleImage` puts a photo under a **display-case spotlight** (`.bottle-spot`): a warm radial light (`--spot-core` → `--spot-mid` → transparent) with the photo multiplied over it, so a store's white background becomes the light and fades into the card — never a white box. The tile is not isolated on purpose, so the photo blends through to the surface behind it. No photo → a dark `muted` tile with a faint line glass icon.
 - `hero`: full-width 4:3 photo and a serif 28–36 px title (buy card). `compact`: 72–96 px photo, two-line title (lists).
 - Images are hotlinked https-only (`safeHttpsUrl`) with `referrerPolicy="no-referrer"`.
 
@@ -283,6 +283,12 @@ Lists: `CopyLinkButton` ("카드 링크 복사" with an inline "복사됨"). Car
 - Skip link: gold outline on `popover`, visible on focus.
 
 ---
+
+### 8.14 The pour (navigation progress)
+- `src/lib/pour.ts` sets `<html data-pour="filling|done">`; `PourProgress` (in the header) starts it on in-app link clicks and GET form submits and ends it when the router's URL changes. The search form and the city menu start it themselves; the search ends it with its transition (re-running the same search keeps the URL).
+- Look: a 2 px oloroso-sherry line along the header's bottom edge (`--pour-deep` → `--pour-mid` → `--pour-light`) that slows towards 85 %, with a glinting drop (`--pour-glint`) at its leading edge; the brand glass fills with `--pour-liquid` in step, with a gentle surface wave. On arrival the line completes and both fade.
+- Navigations under 150 ms cancel silently (prefetched pages never flash it); a 15 s safety ends a navigation that never arrives. Reduced motion: the global rule jumps animations to their end state, so a static line and a filled glass show instead.
+- Decorative only (`aria-hidden`): busy state is still announced by each page (`aria-busy` on results, button labels).
 
 ## 9. Motion
 - Functional only: 150–200 ms colour/opacity transitions, a small scale-fade for popovers, a fade-in for ClerkMode, spinners and the skeleton pulse. No parallax, no entrance choreography.

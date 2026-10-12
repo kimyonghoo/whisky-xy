@@ -178,6 +178,17 @@
   /* Korea reference bar on /compare: slate, a different hue from every verdict. */
   --kr-bar: #6f8cab;
 
+  /* The pour (navigation progress): oloroso sherry, dark to light, and the glint at the leading drop. */
+  --pour-deep: #3a1309;
+  --pour-mid: #6e2a12;
+  --pour-light: #9c4a1e;
+  --pour-glint: #d99a5a;
+  --pour-liquid: #7a2f14;
+
+  /* Product photo spotlight: a warm display-case light that store photos' white backgrounds melt into. */
+  --spot-core: #ebe5d9;
+  --spot-mid: #c9bfae;
+
   --radius: 0.375rem;
 
   /* Kept for vendored shadcn utilities that reference them. */
@@ -310,6 +321,90 @@ div.leaflet-container .leaflet-bar {
 .leaflet-container .leaflet-bar a.leaflet-disabled {
   background: var(--card);
   color: var(--faint);
+}
+
+/*
+ * The pour (src/lib/pour.ts sets <html data-pour="filling|done">). The line runs along the header's
+ * bottom edge and slows towards 85% until the page arrives; then it completes and fades. The brand
+ * glass fills in step. A short delay keeps prefetched (instant) pages from flashing it.
+ */
+.pour-line {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--pour-deep), var(--pour-mid) 50%, var(--pour-light));
+}
+.pour-line::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pour-glint);
+  box-shadow: 0 0 10px 3px color-mix(in srgb, var(--pour-light) 55%, transparent);
+}
+html[data-pour="filling"] .pour-line {
+  opacity: 1;
+  animation: pour-line 9s cubic-bezier(0.1, 0.6, 0.2, 1) 120ms both;
+}
+html[data-pour="done"] .pour-line {
+  width: 100%;
+  opacity: 0;
+  transition: width 200ms ease-out, opacity 250ms ease-in 200ms;
+}
+@keyframes pour-line {
+  from { width: 0; }
+  to { width: 85%; }
+}
+
+.pour-liquid {
+  fill: var(--pour-liquid);
+  opacity: 0;
+  transform: translateY(11px);
+}
+html[data-pour="filling"] .pour-liquid {
+  opacity: 1;
+  animation: pour-rise 9s cubic-bezier(0.1, 0.6, 0.2, 1) 120ms both;
+}
+html[data-pour="done"] .pour-liquid {
+  transform: translateY(0);
+  opacity: 0;
+  transition: transform 200ms ease-out, opacity 250ms ease-in 200ms;
+}
+html[data-pour] .pour-wave {
+  animation: pour-wave 1.1s linear infinite;
+}
+@keyframes pour-rise {
+  from { transform: translateY(11px); }
+  to { transform: translateY(1.5px); }
+}
+@keyframes pour-wave {
+  from { transform: translateX(0); }
+  to { transform: translateX(-8px); }
+}
+
+/*
+ * Product photos: most stores shoot on white. Multiplying the photo over a warm spotlight turns that
+ * white into the light itself, which falls off into the surrounding surface, so no white box remains.
+ * No `isolation` here on purpose: the photo must blend through the tile into the card behind it.
+ */
+.bottle-spot {
+  background: radial-gradient(
+    ellipse 58% 64% at 50% 46%,
+    var(--spot-core) 0%,
+    var(--spot-mid) 40%,
+    color-mix(in srgb, var(--spot-mid) 30%, transparent) 70%,
+    transparent 92%
+  );
+}
+.bottle-spot img {
+  mix-blend-mode: multiply;
 }
 
 @media (prefers-reduced-motion: reduce) {
