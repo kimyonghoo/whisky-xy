@@ -7,6 +7,8 @@ import { ko } from '@/lib/i18n/ko';
 import { en } from '@/lib/i18n/en';
 
 const dewinespot = getStore('dewinespot')!;
+// Fixed clock: the listings below are checked 2026-10-10, so stock text must not depend on the real date.
+const NOW = new Date('2026-10-10T16:00:00Z');
 
 function listing(over: Partial<Listing> = {}): Listing {
   const d = new Date('2026-10-10T15:00:00Z');
@@ -20,27 +22,27 @@ function listing(over: Partial<Listing> = {}): Listing {
 
 describe('cardMeta', () => {
   it('builds description with NY date, price, stock, store and address', () => {
-    const m = cardMeta(listing(), dewinespot);
+    const m = cardMeta(listing(), dewinespot, NOW);
     expect(m.description).toMatch(/^10\/10 기준 \$175\.00 · 재고 있음 · De Wine Spot/);
     expect(m.description).toContain('428 Lorimer St');
     expect(m.image).toBe('https://cdn.shopify.com/a.jpg');
   });
   it('uses America/New_York date, not UTC', () => {
-    const m = cardMeta(listing({ checkedAt: new Date('2026-10-11T02:00:00Z') }), dewinespot);
+    const m = cardMeta(listing({ checkedAt: new Date('2026-10-11T02:00:00Z') }), dewinespot, new Date('2026-10-11T03:00:00Z'));
     expect(m.description).toMatch(/^10\/10 기준/);
   });
   it('shows sold out', () => {
-    expect(cardMeta(listing({ available: false }), dewinespot).description).toContain('품절');
+    expect(cardMeta(listing({ available: false }), dewinespot, NOW).description).toContain('품절');
   });
   it('quotes the Korean name with the English in parentheses on /ko; English alone on /en', () => {
     const l = listing();
-    const now = new Date('2026-10-10T16:00:00Z');
-    expect(cardMeta(l, dewinespot, now, ko, displayBottleName({ english: l.title, locale: 'ko' })).title).toBe("블랑톤 오리지널 (Blanton's Original)");
+    const now = NOW;
+    expect(cardMeta(l, dewinespot, now, ko,displayBottleName({ english: l.title, locale: 'ko' })).title).toBe("블랑톤 오리지널 (Blanton's Original)");
     expect(cardMeta(l, dewinespot, now, en, displayBottleName({ english: l.title, locale: 'en' })).title).toBe("Blanton's Original");
   });
   it('drops non-https image', () => {
-    expect(cardMeta(listing({ imageUrl: 'javascript:alert(1)' }), dewinespot).image).toBeNull();
-    expect(cardMeta(listing({ imageUrl: 'http://x/a.jpg' }), dewinespot).image).toBeNull();
+    expect(cardMeta(listing({ imageUrl: 'javascript:alert(1)' }), dewinespot, NOW).image).toBeNull();
+    expect(cardMeta(listing({ imageUrl: 'http://x/a.jpg' }), dewinespot, NOW).image).toBeNull();
   });
 });
 
