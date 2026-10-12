@@ -124,9 +124,10 @@ describe('JPY store', () => {
     expect(err).toBeInstanceOf(CurrencyMismatchError);
     expect(err.message).toBe('Expected JPY but store reported USD');
   });
-  it('live recheck uses the per-store currency too', async () => {
-    const fake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({ variants: [] })));
-    await expect(fetchLiveProduct(jpStore, 'x', { fetchFn: fake })).rejects.toBeInstanceOf(CurrencyMismatchError);
+  it('live recheck refuses a non-USD store before any request (.js prices are subunits x100)', async () => {
+    const fake = makeFake(() => json({ currency: 'JPY', variants: [] }));
+    await expect(fetchLiveProduct(jpStore, 'x', { fetchFn: fake })).rejects.toThrow(/live recheck.*JPY/i);
+    expect(fake.calls).toHaveLength(0);
   });
 });
 

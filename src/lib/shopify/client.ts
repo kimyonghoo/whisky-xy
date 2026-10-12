@@ -106,6 +106,12 @@ export async function fetchLiveProduct(
   handle: string,
   opts: { fetchFn?: FetchFn; timeoutMs?: number } = {},
 ): Promise<LiveVariant[] | null> {
+  // Shopify's `/products/<handle>.js` prices are in subunits (x100) even for zero-decimal
+  // currencies, so a JPY price would be stored 100x too high. Fail closed, before any request,
+  // until a non-USD live recheck is designed. (recheckListing turns this throw into 'failed'.)
+  if (store.currency !== 'USD') {
+    throw new Error(`Live recheck is USD-only: ${store.id} prices in ${store.currency}`);
+  }
   const fetchFn = opts.fetchFn ?? liveFetch;
   const signal = AbortSignal.timeout(opts.timeoutMs ?? 5000);
   const productPath = `/products/${encodeURIComponent(handle)}.js`;
