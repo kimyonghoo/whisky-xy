@@ -91,6 +91,7 @@ export async function CitySections({
                   <span className="font-serif font-medium">{d.city[sec.city]}</span>
                   <span className="text-sm text-muted-foreground tabular">
                     {d.search.otherCitySummary(
+                      sec.inStockStoreCount,
                       sec.storeCount,
                       sec.bestAvailableCents !== null ? formatUsd(sec.bestAvailableCents) : null,
                     )}

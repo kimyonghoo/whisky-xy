@@ -100,6 +100,13 @@ describe('dictionaries', () => {
     expect(dictFor('ko')).toBe(ko);
     expect(dictFor('en')).toBe(en);
   });
+
+  it('the collapsed other-city line counts in-stock stores and labels the minimum as tax-included', () => {
+    expect(ko.search.otherCitySummary(1, 3, '$54.43')).toBe('재고 1곳 / 3곳 · 세금 포함 최저 $54.43');
+    expect(en.search.otherCitySummary(1, 3, '$54.43')).toBe('In stock at 1 of 3 · from $54.43 incl. tax');
+    expect(ko.search.otherCitySummary(0, 2, null)).toBe('재고 0곳 / 2곳');
+    expect(en.search.otherCitySummary(0, 2, null)).toBe('In stock at 0 of 2');
+  });
 });
 
 describe('locales', () => {

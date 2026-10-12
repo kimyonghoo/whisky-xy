@@ -58,6 +58,8 @@ export interface CitySection {
   bestAvailableCents: number | null;
   /** Distinct stores with at least one row. */
   storeCount: number;
+  /** Distinct stores with a confirmed in-stock row (sold-out and unverified rows don't count). */
+  inStockStoreCount: number;
 }
 
 /** What the search form and URL carry; the page resolves `city` separately (cookie, store, legacy region). */
@@ -232,6 +234,7 @@ export async function searchListings(
         groups,
         bestAvailableCents: avail.length ? Math.min(...avail) : null,
         storeCount: new Set(rows.map((r) => r.storeId)).size,
+        inStockStoreCount: new Set(rows.filter((r) => r.stock === 'instock').map((r) => r.storeId)).size,
       };
     }),
   );

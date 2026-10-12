@@ -74,7 +74,8 @@ export const ko = {
     yourCity: 'YOUR CITY',
     /** Takes the English country name in capitals (ko.countryEn). */
     elsewhere: (countryEnUpper: string) => `ELSEWHERE IN ${countryEnUpper}`,
-    otherCitySummary: (stores: number, best: string | null) => `${stores}곳에서 판매${best ? ` · 최저 ${best}` : ''}`,
+    /** Collapsed other-city line: stores with confirmed stock of all that list it, and the cheapest tax-included price. */
+    otherCitySummary: (inStock: number, total: number, best: string | null) => `재고 ${inStock}곳 / ${total}곳${best ? ` · 세금 포함 최저 ${best}` : ''}`,
     sizeLabel: '용량',
     sizeAll: '전체',
     inStockOnly: '재고 있는 상품만',

@@ -76,7 +76,8 @@ describe('searchListings', () => {
     const by = Object.fromEntries(r.sections.map((s) => [s.city, s]));
     expect(by.brooklyn).toMatchObject({ storeCount: 1, bestAvailableCents: Math.round(7000 * 1.08875) });
     // winechateau is sold out; liquorcave is the only in-stock NJ store, but both count as stores
-    expect(by.nj).toMatchObject({ storeCount: 2, bestAvailableCents: Math.round(7000 * 1.06625) });
+    expect(by.nj).toMatchObject({ storeCount: 2, inStockStoreCount: 1, bestAvailableCents: Math.round(7000 * 1.06625) });
+    expect(by.brooklyn.inStockStoreCount).toBe(1);
     expect(by.la.storeCount).toBe(1);
     expect(by.la.bestAvailableCents).toBe(withTaxCents(6500, getStore('flask')!.taxRate));
   });

@@ -77,7 +77,8 @@ export const en: Dict = {
     yourCity: 'YOUR CITY',
     /** Takes the English country name in capitals (countryEn). */
     elsewhere: (countryEnUpper: string) => `ELSEWHERE IN ${countryEnUpper}`,
-    otherCitySummary: (stores: number, best: string | null) => `At ${stores} ${stores === 1 ? 'store' : 'stores'}${best ? ` · from ${best}` : ''}`,
+    /** Collapsed other-city line: stores with confirmed stock of all that list it, and the cheapest tax-included price. */
+    otherCitySummary: (inStock: number, total: number, best: string | null) => `In stock at ${inStock} of ${total}${best ? ` · from ${best} incl. tax` : ''}`,
     sizeLabel: 'Size',
     sizeAll: 'All',
     inStockOnly: 'In stock only',
