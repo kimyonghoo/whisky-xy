@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isWhiskyProduct, parseSizeMl, parseProof, parseBatch, normalizeText, bottleKey } from '@/lib/whisky/parse';
+import regression from '../fixtures/parse-regression.json';
 
 describe('isWhiskyProduct', () => {
   it('accepts whisky and rejects non-whisky', () => {
@@ -139,5 +140,66 @@ describe('bottleKey canonicalization (I1)', () => {
   it('keeps proof and rye in the key (missing vs present proof stays split, the safe direction)', () => {
     expect(k('George T Stagg 2024 Release 138.7 Proof')).not.toBe(k('George T. Stagg 2024 Release'));
     expect(k('Sazerac Rye Whiskey')).not.toBe(k('Sazerac Whiskey'));
+  });
+});
+
+describe('Japanese text', () => {
+  const k = (title: string, variantTitle: string | null = null) => bottleKey({ title, variantTitle });
+
+  it('parseSizeMl reads ㎖, full-width and plain ml', () => {
+    expect(parseSizeMl('サントリー 山崎 12年 700㎖')).toBe(700);
+    expect(parseSizeMl('容量 700ml')).toBe(700);
+    expect(parseSizeMl('ｍｌ表記 ７００ｍｌ')).toBe(700);
+    expect(parseSizeMl('1.75L')).toBe(1750);
+    expect(parseSizeMl('１．７５Ｌ')).toBe(1750);
+    expect(parseSizeMl('山崎 12年 シングルモルト')).toBeNull();
+  });
+
+  it('isWhiskyProduct recognises Japanese whisky words', () => {
+    for (const title of ['山崎 12年 シングルモルトウイスキー', 'ニッカ ウィスキー', 'ウヰスキー 白州', 'ｳｲｽｷｰ 響', '竹鶴 ブレンデッド 700ml', 'ウイスキ']) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }), title).toBe(true);
+    }
+  });
+
+  it('isWhiskyProduct rejects Japanese non-whisky', () => {
+    expect(isWhiskyProduct({ title: '梅酒', productType: 'リキュール', tags: [] })).toBe(false);
+    expect(isWhiskyProduct({ title: '芋焼酎 ウイスキー樽貯蔵', productType: '', tags: [] })).toBe(false);
+    expect(isWhiskyProduct({ title: '純米大吟醸 日本酒', productType: '', tags: [] })).toBe(false);
+    expect(isWhiskyProduct({ title: 'ウイスキーグラス', productType: '', tags: [] })).toBe(false);
+    expect(isWhiskyProduct({ title: 'ウイスキー ギフト券', productType: '', tags: [] })).toBe(false);
+  });
+
+  it('normalizeText keeps Han, kana and the long-vowel mark', () => {
+    expect(normalizeText('山崎 12年')).toBe('山崎 12年');
+    expect(normalizeText('ラフロイグ')).toBe('ラフロイグ');
+    expect(normalizeText('山崎・１２年（ＮＶ）')).toBe('山崎 12年 nv');
+  });
+
+  it('normalizeText keeps voiced kana distinct and folds half-width kana', () => {
+    expect(normalizeText('ガ')).not.toBe(normalizeText('カ'));
+    expect(normalizeText('ﾊﾞｰﾎﾞﾝ')).toBe('バーボン');
+    expect(normalizeText('ぱ')).toBe('ぱ');
+  });
+
+  it('bottleKey separates Japanese bottles and reads the size', () => {
+    expect(k('山崎 12年 700ml')).not.toBe(k('白州 12年 700ml'));
+    expect(k('山崎 12年 700ml')).not.toBe(k('山崎 18年 700ml'));
+    expect(k('山崎 12年 700ml')).toBe(k('山崎 12年 ７００㎖'));
+    expect(k('山崎 12年', '700ml')).toBe(k('山崎 12年 700ml'));
+    expect(k('山崎 12年 700ml')).toMatch(/\|s700$/);
+    expect(k('山崎 12年 700ml')).toMatch(/^\S/);
+  });
+});
+
+describe('ASCII regression (recorded before the Japanese work)', () => {
+  const rows = regression as { title: string; variantTitle: string | null; key: string; norm: string }[];
+  it('has a meaningful number of recorded titles', () => {
+    expect(rows.length).toBeGreaterThanOrEqual(150);
+  });
+  it('bottleKey and normalizeText outputs are byte-identical', () => {
+    for (const r of rows) {
+      expect(bottleKey({ title: r.title, variantTitle: r.variantTitle }), `key: ${r.title}`).toBe(r.key);
+      expect(normalizeText(`${r.title} ${r.variantTitle ?? ''}`), `norm: ${r.title}`).toBe(r.norm);
+    }
   });
 });

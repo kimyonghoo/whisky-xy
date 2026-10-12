@@ -1,26 +1,48 @@
 // Pure text parsing helpers for whisky listings. No DB, no network.
 
-const WHISKY_RE = /whisk(e)?y|bourbon|scotch|\brye\b|single malt/i;
+const WHISKY_RE =
+  /whisk(e)?y|bourbon|scotch|\brye\b|single malt|ウイスキー|ウィスキー|ウヰスキー|ウイスキ|シングルモルト|ブレンデッド/i;
 const ALWAYS_REJECT_RE =
-  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters/i;
+  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒|焼酎|日本酒|グラス|ギフト券/i;
 // Wine/grape and beer terms only reject when productType is not itself whisky-like
 // (cask-finished whisky legitimately mentions port, cabernet, etc.).
 const NON_WHISKY_TYPE_REJECT_RE =
   /\bwine\b|cabernet|sauvignon|chardonnay|\b(beer|stout|ale|ipa|lager|porter)\b/i;
 
-export function isWhiskyProduct(p: { title: string; productType: string; tags: string[] }): boolean {
-  if (ALWAYS_REJECT_RE.test(p.title) || ALWAYS_REJECT_RE.test(p.productType)) return false;
-  const typeIsWhisky = WHISKY_RE.test(p.productType);
-  if (!typeIsWhisky && (NON_WHISKY_TYPE_REJECT_RE.test(p.title) || NON_WHISKY_TYPE_REJECT_RE.test(p.productType))) {
-    return false;
-  }
-  return WHISKY_RE.test(`${p.title} ${p.productType} ${p.tags.join(' ')}`);
+// Full NFKC fold for matching only (half-width katakana ｳｲｽｷｰ, full-width Latin). Never used
+// to build stored text; pure-ASCII input is returned unchanged.
+function foldForMatch(text: string): string {
+  return text.normalize('NFKC');
 }
 
-const ML_RE = /(\d+(?:\.\d+)?)\s*ml\b/i;
+export function isWhiskyProduct(p: { title: string; productType: string; tags: string[] }): boolean {
+  const title = foldForMatch(p.title);
+  const productType = foldForMatch(p.productType);
+  if (ALWAYS_REJECT_RE.test(title) || ALWAYS_REJECT_RE.test(productType)) return false;
+  const typeIsWhisky = WHISKY_RE.test(productType);
+  if (!typeIsWhisky && (NON_WHISKY_TYPE_REJECT_RE.test(title) || NON_WHISKY_TYPE_REJECT_RE.test(productType))) {
+    return false;
+  }
+  return WHISKY_RE.test(`${title} ${productType} ${foldForMatch(p.tags.join(' '))}`);
+}
+
+/** Narrow width fold used before size/proof/batch matching: full-width ASCII (U+FF01-FF5E)
+ *  to ASCII, ideographic space to a space, and the square-ml / square-liter compatibility glyphs to `ml` / `l`.
+ *  Deliberately not full NFKC, which would also rewrite `º` (the proof marker) to `o`.
+ *  ASCII input is returned unchanged. */
+function foldWidth(text: string): string {
+  return text
+    .replace(/[\uFF01-\uFF5E]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/\u3000/g, ' ')
+    .replace(/\u3396/g, 'ml') // U+3396 (square ml)
+    .replace(/\u3351/g, 'l'); // U+3351 (square liter)
+}
+
+const ML_RE = /(\d+(?:\.\d+)?)\s*ml\b/i; // the square-ml sign is folded to "ml" by foldWidth first
 const LITER_RE = /(\d+(?:\.\d+)?)\s*(?:liters?|litres?|l)\b/i;
 
-function sizeMatch(text: string): { ml: number; match: string } | null {
+function sizeMatch(rawText: string): { ml: number; match: string } | null {
+  const text = foldWidth(rawText);
   const m = ML_RE.exec(text);
   if (m) return { ml: Math.round(parseFloat(m[1])), match: m[0] };
   const l = LITER_RE.exec(text);
@@ -76,10 +98,13 @@ export function normalizeText(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFKD')
-    .replace(/\p{M}+/gu, '')
+    // Strip accents (Café -> cafe) but keep the kana voicing marks U+3099/U+309A, which
+    // NFKC below recombines (ガ stays distinct from カ).
+    .replace(/(?:(?![\u3099\u309a])\p{M})+/gu, '')
+    .normalize('NFKC')
     .replace(/['’]/g, '')
     .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^a-z0-9\p{Script=Han}\p{Script=Katakana}\p{Script=Hiragana}ー]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -102,7 +127,7 @@ const STRIP_PHRASES_RE = /\b(?:buffalo trace antique collection|btac)\b/g;
 export const DEFAULT_KEY_SIZE_ML = 750;
 
 export function bottleKey(p: { title: string; variantTitle: string | null }): string {
-  const text = `${p.title} ${p.variantTitle ?? ''}`;
+  const text = foldWidth(`${p.title} ${p.variantTitle ?? ''}`);
   const size = sizeMatch(text);
   const proof = proofMatch(text);
   const batch = batchMatch(text);
