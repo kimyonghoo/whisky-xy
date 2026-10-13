@@ -25,8 +25,15 @@ export interface PageCrawlSkips {
   error: number;
 }
 
+export type PageCheckOutcome = 'observed' | keyof PageCrawlSkips;
+
 export interface PageCrawlResult {
   observations: Observation[];
+  /**
+   * One entry per product path attempted this run (canonical path), in order: observed, or why it
+   * was skipped. Paths not reached because of a stop or the budget are absent.
+   */
+  checked: { path: string; outcome: PageCheckOutcome }[];
   /** List pages read successfully this run. */
   listPaths: string[];
   /** Product paths found on this run's list pages (canonical, de-duplicated, in page order). */
@@ -97,11 +104,15 @@ function toObservation(store: Store, cfg: PageStoreConfig, path: string, product
     return { skip: 'notWhisky' };
   }
   const titleSize = parseSizeMl(title);
-  const sizeMl = cfg.sizeFrom(html) ?? titleSize;
+  const specSize = cfg.sizeFrom(html);
+  const sizeMl = specSize ?? titleSize;
   if (sizeMl !== null && sizeMl < MIN_BOTTLE_ML) return { skip: 'notWhisky' };
-  // A size known only from the spec row goes in variantTitle, so the bottle key (and any later
-  // rekey, which reads title + variantTitle) carries it instead of the 750 ml default.
-  const variantTitle = sizeMl !== null && titleSize === null ? `${sizeMl}ml` : null;
+  // One size source for sizeMl and the bottle key: the 容量 row when there is one. It goes in
+  // variantTitle whenever the title does not already say it, so the key (and any later rekey,
+  // which reads title + variantTitle) uses it: `700ml` when the title has no size (instead of the
+  // 750 ml default), `容量 700ml` when the title says another size (the 容量 label wins in bottleKey).
+  const variantTitle =
+    specSize === null || specSize === titleSize ? null : titleSize === null ? `${specSize}ml` : `容量 ${specSize}ml`;
   const keyText = `${title} ${variantTitle ?? ''}`;
 
   return {
@@ -141,6 +152,7 @@ export async function crawlPageStore(store: Store, cfg: PageStoreConfig, opts: P
   const { fetcher } = opts;
   const skipped: PageCrawlSkips = { disallowed: 0, gone: 0, currency: 0, notWhisky: 0, noPrice: 0, noAvailability: 0, error: 0 };
   const observations: Observation[] = [];
+  const checked: PageCrawlResult['checked'] = [];
   const listPaths: string[] = [];
   const discovered = new Set<string>();
   let stopped: CrawlStopReason | null = null;
@@ -168,8 +180,10 @@ export async function crawlPageStore(store: Store, cfg: PageStoreConfig, opts: P
         skipped.disallowed++;
         nextListPage = 1;
       } else {
+        // Any other error (HTTP error, redirect of a past-the-end page, network): wrap rather than
+        // retry this page forever.
         skipped.error++;
-        nextListPage = page; // try this page again next run
+        nextListPage = 1;
       }
       break;
     }
@@ -189,38 +203,53 @@ export async function crawlPageStore(store: Store, cfg: PageStoreConfig, opts: P
 
   // 2. Item pages: due first (in the given order), then new ones.
   if (stopped === null) {
-    const due = [...new Set(opts.dueProductPaths)];
+    // Everything is compared and fetched in canonical form; a path with no product id is skipped
+    // without a request (and is not reported in `checked`, having no canonical path).
+    const canonical = (p: string): string | null => {
+      const id = cfg.productId(p);
+      return id === null ? null : cfg.productPath(id);
+    };
+    const due: string[] = [];
+    for (const p of opts.dueProductPaths) {
+      const c = canonical(p);
+      if (c === null) skipped.error++;
+      else if (!due.includes(c)) due.push(c);
+    }
     const dueSet = new Set(due);
-    const known = opts.knownProductPaths ?? new Set<string>();
+    const known = new Set<string>();
+    for (const p of opts.knownProductPaths ?? []) {
+      const c = canonical(p);
+      if (c !== null) known.add(c);
+    }
     const fresh = [...discovered].filter((p) => !dueSet.has(p) && !known.has(p));
 
     for (const path of [...due, ...fresh]) {
-      const productId = cfg.productId(path);
-      if (productId === null) {
-        skipped.error++;
-        continue;
-      }
-      let html: string;
+      const productId = cfg.productId(path)!; // canonical paths always have an id
+      let outcome: PageCheckOutcome;
       try {
-        html = await fetcher.get(path);
+        const html = await fetcher.get(path);
+        const result = toObservation(store, cfg, path, productId, html);
+        if ('obs' in result) {
+          observations.push(result.obs);
+          outcome = 'observed';
+        } else {
+          outcome = result.skip;
+        }
       } catch (e) {
         if (e instanceof CrawlStopped) {
           stopped = e.reason;
           break;
         }
-        if (e instanceof PathDisallowed) skipped.disallowed++;
-        else if (e instanceof PageGone) skipped.gone++;
-        else skipped.error++;
-        continue;
+        outcome = e instanceof PathDisallowed ? 'disallowed' : e instanceof PageGone ? 'gone' : 'error';
       }
-      const outcome = toObservation(store, cfg, path, productId, html);
-      if ('obs' in outcome) observations.push(outcome.obs);
-      else skipped[outcome.skip]++;
+      if (outcome !== 'observed') skipped[outcome]++;
+      checked.push({ path, outcome });
     }
   }
 
   return {
     observations,
+    checked,
     listPaths,
     discoveredProductPaths: [...discovered],
     nextListPage,

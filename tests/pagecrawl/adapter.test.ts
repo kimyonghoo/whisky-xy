@@ -124,6 +124,96 @@ describe('crawlPageStore', () => {
     // 28 other grid items 404 here: skipped as gone, never as observations.
     expect(r.skipped).toEqual({ disallowed: 0, gone: 28, currency: 0, notWhisky: 0, noPrice: 0, noAvailability: 0, error: 0 });
     expect(r.requests).toBe(1 + 2 + 30);
+    expect(r.checked).toHaveLength(30);
+    expect(r.checked.slice(0, 3)).toEqual([
+      { path: A, outcome: 'observed' },
+      { path: B, outcome: 'observed' },
+      { path: item('000000022837'), outcome: 'gone' },
+    ]);
+  });
+
+  it('reports a per-path outcome for every product path attempted, and none for unreached paths', async () => {
+    const GLASS = item('000000022836'); // 【グラス付き】 in the list fixture
+    const { fetcher } = await setup(
+      {
+        [P1]: LIST, [P2]: EMPTY_LIST,
+        [A]: INSTOCK,
+        [GLASS]: itemPage({ name: '【グラス付き】I.W.ハーパー 12年（正規）', size: '700ml' }),
+      },
+      { maxRequests: 1 + 2 + 2 + 3 }, // robots, 2 list pages, 2 due, 3 fresh
+    );
+    const DELISTED = item('000000000404');
+    const r = await crawlPageStore(STORE, CFG, {
+      fetcher, dueProductPaths: [DELISTED, A], knownProductPaths: new Set([B, item('000000022837')]),
+    });
+    expect(r.stopped).toBe('budget');
+    expect(r.checked).toEqual([
+      { path: DELISTED, outcome: 'gone' },
+      { path: A, outcome: 'observed' },
+      { path: GLASS, outcome: 'notWhisky' },
+      { path: item('000000022834'), outcome: 'gone' },
+      { path: item('000000022833'), outcome: 'gone' },
+    ]);
+    expect(r.checked.map((c) => c.path)).not.toContain(item('000000022832')); // not reached: budget
+    expect(r.skipped).toMatchObject({ gone: 3, notWhisky: 1 });
+  });
+
+  it('reports disallowed paths as checked without fetching them', async () => {
+    const { fetcher, calls } = await setup({ [P1]: EMPTY_LIST }, { robots: 'User-agent: *\nDisallow: /view/item/000000022839\n' });
+    const r = await crawlPageStore(STORE, CFG, { fetcher, dueProductPaths: [A] });
+    expect(calls).not.toContain(A);
+    expect(r.checked).toEqual([{ path: A, outcome: 'disallowed' }]);
+  });
+
+  it('canonicalises due and known paths, so an item is fetched once and stored under its canonical url', async () => {
+    const { fetcher, calls } = await setup({ [P1]: LIST, [P2]: EMPTY_LIST, [A]: INSTOCK });
+    const r = await crawlPageStore(STORE, CFG, {
+      fetcher,
+      dueProductPaths: [`${A}?category_page_id=ct755`, A, '/view/category/ct755', item('000000022838') + '?category_page_id=ct755'],
+      knownProductPaths: new Set([`${item('000000022837')}?category_page_id=ct755`]),
+    });
+    expect(calls.filter((c) => c === A)).toHaveLength(1);
+    expect(calls.filter((c) => c.includes('category_page_id'))).toEqual([]);
+    expect(calls).not.toContain(item('000000022837'));
+    expect(calls.filter((c) => c === '/view/category/ct755')).toEqual([]); // no id: never fetched
+    expect(r.observations[0].url).toBe(`https://shinanoya-tokyo.jp${A}`);
+    expect(r.checked.slice(0, 2)).toEqual([{ path: A, outcome: 'observed' }, { path: B, outcome: 'gone' }]);
+  });
+
+  it('uses the 容量 size for both sizeMl and the bottle key when the title says otherwise', async () => {
+    const { fetcher } = await setup({ [P1]: EMPTY_LIST, [A]: itemPage({ name: '山崎 12年 750ml', size: '700ml' }) });
+    const r = await crawlPageStore(STORE, CFG, { fetcher, dueProductPaths: [A] });
+    const o = r.observations[0];
+    expect(o.sizeMl).toBe(700);
+    expect(o.bottleKey).toMatch(/\|s700$/);
+    expect(o.title).toBe('山崎 12年 750ml');
+    expect(o.variantTitle).toBe('容量 700ml');
+  });
+
+  it('keeps variantTitle null when the title already states the 容量 size', async () => {
+    const { fetcher } = await setup({ [P1]: EMPTY_LIST, [A]: itemPage({ name: '山崎 12年 700ml', size: '700ml' }) });
+    const r = await crawlPageStore(STORE, CFG, { fetcher, dueProductPaths: [A] });
+    expect(r.observations[0]).toMatchObject({ sizeMl: 700, variantTitle: null });
+  });
+
+  it('wraps to page 1 on a generic list-page error, but resumes at the page after a stop', async () => {
+    const p5 = CFG.listPath(5);
+    const err = await setup({ [p5]: 500 });
+    expect((await crawlPageStore(STORE, CFG, { fetcher: err.fetcher, dueProductPaths: [], listPageStart: 5 })).nextListPage).toBe(1);
+
+    const redirect = await setup({ [p5]: 302 });
+    const r = await crawlPageStore(STORE, CFG, { fetcher: redirect.fetcher, dueProductPaths: [], listPageStart: 5 });
+    expect(r.nextListPage).toBe(1);
+    expect(r.stopped).toBeNull();
+    expect(r.skipped.error).toBe(1);
+
+    const first = await setup({ [P1]: 500 });
+    expect((await crawlPageStore(STORE, CFG, { fetcher: first.fetcher, dueProductPaths: [] })).nextListPage).toBe(1);
+
+    const budget = await setup({ [p5]: LIST }, { maxRequests: 1 });
+    const b = await crawlPageStore(STORE, CFG, { fetcher: budget.fetcher, dueProductPaths: [], listPageStart: 5 });
+    expect(b.stopped).toBe('budget');
+    expect(b.nextListPage).toBe(5);
   });
 
   it('never follows the recommendation-block links', async () => {

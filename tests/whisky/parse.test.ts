@@ -181,6 +181,24 @@ describe('Japanese text', () => {
     expect(isWhiskyProduct({ title: 'Some Cabernet Sauvignon 750ml', productType: '', tags: [] }, { whiskyOnlyCatalog: true })).toBe(false);
   });
 
+  it('isWhiskyProduct rejects case sales, sets and glass bundles with or without whiskyOnlyCatalog', () => {
+    for (const title of ['【ケース販売】ラガヴーリン 8年', 'ラガヴーリン 8年 ケース 6本', '山崎 飲み比べセット', '白州 3本セット', '響 ギフト 2本セット', '【グラス付き】I.W.ハーパー 12年（正規）']) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }), title).toBe(false);
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, { whiskyOnlyCatalog: true }), `flag: ${title}`).toBe(false);
+      expect(isWhiskyProduct({ title: `${title} ウイスキー`, productType: 'ウイスキー', tags: [] }), `worded: ${title}`).toBe(false);
+    }
+    expect(isWhiskyProduct({ title: 'サントリー 山崎 12年 700ml', productType: '', tags: [] }, { whiskyOnlyCatalog: true })).toBe(true);
+  });
+
+  it('a size labelled 容量 wins over another size in the text, for parseSizeMl and bottleKey alike', () => {
+    expect(parseSizeMl('山崎 12年 750ml 容量 700ml')).toBe(700);
+    expect(parseSizeMl('山崎 12年 750ml 容量：1L')).toBe(1000);
+    const key = bottleKey({ title: '山崎 12年 750ml', variantTitle: '容量 700ml' });
+    expect(key).toMatch(/\|s700$/);
+    expect(key).toBe(bottleKey({ title: '山崎 12年 700ml', variantTitle: null }));
+    expect(bottleKey({ title: '山崎 12年', variantTitle: '容量 700ml' })).toBe(bottleKey({ title: '山崎 12年 700ml', variantTitle: null }));
+  });
+
   it('normalizeText keeps Han, kana and the long-vowel mark', () => {
     expect(normalizeText('山崎 12年')).toBe('山崎 12年');
     expect(normalizeText('ラフロイグ')).toBe('ラフロイグ');

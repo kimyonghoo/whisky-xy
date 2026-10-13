@@ -32,7 +32,8 @@ export interface Store {
   catalogPath?: string;
   /**
    * The crawled source lists only whisky (e.g. the store's whisky category), so a title needs no
-   * whisky word to count; reject terms (glasses, liqueurs, wine...) still apply.
+   * whisky word to count; reject terms (glasses, liqueurs, wine, case sales/sets...) still apply.
+   * Read only by the page adapter (crawlPageStore) for now; the Shopify path ignores it until Task 6.
    */
   whiskyOnlyCatalog?: boolean;
 }

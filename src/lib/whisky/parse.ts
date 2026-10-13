@@ -3,7 +3,9 @@
 const WHISKY_RE =
   /whisk(e)?y|bourbon|scotch|\brye\b|single malt|ウイスキー|ウィスキー|ウヰスキー|ウイスキ|シングルモルト|ブレンデッド/i;
 const ALWAYS_REJECT_RE =
-  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒|焼酎|日本酒|グラス(?!ゴー)|ギフト券/i;
+  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒|焼酎|日本酒|グラス(?!ゴー)|ギフト券|ケース販売|ケース|\d+本セット|本セット|セット/i;
+// The Japanese multi-bottle terms (ケース販売 case sales, N本セット sets, 飲み比べセット) and グラス付き
+// (glass bundles) are rejected because their price is not one bottle's price.
 // Wine/grape and beer terms only reject when productType is not itself whisky-like
 // (cask-finished whisky legitimately mentions port, cabernet, etc.).
 const NON_WHISKY_TYPE_REJECT_RE =
@@ -56,13 +58,34 @@ function foldWidth(text: string): string {
 const ML_RE = /(\d+(?:\.\d+)?)\s*ml\b/i; // the square-ml sign is folded to "ml" by foldWidth first
 const LITER_RE = /(\d+(?:\.\d+)?)\s*(?:liters?|litres?|l)\b/i;
 
-function sizeMatch(rawText: string): { ml: number; match: string } | null {
-  const text = foldWidth(rawText);
+// A size labelled 容量 (volume), e.g. a store's spec row carried as `容量 700ml`. It wins over any
+// other size in the text. ASCII text never contains it, so ASCII sizes and keys are unchanged.
+const LABELLED_ML_RE = /容量\s*[:：]?\s*(\d+(?:\.\d+)?)\s*ml\b/i;
+const LABELLED_LITER_RE = /容量\s*[:：]?\s*(\d+(?:\.\d+)?)\s*(?:liters?|litres?|l)\b/i;
+
+function plainSizeMatch(text: string): { ml: number; match: string } | null {
   const m = ML_RE.exec(text);
   if (m) return { ml: Math.round(parseFloat(m[1])), match: m[0] };
   const l = LITER_RE.exec(text);
   if (l) return { ml: Math.round(parseFloat(l[1]) * 1000), match: l[0] };
   return null;
+}
+
+/** The size and the text matches to strip from a key: a labelled 容量 size also strips the
+ *  first other size, so `X 750ml` + `容量 700ml` keys like `X 700ml`. */
+function sizeMatch(rawText: string): { ml: number; matches: string[] } | null {
+  const text = foldWidth(rawText);
+  const lm = LABELLED_ML_RE.exec(text);
+  const ll = lm ? null : LABELLED_LITER_RE.exec(text);
+  const hit = lm ? { ml: Math.round(parseFloat(lm[1])), match: lm[0] }
+    : ll ? { ml: Math.round(parseFloat(ll[1]) * 1000), match: ll[0] }
+    : null;
+  if (hit) {
+    const other = plainSizeMatch(text.replace(hit.match, ' '));
+    return { ml: hit.ml, matches: other ? [hit.match, other.match] : [hit.match] };
+  }
+  const plain = plainSizeMatch(text);
+  return plain ? { ml: plain.ml, matches: [plain.match] } : null;
 }
 
 export function parseSizeMl(text: string): number | null {
@@ -184,7 +207,7 @@ export function bottleKey(p: { title: string; variantTitle: string | null }): st
   const batch = batchMatch(text);
 
   let stripped = text;
-  for (const m of [size?.match, proof?.match, batch?.match]) {
+  for (const m of [...(size?.matches ?? []), proof?.match, batch?.match]) {
     if (m) stripped = stripped.replace(m, ' ');
   }
 
