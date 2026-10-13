@@ -201,7 +201,7 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
     const replies = [
       () => new Response('x', { status: 500 }),
       () => new Response('', { status: 301, headers: { location: '/x' } }),
-      () => new Response('x', { status: 403 }),
+      () => new Response('x', { status: 503 }),
     ];
     for (const reply of replies) {
       await expect(loadShopifyRobots(coll, { fetchFn: makeFake(reply) })).rejects.toBeInstanceOf(RobotsRefusal);
@@ -218,6 +218,16 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
       const err = await loadShopifyRobots(coll, { fetchFn: fake }).catch((e) => e);
       expect(err, String(status)).toBeInstanceOf(CrawlStopped);
       expect(err.reason, String(status)).toBe('challenge');
+      expect(fake.calls).toHaveLength(1);
+    }
+  });
+
+  it('loadShopifyRobots: a robots.txt 403 or 429 is a block stop (http-403 / http-429), with no further request', async () => {
+    for (const [status, reason] of [[403, 'http-403'], [429, 'http-429']] as const) {
+      const fake = makeFake(() => new Response('x', { status }));
+      const err = await loadShopifyRobots(coll, { fetchFn: fake }).catch((e) => e);
+      expect(err, String(status)).toBeInstanceOf(CrawlStopped);
+      expect(err.reason, String(status)).toBe(reason);
       expect(fake.calls).toHaveLength(1);
     }
   });

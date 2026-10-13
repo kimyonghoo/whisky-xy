@@ -90,7 +90,7 @@ async function checkCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal
 
 /**
  * The store is not crawled this run because of its robots.txt: it could not be read (anything but
- * a 2xx or a 404), it disallows a path the crawl would request, or its Crawl-delay is too long.
+ * a 2xx, a 404 or a block status), it disallows a path the crawl would request, or its Crawl-delay is too long.
  */
 export class RobotsRefusal extends Error {
   reason: 'robots-unavailable' | 'crawl-delay' | 'disallowed';
@@ -103,8 +103,9 @@ export class RobotsRefusal extends Error {
 
 /**
  * Reads the store's robots.txt with the bot User-Agent (no cookie, no redirects, no retry).
- * 404 means no rules; any other non-2xx, a redirect or a network error refuses the store.
- * A `cf-mitigated: challenge` header (any status) is a block: CrawlStopped('challenge').
+ * 404 means no rules. A `cf-mitigated: challenge` header (any status), a 403 or a 429 is a block:
+ * CrawlStopped('challenge' / 'http-403' / 'http-429'). Any other non-2xx, a redirect or a network
+ * error refuses the store for this run (RobotsRefusal 'robots-unavailable').
  */
 export async function loadShopifyRobots(
   store: Pick<Store, 'domain'>,
@@ -122,6 +123,8 @@ export async function loadShopifyRobots(
     throw new RobotsRefusal('robots-unavailable', `robots.txt unavailable: ${e instanceof Error ? e.message : String(e)}`);
   }
   if (isCfChallengeHeader(res)) throw new CrawlStopped('challenge', 'robots.txt');
+  // A 403 or 429 on robots.txt is a block (as on the page fetcher); 5xx stays robots-unavailable.
+  if (res.status === 403 || res.status === 429) throw new CrawlStopped(`http-${res.status}`, 'robots.txt');
   let robots: Robots;
   if (res.status === 404) {
     robots = parseRobots('', PRODUCT_TOKEN);

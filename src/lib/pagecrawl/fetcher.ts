@@ -217,6 +217,9 @@ export async function createPoliteFetcher(opts: PoliteFetcherOptions): Promise<P
   // Header only, on any status (a Cloudflare challenge usually comes as a 403): robots.txt text
   // (e.g. a Disallow for /cdn-cgi/challenge-platform/) must never read as a challenge.
   if (isCfChallengeHeader(fetched.res)) throw stop('challenge', 'robots.txt');
+  // A 403 or 429 on robots.txt is the site refusing us: a block, like on any page. 5xx and other
+  // failures stay robots-unavailable (a glitch, retried next run).
+  if (fetched.status === 403 || fetched.status === 429) throw stop(`http-${fetched.status}`, 'robots.txt');
   if (fetched.status === 404) {
     robots = parseRobots('', PRODUCT_TOKEN);
   } else if (fetched.status >= 200 && fetched.status < 300 && fetched.body !== null) {

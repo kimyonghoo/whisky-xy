@@ -64,7 +64,7 @@ const PAGE_DUE_PER_RUN = 150;
  * Wall-clock budget of a whole run, from the start of `runCrawl`: well inside the workflow's
  * 45-minute timeout, so the run always ends with its ingest written.
  */
-export const RUN_BUDGET_MS = 40 * 60_000;
+export const RUN_BUDGET_MS = 35 * 60_000;
 /** A JP store is not started with less than this left of the run budget. */
 export const MIN_STORE_BUDGET_MS = 60_000;
 
@@ -197,7 +197,7 @@ export async function runCrawl(opts: {
   /**
    * Tests only: sleep and clock of the polite crawls (page stores and robots-checked Shopify), which
    * production always takes from the real clock (pacing, the 20-minute store deadline and the
-   * 40-minute run budget).
+   * 35-minute run budget).
    */
   politeSleep?: (ms: number) => Promise<void>;
   politeNow?: () => number;

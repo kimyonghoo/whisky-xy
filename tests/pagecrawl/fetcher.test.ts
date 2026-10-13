@@ -83,7 +83,7 @@ describe('robots.txt loading', () => {
     expect(await fetcher.get('/cart')).toBe('cart page');
   });
 
-  it.each([500, 503, 403, 401, 410, 429, 301, 302])('robots HTTP %i throws robots-unavailable and makes no further requests', async (status) => {
+  it.each([500, 503, 401, 410, 301, 302])('robots HTTP %i throws robots-unavailable and makes no further requests', async (status) => {
     const f = makeFetch({ '/robots.txt': () => new Response('', { status, headers: { location: 'https://elsewhere.example/robots.txt' } }) });
     const reason = await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }));
     expect(reason).toBe('robots-unavailable');
@@ -133,9 +133,21 @@ describe('robots.txt loading', () => {
     expect(await fetcher.get('/ok')).toBe('<html>ok</html>');
   });
 
-  it('a non-2xx robots.txt is robots-unavailable even when its body looks like a challenge', async () => {
+  it('a robots.txt 403 whose body looks like a challenge (no header) is http-403, never read as a challenge', async () => {
     const f = makeFetch({ '/robots.txt': () => new Response('cf-chl challenge-platform', { status: 403 }) });
-    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('robots-unavailable');
+    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('http-403');
+    expect(f.calls).toHaveLength(1);
+  });
+
+  it.each([[403, 'http-403'], [429, 'http-429']])('a robots.txt HTTP %i is a block (%s) and makes no further requests', async (status, reason) => {
+    const f = makeFetch({ '/robots.txt': () => new Response('', { status }), '/x': html('x') });
+    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe(reason);
+    expect(f.calls).toHaveLength(1);
+  });
+
+  it('a robots.txt 403 with an oversized body is still http-403', async () => {
+    const f = makeFetch({ '/robots.txt': () => new Response('a'.repeat(4 * 1024 * 1024), { status: 403 }) });
+    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('http-403');
     expect(f.calls).toHaveLength(1);
   });
 

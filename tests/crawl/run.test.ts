@@ -527,6 +527,25 @@ describe('runCrawl: Japanese stores', () => {
     expect((await getBlock(db, 'nemoto'))?.reason).toBe('http-429');
   });
 
+  it('a robots.txt 403 or 429 is a block on both loaders: persisted after one request, then skipped with 0 requests', async () => {
+    const n1 = net((host, path) => (path === '/robots.txt' ? 403 : shinanoyaSite({ 1: [1] })(host, path)));
+    const r1 = await runCrawl({ ...jp, stores: [shinanoya], fetchFn: n1.fetchFn });
+    expect(n1.storeCalls(shinanoya.domain)).toEqual(['/robots.txt']);
+    expect(r1.stores[0]).toMatchObject({ note: 'stopped: http-403', block: { reason: 'http-403', detected: true } });
+    expect((await getBlock(db, 'shinanoya'))?.reason).toBe('http-403');
+
+    const n2 = net(nemotoSite(429, [yamazaki]));
+    const r2 = await runCrawl({ ...jp, stores: [nemoto], fetchFn: n2.fetchFn });
+    expect(n2.storeCalls(nemoto.domain)).toEqual(['/robots.txt']);
+    expect(r2.stores[0]).toMatchObject({ note: 'stopped: http-429', block: { reason: 'http-429', detected: true } });
+    expect((await getBlock(db, 'nemoto'))?.reason).toBe('http-429');
+
+    const n3 = net((host, path) => (host === nemoto.domain ? nemotoSite(undefined, [yamazaki])(host, path) : shinanoyaSite({ 1: [1] })(host, path)));
+    const r3 = await runCrawl({ ...jp, stores: [shinanoya, nemoto], fetchFn: n3.fetchFn });
+    expect(n3.calls).not.toContainEqual(expect.stringMatching(/^(shinanoya-tokyo\.jp|nemoto-shouten\.com)/));
+    expect(r3.stores.map((s) => s.block?.detected)).toEqual([false, false]);
+  });
+
   it('a 503, robots-unavailable or errors stop is reported but not persisted: the next run crawls', async () => {
     const r1 = await runCrawl({ ...jp, stores: [shinanoya], fetchFn: net(shinanoyaSite({ 1: [1] }, () => 503)).fetchFn });
     expect(r1.stores[0]).toMatchObject({ note: 'stopped: http-503', stopReason: 'http-503' });
@@ -550,7 +569,7 @@ describe('runCrawl: Japanese stores', () => {
     expect(await getBlock(db, 'flask')).toBeNull();
   });
 
-  // ---- run-level time budget: 40 minutes from the start of runCrawl ----
+  // ---- run-level time budget: 35 minutes from the start of runCrawl ----
 
   it('a slow US phase shrinks the deadline of the JP stores that follow (min of 20 min and the run budget left)', async () => {
     const lists: Record<number, number[]> = {};
@@ -567,7 +586,7 @@ describe('runCrawl: Japanese stores', () => {
     });
     const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
       if (new URL(String(input)).hostname === flask.domain) {
-        t += 10 * 60_000; // the US phase takes 30 minutes (cart.js and two catalog pages)
+        t += 500_000; // the US phase takes 25 minutes (cart.js and two catalog pages)
         return usOk(input, init);
       }
       return n.fetchFn(input, init);
@@ -575,7 +594,7 @@ describe('runCrawl: Japanese stores', () => {
     const r = await runCrawl({
       ...jp, stores: [shinanoya, flask], fetchFn, politeSleep: async (ms) => { t += ms; }, politeNow: () => t,
     });
-    // 10 minutes left of the 40: 600 s / 10 s per response = 60 requests (not the 120 of a 20-minute deadline)
+    // 10 minutes left of the 35: 600 s / 10 s per response = 60 requests (not the 120 of a 20-minute deadline)
     expect(n.storeCalls(shinanoya.domain)).toHaveLength(60);
     expect(r.stores[0]).toMatchObject({ storeId: 'shinanoya', ok: true, note: 'stopped: deadline' });
   });
@@ -596,7 +615,7 @@ describe('runCrawl: Japanese stores', () => {
     const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
     const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
       if (new URL(String(input)).hostname === flask.domain) {
-        t += 700_000; // US phase: 35 minutes over 3 requests
+        t += 600_000; // US phase: 30 minutes over 3 requests
         return usOk(input, init);
       }
       return n.fetchFn(input, init);
@@ -615,7 +634,7 @@ describe('runCrawl: Japanese stores', () => {
     const n = net((host, path) => (host === nemoto.domain ? nemotoSite(undefined, [yamazaki])(host, path) : shinanoyaSite({ 1: [1] })(host, path)));
     const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
       if (new URL(String(input)).hostname === flask.domain) {
-        t += 790_000; // US phase: 39.5 minutes over 3 requests
+        t += 690_000; // US phase: 34.5 minutes over 3 requests
         return usOk(input, init);
       }
       return n.fetchFn(input, init);
