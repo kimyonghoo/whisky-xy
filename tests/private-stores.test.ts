@@ -37,7 +37,7 @@ const { recheckListing } = await import('@/lib/recheck');
 const { SiteFooter } = await import('@/components/SiteChrome');
 const { default: CardPage, generateMetadata } = await import('@/app/[lang]/card/[id]/page');
 
-const PUBLIC_COUNT = STORES.filter((s) => s.id !== PRIVATE_STORE.id).length;
+const PUBLIC_COUNT = STORES.filter((s) => s.publicAllowed).length;
 const WHISKY = 'Zzyzx Private Reserve Bourbon';
 
 describe('private store (crawled, never public)', () => {

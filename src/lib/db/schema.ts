@@ -87,6 +87,16 @@ export const storeLiveBudget = pgTable('store_live_budget', {
   updatedAt: ts('updated_at').notNull(),
 });
 
+/**
+ * Per-store page-crawl bookmark kept between runs: the list page the next run starts reading at
+ * (page crawls read a slice of the store's list pages per run and wrap to page 1).
+ */
+export const crawlState = pgTable('crawl_state', {
+  storeId: text('store_id').primaryKey(),
+  nextListPage: integer('next_list_page').notNull(),
+  updatedAt: ts('updated_at').notNull(),
+});
+
 export type KrLink = typeof krLinks.$inferSelect;
 export type FxRate = typeof fxRates.$inferSelect;
 export type Listing = typeof listings.$inferSelect;

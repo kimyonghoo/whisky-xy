@@ -36,6 +36,13 @@
       "when": 1791814940608,
       "tag": "0004_listing_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791890896902,
+      "tag": "0005_crawl_state",
+      "breakpoints": true
     }
   ]
 }

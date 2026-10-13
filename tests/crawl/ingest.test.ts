@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { createTestDb } from '../helpers/db';
 import { listings, priceHistory } from '@/lib/db/schema';
-import { ingestStoreCrawl, recordLiveCheck, type Observation } from '@/lib/crawl/ingest';
+import { applyPageChecks, ingestStoreCrawl, recordLiveCheck, type Observation } from '@/lib/crawl/ingest';
 
 const t0 = new Date('2026-01-01T00:00:00Z');
 const t1 = new Date('2026-01-01T06:00:00Z');
@@ -19,6 +19,29 @@ let db: Awaited<ReturnType<typeof createTestDb>>;
 beforeEach(async () => { db = await createTestDb(); });
 
 const rowFor = async (variantId: string) => (await db.select().from(listings)).find((l) => l.variantId === variantId)!;
+
+describe('applyPageChecks', () => {
+  it('gone: an available listing sells out (history + sold_out event); a sold-out one only gets checkedAt', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, true), b(3499, false)], t0);
+    const ev = await applyPageChecks(db, 'flask', [{ variantId: 'a', gone: true }, { variantId: 'b', gone: true }], t1);
+    expect(ev).toEqual([{ kind: 'sold_out', listingId: (await rowFor('a')).id, prevPriceCents: 6499, priceCents: 6499, available: false }]);
+    expect(await rowFor('a')).toMatchObject({ available: false, checkedAt: t1, updatedAt: t1, lastSeenAt: t0 });
+    expect(await rowFor('b')).toMatchObject({ available: false, checkedAt: t1, updatedAt: t0 });
+    const hist = await db.select().from(priceHistory).where(eq(priceHistory.listingId, (await rowFor('a')).id));
+    expect(hist.map((h) => [h.available, h.recordedAt])).toEqual([[true, t0], [false, t1]]);
+  });
+
+  it('other outcomes only bump checkedAt; unknown variants and other stores are untouched', async () => {
+    await ingestStoreCrawl(db, 'flask', [a(6499, true)], t0);
+    await ingestStoreCrawl(db, 'other', [{ ...a(100, true), storeId: 'other' }], t0);
+    expect(await applyPageChecks(db, 'flask', [{ variantId: 'a', gone: false }, { variantId: 'zzz', gone: true }], t1)).toEqual([]);
+    const rows = await db.select().from(listings);
+    expect(rows).toHaveLength(2);
+    expect(rows.find((l) => l.storeId === 'flask')).toMatchObject({ available: true, priceCents: 6499, checkedAt: t1, updatedAt: t0 });
+    expect(rows.find((l) => l.storeId === 'other')).toMatchObject({ checkedAt: t0, available: true });
+    expect(await db.select().from(priceHistory)).toHaveLength(2);
+  });
+});
 
 describe('ingestStoreCrawl currency', () => {
   it('persists currency and refreshes it on conflict', async () => {

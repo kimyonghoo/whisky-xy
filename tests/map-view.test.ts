@@ -5,6 +5,8 @@ import {
 import type { BottleOffers } from '@/lib/listings';
 import { STORES } from '@/lib/stores';
 
+const PUBLIC = STORES.filter((s) => s.publicAllowed);
+
 const avail = new Map([['dewinespot', 120], ['flask', 40]]);
 
 describe('parseBottleParam', () => {
@@ -20,8 +22,8 @@ describe('parseBottleParam', () => {
 describe('buildMapStores', () => {
   it('without a bottle: all public stores in config order, numbered, with links', () => {
     const s = buildMapStores(STORES, avail, null);
-    expect(s.map((x) => x.id)).toEqual(STORES.map((x) => x.id));
-    expect(s.map((x) => x.n)).toEqual(STORES.map((_, i) => i + 1));
+    expect(s.map((x) => x.id)).toEqual(PUBLIC.map((x) => x.id));
+    expect(s.map((x) => x.n)).toEqual(PUBLIC.map((_, i) => i + 1));
     const dws = s[0];
     expect(dws.inStockCount).toBe(120);
     expect(dws.storeHref).toBe('/?store=dewinespot');
@@ -55,7 +57,7 @@ describe('buildMapStores', () => {
     expect(s.slice(4).every((x) => x.dimmed && x.offer?.status === 'none')).toBe(true);
     // stores that don't list it keep config order
     expect(s.slice(4).map((x) => x.id)).toEqual(
-      STORES.map((x) => x.id).filter((id) => !['dewinespot', 'winechateau', 'coolvines', 'liquorcave'].includes(id)),
+      PUBLIC.map((x) => x.id).filter((id) => !['dewinespot', 'winechateau', 'coolvines', 'liquorcave'].includes(id)),
     );
   });
 });

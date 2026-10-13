@@ -33,7 +33,7 @@ export interface Store {
   /**
    * The crawled source lists only whisky (e.g. the store's whisky category), so a title needs no
    * whisky word to count; reject terms (glasses, liqueurs, wine, case sales/sets...) still apply.
-   * Read only by the page adapter (crawlPageStore) for now; the Shopify path ignores it until Task 6.
+   * Read by both the page adapter (crawlPageStore) and the Shopify mapper (toObservations).
    */
   whiskyOnlyCatalog?: boolean;
 }
@@ -99,6 +99,43 @@ export const STORES: Store[] = [
     address: '240 Grand Ave, South San Francisco, CA 94080', lat: 37.6551751, lng: -122.409552,
     phone: '650-741-6430', taxRate: 0.09875, stockReliability: 'high', onlineOnly: true, publicAllowed: true,
     currency: 'USD', pricesIncludeTax: false, adapter: 'shopify', crawlEnabled: true,
+  },
+  // ---- Japan, phase 1: crawled privately (publicAllowed false; tokyo/sapporo stay 'soon') ----
+  {
+    // 北海道根本商店 (有限会社一山根本商店). Shop facts: the 真駒内店 根本商店 block on https://nemoto-shouten.com/
+    // (fetched 2026-10-13). Online stock is shared with this shop (legal notice: 商品は実店舗での販売も行っております).
+    // Terms checked 2026-10-13. Verdict: crawlEnabled true.
+    // - https://nemoto-shouten.com/policies/terms-of-service (利用規約): e-mail domain and order-form
+    //   instructions only; no clause on automated access, scraping or reproduction.
+    // - https://nemoto-shouten.com/policies/legal-notice (特定商取引法に基づく表記): seller, address, prices
+    //   ("販売価格は、表示された金額（表示価格/消費税込）と致します。"), payment, returns; no such clause either.
+    // - robots.txt (200): allows the whisky collection's products.json pages and /meta.json; disallows
+    //   /cart.js ("AJAX surfaces"), so the robots-checked crawl reads the currency from /meta.json instead.
+    // lat/lng PROVISIONAL: the Nominatim lookup of 2026-10-13 ("北海道札幌市南区真駒内本町3丁目5-16") returned
+    // no result; these are an approximate 真駒内本町 position to be replaced by a geocoded one before launch.
+    id: 'nemoto', name: '北海道根本商店', domain: 'nemoto-shouten.com', city: 'sapporo',
+    address: '北海道札幌市南区真駒内本町3丁目5-16', lat: 42.9935, lng: 141.356,
+    phone: '011-582-2994', taxRate: 0, stockReliability: 'high', onlineOnly: false, publicAllowed: false,
+    currency: 'JPY', pricesIncludeTax: true, adapter: 'shopify', crawlEnabled: true,
+    // 749 whiskies on 2026-10-12: the whisky collection completes in a few pages.
+    catalogPath: '/collections/whisky/products.json', whiskyOnlyCatalog: true,
+  },
+  {
+    // 信濃屋 NET SHOP (shinanoya-tokyo.jp, MakeShop; 株式会社信濃屋食品). The pin is 銀座店: address and phone
+    // from https://shinanoya.co.jp/shop/ (fetched 2026-10-13). Prices and stock are the NET SHOP's, not
+    // 銀座店's, hence stockReliability 'low'.
+    // Terms checked 2026-10-13 (Task 5): no 利用規約 page on shinanoya-tokyo.jp (footer/guide link none);
+    // /view/guide and /view/contract (特定商取引法) have no clause on automated access; robots.txt is 404
+    // (no rules). Only restriction (/view/guide): "当店画像・コメント等を無断で転載する行為は弊社知的財産権への
+    // 権利侵害に抵触する場合がございます" -> facts only, imageUrl null, no descriptions. Verdict: crawlEnabled true.
+    // Open item: the corporate site's footer links a 利用規約 (https://shinanoya.co.jp/support/terms.html),
+    // not yet read (see the Task 6 report).
+    // lat/lng PROVISIONAL: the Nominatim lookup of 2026-10-13 ("東京都中央区銀座8丁目6-22") returned no result;
+    // these are an approximate 銀座8丁目 position to be replaced by a geocoded one before launch.
+    id: 'shinanoya', name: '信濃屋', domain: 'shinanoya-tokyo.jp', city: 'tokyo',
+    address: '東京都中央区銀座8-6-22 銀座ピアースビル1F', lat: 35.6685, lng: 139.7608,
+    phone: '03-3571-3315', taxRate: 0, stockReliability: 'low', onlineOnly: false, publicAllowed: false,
+    currency: 'JPY', pricesIncludeTax: true, adapter: 'page', crawlEnabled: true, whiskyOnlyCatalog: true,
   },
 ];
 

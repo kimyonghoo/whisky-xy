@@ -14,7 +14,7 @@ describe('geo', () => {
   });
   it('assigns every public store to a live city; LA holds the former CA stores', () => {
     expect(storesIn('la').map((s) => s.id)).toContain('bittersandbottles');
-    for (const s of STORES) expect(getCity(s.city)?.status).toBe('live');
+    for (const s of STORES.filter((x) => x.publicAllowed)) expect(getCity(s.city)?.status).toBe('live');
     expect(storesIn('tokyo')).toEqual([]);
   });
   describe('resolveCity', () => {

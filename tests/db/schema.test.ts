@@ -50,4 +50,24 @@ describe('schema', () => {
     const res = await pg.query<{ currency: string }>('SELECT currency FROM listings');
     expect(res.rows).toEqual([{ currency: 'USD' }]);
   });
+
+  it('migration 0005 adds crawl_state (one row per store) and keeps existing listings', async () => {
+    const { PGlite } = await import('@electric-sql/pglite');
+    const pg = new PGlite();
+    const sqlOf = (name: string) => readFileSync(join(process.cwd(), 'drizzle', name), 'utf8');
+    const run = async (name: string) => {
+      for (const stmt of sqlOf(name).split('--> statement-breakpoint')) if (stmt.trim()) await pg.exec(stmt);
+    };
+    for (const f of ['0000_condemned_charles_xavier.sql', '0001_steep_morgan_stark.sql', '0002_store_live_budget.sql', '0003_watch_cities.sql', '0004_listing_currency.sql']) {
+      await run(f);
+    }
+    await pg.exec(`INSERT INTO listings (store_id, product_id, variant_id, handle, title, vendor, product_type, url, price_cents,
+      available, bottle_key, search_text, first_seen_at, last_seen_at, checked_at, updated_at)
+      VALUES ('flask', '1', '11', 'h', 'T', 'V', 'Whiskey', 'https://x/p/h', 6499, true, 'k', 't', now(), now(), now(), now())`);
+    await run('0005_crawl_state.sql');
+    await pg.exec(`INSERT INTO crawl_state (store_id, next_list_page, updated_at) VALUES ('shinanoya', 21, now())`);
+    await expect(pg.exec(`INSERT INTO crawl_state (store_id, next_list_page, updated_at) VALUES ('shinanoya', 1, now())`)).rejects.toThrow();
+    expect((await pg.query('SELECT store_id, next_list_page FROM crawl_state')).rows).toEqual([{ store_id: 'shinanoya', next_list_page: 21 }]);
+    expect((await pg.query('SELECT count(*)::int AS n FROM listings')).rows).toEqual([{ n: 1 }]);
+  });
 });

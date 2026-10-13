@@ -1,4 +1,4 @@
-import { eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '@/lib/db/client';
 import { listings, priceHistory, type Listing } from '@/lib/db/schema';
 import type { Observation } from './map';
@@ -138,6 +138,53 @@ export async function ingestStoreCrawl(
     for (const part of chunked(history)) {
       await tx.insert(priceHistory).values(part);
     }
+    return events;
+  });
+}
+
+/**
+ * Applies a page crawl's non-observed outcomes to that store's existing listings (observed pages go
+ * through `ingestStoreCrawl`). `gone` means the listing's own page answered 404/410, so an available
+ * listing is marked sold out (history row and a `sold_out` event). Every other outcome only bumps
+ * `checkedAt`, which moves the listing to the back of the re-check queue. Variants with no listing
+ * are ignored: nothing is stored for a page that never produced an observation.
+ */
+export async function applyPageChecks(
+  db: Db,
+  storeId: string,
+  checks: { variantId: string; gone: boolean }[],
+  now: Date,
+): Promise<ChangeEvent[]> {
+  if (checks.length === 0) return [];
+  const goneVariants = new Set(checks.filter((c) => c.gone).map((c) => c.variantId));
+  const variants = [...new Set(checks.map((c) => c.variantId))];
+
+  return db.transaction(async (tx) => {
+    const rows: Listing[] = [];
+    for (const part of chunked(variants)) {
+      rows.push(
+        ...(await tx.select().from(listings).where(and(eq(listings.storeId, storeId), inArray(listings.variantId, part)))),
+      );
+    }
+    const events: ChangeEvent[] = [];
+    const soldOutIds: number[] = [];
+    const touchIds: number[] = [];
+    for (const r of rows) {
+      if (goneVariants.has(r.variantId) && r.available) {
+        soldOutIds.push(r.id);
+        events.push({ kind: 'sold_out', listingId: r.id, prevPriceCents: r.priceCents, priceCents: r.priceCents, available: false });
+      } else {
+        touchIds.push(r.id);
+      }
+    }
+    for (const part of chunked(soldOutIds)) {
+      await tx.update(listings).set({ available: false, checkedAt: now, updatedAt: now }).where(inArray(listings.id, part));
+    }
+    for (const part of chunked(touchIds)) {
+      await tx.update(listings).set({ checkedAt: now }).where(inArray(listings.id, part));
+    }
+    const history = events.map((e) => ({ listingId: e.listingId, priceCents: e.priceCents, available: false, recordedAt: now }));
+    for (const part of chunked(history)) await tx.insert(priceHistory).values(part);
     return events;
   });
 }
