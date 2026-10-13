@@ -1,6 +1,8 @@
 import type { Currency, Store } from '@/lib/stores';
 import { liveFetch, storeFetch } from '@/lib/shopify/http';
 import { botUserAgent } from '@/lib/bot-ua';
+import { parseRobots, type Robots } from '@/lib/pagecrawl/robots';
+import { MAX_CRAWL_DELAY_MS, PRODUCT_TOKEN } from '@/lib/pagecrawl/fetcher';
 
 export type FetchFn = typeof fetch;
 
@@ -66,6 +68,61 @@ async function checkCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal
   if (cart.currency !== store.currency) throw new CurrencyMismatchError(store.currency, String(cart.currency));
 }
 
+/**
+ * The store is not crawled this run because of its robots.txt: it could not be read (anything but
+ * a 2xx or a 404), it disallows a path the crawl would request, or its Crawl-delay is too long.
+ */
+export class RobotsRefusal extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RobotsRefusal';
+  }
+}
+
+/**
+ * Reads the store's robots.txt with the bot User-Agent (no cookie, no redirects, no retry).
+ * 404 means no rules; any other non-2xx, a redirect or a network error refuses the store.
+ */
+export async function loadShopifyRobots(
+  store: Pick<Store, 'domain'>,
+  opts: { fetchFn?: FetchFn; timeoutMs?: number } = {},
+): Promise<Robots> {
+  const fetchFn = opts.fetchFn ?? liveFetch;
+  let res: Response;
+  try {
+    res = await fetchFn(`https://${store.domain}/robots.txt`, {
+      headers: { 'User-Agent': botUserAgent(), Accept: 'text/plain,*/*' },
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 20000),
+      redirect: 'manual',
+    });
+  } catch (e) {
+    throw new RobotsRefusal(`robots.txt unavailable: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  let robots: Robots;
+  if (res.status === 404) {
+    robots = parseRobots('', PRODUCT_TOKEN);
+  } else if (res.status >= 200 && res.status < 300 && res.type !== 'opaqueredirect') {
+    robots = parseRobots(await res.text(), PRODUCT_TOKEN);
+  } else {
+    throw new RobotsRefusal(`robots.txt unavailable: HTTP ${res.status || res.type}`);
+  }
+  if ((robots.crawlDelayMs ?? 0) > MAX_CRAWL_DELAY_MS) {
+    throw new RobotsRefusal(`robots.txt crawl-delay ${robots.crawlDelayMs} ms exceeds ${MAX_CRAWL_DELAY_MS} ms`);
+  }
+  return robots;
+}
+
+/**
+ * Currency check for robots-checked crawls. Shopify's robots.txt disallows `/cart.js` (an "AJAX
+ * surface"), so these read the shop's currency from `/meta.json` instead.
+ */
+async function checkMetaCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal): Promise<void> {
+  const res = await storeRequest(store, '/meta.json', fetchFn, signal);
+  if (!res.ok) throw new Error(`${store.domain} /meta.json failed: HTTP ${res.status}`);
+  const meta = await readJson<{ currency?: string }>(store, '/meta.json', res);
+  if (meta.currency !== store.currency) throw new CurrencyMismatchError(store.currency, String(meta.currency));
+}
+
 /** Only `/products.json` or `/collections/<handle>/products.json`: never an arbitrary path. */
 const CATALOG_PATH_RE = /^\/(?:collections\/[a-z0-9][a-z0-9-]*\/)?products\.json$/;
 
@@ -75,22 +132,46 @@ export function catalogPathOf(store: Pick<Store, 'domain' | 'catalogPath'>): str
   return p;
 }
 
+/**
+ * Reads the catalog page by page. With `robots` (the robots-checked crawl used for non-USD stores),
+ * every path the crawl could request (`/meta.json` and catalog pages 1..maxPages, with their exact
+ * query) is checked before the first request, the currency comes from `/meta.json`, and a
+ * Crawl-delay above `delayMs` sets the pacing. Without it, behaviour is unchanged (`/cart.js`).
+ */
 export async function fetchCatalog(
   store: Store,
-  opts: { fetchFn?: FetchFn; delayMs?: number; maxPages?: number; timeoutMs?: number } = {},
+  opts: {
+    fetchFn?: FetchFn;
+    delayMs?: number;
+    maxPages?: number;
+    timeoutMs?: number;
+    robots?: Robots;
+    /** Tests only. */
+    sleep?: (ms: number) => Promise<void>;
+  } = {},
 ): Promise<{ products: ShopifyProduct[]; complete: boolean }> {
   const fetchFn = opts.fetchFn ?? storeFetch;
-  const delayMs = opts.delayMs ?? 1100;
   const maxPages = opts.maxPages ?? 100;
   const timeoutMs = opts.timeoutMs ?? 20000;
-
-  await checkCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
+  const wait = opts.sleep ?? sleep;
+  const { robots } = opts;
+  const delayMs = Math.max(opts.delayMs ?? 1100, robots?.crawlDelayMs ?? 0);
 
   const base = catalogPathOf(store);
+  const pagePath = (page: number) => `${base}?limit=250&page=${page}`;
+  if (robots) {
+    const paths = ['/meta.json', ...Array.from({ length: maxPages }, (_, i) => pagePath(i + 1))];
+    const refused = paths.find((p) => !robots.isAllowed(p));
+    if (refused !== undefined) throw new RobotsRefusal(`robots.txt disallows ${refused}`);
+    await checkMetaCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
+  } else {
+    await checkCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
+  }
+
   const products: ShopifyProduct[] = [];
   for (let page = 1; page <= maxPages; page++) {
-    await sleep(delayMs);
-    const path = `${base}?limit=250&page=${page}`;
+    await wait(delayMs);
+    const path = pagePath(page);
     const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs));
     if (!res.ok) throw new Error(`${store.domain} products page ${page} failed: HTTP ${res.status}`);
     const body = await readJson<{ products?: ShopifyProduct[] }>(store, path, res);

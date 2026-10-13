@@ -53,10 +53,11 @@ const MAX_CONSECUTIVE_ERRORS = 3;
 const MIN_ALLOWED_DELAY_MS = 3000;
 const MAX_ALLOWED_REQUESTS = 300;
 /** A Crawl-delay above this means the site does not want to be crawled at a useful rate: skip the run. */
-const MAX_CRAWL_DELAY_MS = 60_000;
+export const MAX_CRAWL_DELAY_MS = 60_000;
 /** setTimeout clamps anything above this to 1 ms. */
 const MAX_TIMER_MS = 2 ** 31 - 1;
-const PRODUCT_TOKEN = 'WhiskyPortalBot';
+/** Our robots.txt product token (the User-Agent without its version). */
+export const PRODUCT_TOKEN = 'WhiskyPortalBot';
 
 async function realSleep(ms: number): Promise<void> {
   let left = ms;

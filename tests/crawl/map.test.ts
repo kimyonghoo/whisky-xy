@@ -22,6 +22,18 @@ describe('toObservations currency', () => {
     const obs = toObservations(jp, { ...p, variants: [{ id: 21, title: '700ml', price: '27500', available: true }] });
     expect(obs[0]).toMatchObject({ currency: 'JPY', priceCents: 27500 });
   });
+  it('keeps an untyped Japanese title only for a whisky-only catalog store', () => {
+    const yamazaki = { ...p, title: '山崎 12年 700ml', product_type: '', tags: [], variants: [{ id: 31, title: 'Default Title', price: '27500', available: true }] };
+    expect(toObservations({ ...jp, whiskyOnlyCatalog: true }, yamazaki)).toHaveLength(1);
+    expect(toObservations({ ...jp, whiskyOnlyCatalog: false }, yamazaki)).toEqual([]);
+    expect(toObservations(jp, yamazaki)).toEqual([]);
+    // reject terms still apply to a whisky-only catalog
+    expect(toObservations({ ...jp, whiskyOnlyCatalog: true }, { ...yamazaki, title: '山崎 飲み比べセット' })).toEqual([]);
+  });
+  it('a JPY store never stores an image url (facts only)', () => {
+    const obs = toObservations(jp, { ...p, variants: [{ id: 21, title: '700ml', price: '27500', available: true }] });
+    expect(obs[0].imageUrl).toBeNull();
+  });
   it('skips a JPY variant with a fractional price', () => {
     expect(toObservations(jp, { ...p, variants: [{ id: 22, title: '700ml', price: '27500.50', available: true }] })).toEqual([]);
   });

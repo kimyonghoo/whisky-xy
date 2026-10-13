@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { fetchCatalog, fetchLiveProduct, CurrencyMismatchError, storeHeaders } from '@/lib/shopify/client';
+import { fetchCatalog, fetchLiveProduct, CurrencyMismatchError, storeHeaders, loadShopifyRobots, RobotsRefusal } from '@/lib/shopify/client';
+import { parseRobots } from '@/lib/pagecrawl/robots';
 import type { Store } from '@/lib/stores';
 
 const store = { id: 'dewinespot', name: 'De Wine Spot', domain: 'dewinespot.co', city: 'brooklyn', currency: 'USD' } as Store;
@@ -163,5 +164,92 @@ describe('hardening', () => {
       url.endsWith('/cart.js') ? usd() : json({ variants: [{ id: 1, price: '175.00', available: true }] }),
     );
     await expect(fetchLiveProduct(store, 'x', { fetchFn: fake })).rejects.toThrow(/price/);
+  });
+});
+
+describe('robots-checked catalog crawl (non-USD stores)', () => {
+  const JP = 'https://jp.example';
+  const coll = { ...jpStore, catalogPath: '/collections/whisky/products.json' } as Store;
+  const meta = (currency = 'JPY') => json({ currency });
+  const catalogFake = () =>
+    makeFake((url) => {
+      if (url.endsWith('/meta.json')) return meta();
+      if (url.endsWith('page=1')) return json({ products: [prod(1)] });
+      return json({ products: [] });
+    });
+
+  it('loadShopifyRobots: fetches /robots.txt once with the bot UA and no cookie, and parses it', async () => {
+    const fake = makeFake(() => new Response('User-agent: *\nDisallow: /cart.js\nCrawl-delay: 2\n', { status: 200 }));
+    const robots = await loadShopifyRobots(coll, { fetchFn: fake });
+    expect(fake.calls.map((c) => c.url)).toEqual([`${JP}/robots.txt`]);
+    expect(fake.calls[0].headers['User-Agent']).toMatch(/^WhiskyPortalBot\/0\.1/);
+    expect(fake.calls[0].headers.Cookie).toBeUndefined();
+    expect(robots.isAllowed('/cart.js')).toBe(false);
+    expect(robots.isAllowed('/collections/whisky/products.json?limit=250&page=1')).toBe(true);
+    expect(robots.crawlDelayMs).toBe(2000);
+  });
+
+  it('loadShopifyRobots: 404 means no rules', async () => {
+    const robots = await loadShopifyRobots(coll, { fetchFn: makeFake(() => new Response('nope', { status: 404 })) });
+    expect(robots.isAllowed('/cart.js')).toBe(true);
+  });
+
+  it('loadShopifyRobots: any other failure refuses the store', async () => {
+    const replies = [
+      () => new Response('x', { status: 500 }),
+      () => new Response('', { status: 301, headers: { location: '/x' } }),
+      () => new Response('x', { status: 403 }),
+    ];
+    for (const reply of replies) {
+      await expect(loadShopifyRobots(coll, { fetchFn: makeFake(reply) })).rejects.toBeInstanceOf(RobotsRefusal);
+    }
+    const throwing = (async () => { throw new Error('ECONNRESET'); }) as unknown as typeof fetch;
+    await expect(loadShopifyRobots(coll, { fetchFn: throwing })).rejects.toBeInstanceOf(RobotsRefusal);
+    const slow = makeFake(() => new Response('User-agent: *\nCrawl-delay: 120\n', { status: 200 }));
+    await expect(loadShopifyRobots(coll, { fetchFn: slow })).rejects.toThrow(/crawl-delay/i);
+  });
+
+  it('checks the currency through /meta.json (Shopify robots disallow /cart.js) and never requests /cart.js', async () => {
+    const robots = parseRobots('User-agent: *\nDisallow: /cart.js\n', 'WhiskyPortalBot');
+    const fake = catalogFake();
+    const { products, complete } = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots });
+    expect(products).toHaveLength(1);
+    expect(complete).toBe(true);
+    expect(fake.calls.map((c) => c.url)).toEqual([
+      `${JP}/meta.json`,
+      `${JP}/collections/whisky/products.json?limit=250&page=1`,
+      `${JP}/collections/whisky/products.json?limit=250&page=2`,
+    ]);
+  });
+
+  it('a /meta.json currency other than the store currency aborts', async () => {
+    const robots = parseRobots('', 'WhiskyPortalBot');
+    const fake = makeFake((url) => (url.endsWith('/meta.json') ? meta('USD') : json({ products: [] })));
+    await expect(fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots })).rejects.toBeInstanceOf(CurrencyMismatchError);
+    expect(fake.calls).toHaveLength(1);
+  });
+
+  it('refuses before any request when robots disallows /meta.json or any catalog page it could request', async () => {
+    for (const rules of ['Disallow: /meta.json', 'Disallow: /collections/whisky/', 'Disallow: /*limit=250', 'Disallow: /*page=7$']) {
+      const fake = catalogFake();
+      const robots = parseRobots(`User-agent: *\n${rules}\n`, 'WhiskyPortalBot');
+      const err = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots, maxPages: 10 }).catch((e) => e);
+      expect(err, rules).toBeInstanceOf(RobotsRefusal);
+      expect(err.message, rules).toMatch(/robots\.txt disallows/);
+      expect(fake.calls, rules).toHaveLength(0);
+    }
+  });
+
+  it('honours a Crawl-delay larger than delayMs between catalog requests, and keeps delayMs otherwise', async () => {
+    const waits = async (rules: string) => {
+      const slept: number[] = [];
+      await fetchCatalog(coll, {
+        fetchFn: catalogFake(), delayMs: 1100, robots: parseRobots(`User-agent: *\n${rules}\n`, 'WhiskyPortalBot'),
+        sleep: async (ms) => { slept.push(ms); },
+      });
+      return slept;
+    };
+    expect(await waits('Crawl-delay: 5')).toEqual([5000, 5000]);
+    expect(await waits('Crawl-delay: 0.5')).toEqual([1100, 1100]);
   });
 });

@@ -33,7 +33,11 @@ function toTagList(tags: string[] | string | null | undefined): string[] {
 
 export function toObservations(store: Store, p: ShopifyProduct): Observation[] {
   const tags = toTagList(p.tags);
-  if (!isWhiskyProduct({ title: p.title, productType: p.product_type, tags })) return [];
+  if (!isWhiskyProduct({ title: p.title, productType: p.product_type, tags }, { whiskyOnlyCatalog: store.whiskyOnlyCatalog })) {
+    return [];
+  }
+  // Facts only for Japanese stores (spec §3.4): product photos are the store's works, so no image url.
+  const keepImage = store.currency === 'USD';
 
   const out: Observation[] = [];
   for (const v of p.variants) {
@@ -56,7 +60,7 @@ export function toObservations(store: Store, p: ShopifyProduct): Observation[] {
       variantTitle,
       vendor: p.vendor,
       productType: p.product_type,
-      imageUrl: p.images[0]?.src ?? null,
+      imageUrl: keepImage ? (p.images[0]?.src ?? null) : null,
       url: `https://${store.domain}/products/${p.handle}`,
       priceCents,
       currency: store.currency,
