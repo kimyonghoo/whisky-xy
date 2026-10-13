@@ -30,6 +30,11 @@ export interface Store {
    * The sweep then means "no longer in this collection" (marked sold out, never deleted).
    */
   catalogPath?: string;
+  /**
+   * The crawled source lists only whisky (e.g. the store's whisky category), so a title needs no
+   * whisky word to count; reject terms (glasses, liqueurs, wine...) still apply.
+   */
+  whiskyOnlyCatalog?: boolean;
 }
 
 

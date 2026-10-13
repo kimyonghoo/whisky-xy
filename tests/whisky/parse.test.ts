@@ -169,6 +169,18 @@ describe('Japanese text', () => {
     expect(isWhiskyProduct({ title: 'ウイスキー ギフト券', productType: '', tags: [] })).toBe(false);
   });
 
+  it('isWhiskyProduct with whiskyOnlyCatalog drops the whisky-word requirement but keeps every reject term', () => {
+    const plain = { title: '山崎 12年 700ml', productType: '', tags: [] };
+    expect(isWhiskyProduct(plain, { whiskyOnlyCatalog: true })).toBe(true);
+    expect(isWhiskyProduct(plain)).toBe(false);
+    expect(isWhiskyProduct(plain, { whiskyOnlyCatalog: false })).toBe(false);
+    const glass = { title: 'ウイスキーグラス', productType: '', tags: [] };
+    expect(isWhiskyProduct(glass, { whiskyOnlyCatalog: true })).toBe(false);
+    expect(isWhiskyProduct(glass)).toBe(false);
+    expect(isWhiskyProduct({ title: '梅酒 700ml', productType: '', tags: [] }, { whiskyOnlyCatalog: true })).toBe(false);
+    expect(isWhiskyProduct({ title: 'Some Cabernet Sauvignon 750ml', productType: '', tags: [] }, { whiskyOnlyCatalog: true })).toBe(false);
+  });
+
   it('normalizeText keeps Han, kana and the long-vowel mark', () => {
     expect(normalizeText('山崎 12年')).toBe('山崎 12年');
     expect(normalizeText('ラフロイグ')).toBe('ラフロイグ');

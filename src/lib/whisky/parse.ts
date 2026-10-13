@@ -15,7 +15,15 @@ function foldForMatch(text: string): string {
   return text.normalize('NFKC');
 }
 
-export function isWhiskyProduct(p: { title: string; productType: string; tags: string[] }): boolean {
+/**
+ * Is this a whisky bottle? `whiskyOnlyCatalog` is for sources that only list whisky (a store's
+ * whisky category): the positive whisky-word requirement is dropped, since titles there often
+ * carry no such word (`山崎 12年`), but every reject term still applies (glasses, liqueurs, wine...).
+ */
+export function isWhiskyProduct(
+  p: { title: string; productType: string; tags: string[] },
+  opts?: { whiskyOnlyCatalog?: boolean },
+): boolean {
   const rawTitle = p.title;
   const rawType = p.productType;
   const rawAll = `${p.title} ${p.productType} ${p.tags.join(' ')}`;
@@ -29,6 +37,7 @@ export function isWhiskyProduct(p: { title: string; productType: string; tags: s
   if (any(ALWAYS_REJECT_RE, rawTitle, rawType, title, type)) return false;
   const typeIsWhisky = any(WHISKY_RE, rawType, type);
   if (!typeIsWhisky && any(NON_WHISKY_TYPE_REJECT_RE, rawTitle, rawType, title, type)) return false;
+  if (opts?.whiskyOnlyCatalog === true) return true;
   return any(WHISKY_RE, rawAll, all);
 }
 
