@@ -71,6 +71,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 4. 배포된 사이트에서 `/`, `/map`, `/compare`가 열리는지 확인합니다.
 5. 한국 가격 비교를 쓰려면 `/link-kr`에서 `ADMIN_KEY`를 입력하고, 미국 병과 데일리샷 상품을 연결합니다. 연결 후에는 크롤링할 때마다 한국 최저가가 갱신됩니다.
 
+**배포 전에 마이그레이션 먼저:** Vercel은 main에 merge되는 즉시 배포하지만, 배포 DB의 마이그레이션은 crawl 워크플로가 실행될 때(최대 6시간 뒤)에야 적용됩니다. 그래서 DB 컬럼을 추가하는 변경(`drizzle/`에 새 마이그레이션이 있는 경우)은 그 사이에 새 코드가 없는 컬럼을 읽어 화면이 500 오류를 낼 수 있습니다. 이런 변경은 둘 중 하나를 꼭 하세요.
+
+- main에 merge하기 **전에** 배포 DB에 직접 적용합니다: 배포용 `DATABASE_URL`(1단계 문자열)을 설정하고 `npm run db:migrate`를 실행합니다.
+- 또는 merge **직후** **Actions → crawl → Run workflow**로 워크플로를 바로 실행합니다(첫 단계가 `db:migrate`입니다).
+
 ## 6. 공개 출시 전: 지도 타일 교체
 
 `NEXT_PUBLIC_MAP_TILE_URL`을 비우면 OpenStreetMap 공개 타일을 씁니다. 이 타일은 **개발과 소규모 사용만 허용**하며, 상용 서비스나 많은 트래픽에는 쓸 수 없습니다(OSM 타일 사용 정책). 사이트를 일반에 공개하거나 상용으로 운영하기 전에:
@@ -100,6 +105,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## 문제가 생기면
 
 - **crawl이 실패:** Actions 로그에서 어느 단계인지 확인합니다. `db:migrate` 실패는 보통 `DATABASE_URL`(비밀번호, 포트 6543) 문제입니다.
+- **crawl이 `Store blocked`로 실패:** 일본 매장이 403, 429나 봇 확인(challenge)으로 응답해 크롤링을 막은 것입니다. 이후 실행은 그 매장에 요청하지 않고 경고만 남깁니다. 매장 사이트와 이용약관을 직접 확인하고, 다시 크롤링해도 괜찮을 때만 배포용 `DATABASE_URL`을 설정한 뒤 `npm run crawl:unblock -- --store <id>`로 해제합니다.
 - **텔레그램 알림이 안 옴:** 봇에 먼저 메시지를 보냈는지, `TELEGRAM_CHAT_IDS`가 맞는지 확인합니다.
 - **사이트에 데이터가 없음:** crawl 워크플로를 한 번 수동 실행했는지, Vercel의 `DATABASE_URL`이 Actions와 같은 값인지 확인합니다.
 - **지도가 회색/빈 타일:** 타일 URL과 키, 허용 도메인을 확인하고 재배포했는지 확인합니다.
