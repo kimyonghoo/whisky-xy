@@ -4,7 +4,7 @@ export interface Robots {
   crawlDelayMs: number | null;
 }
 
-interface Rule { allow: boolean; regex: RegExp; length: number }
+interface Rule { allow: boolean; strict: RegExp; loose: RegExp; length: number }
 interface Group { agents: string[]; rules: { allow: boolean; pattern: string }[]; delays: number[] }
 
 /** Characters kept as-is in the canonical form: unreserved, plus the structural `/ ? = &`. */
@@ -49,14 +49,51 @@ function canonical(s: string, keepStar: boolean): string {
   return out;
 }
 
-function compile(pattern: string): { regex: RegExp; length: number } {
-  const anchored = pattern.endsWith('$');
-  const body = canonical(anchored ? pattern.slice(0, -1) : pattern, true);
+/**
+ * The loose form, applied to both pattern and path: `%2F %3F %3D %26` decoded to `/ ? = &` and ASCII
+ * letters lower-cased. Applied after `canonical`, so escapes are already upper-case hex.
+ */
+function loosen(canon: string): string {
+  return canon
+    .replace(/%2F/g, '/')
+    .replace(/%3F/g, '?')
+    .replace(/%3D/g, '=')
+    .replace(/%26/g, '&')
+    .toLowerCase();
+}
+
+function toRegex(body: string, anchored: boolean): RegExp {
   const source = body
     .split('*')
     .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
     .join('.*');
-  return { regex: new RegExp(`^${source}${anchored ? '$' : ''}`), length: body.length + (anchored ? 1 : 0) };
+  return new RegExp(`^${source}${anchored ? '$' : ''}`);
+}
+
+/** RFC 9309 rule length in octets of the pattern as written: `%XX` is 1, a raw character is its UTF-8 length, `*` and `$` are 1. */
+function octetLength(pattern: string): number {
+  let n = 0;
+  for (let i = 0; i < pattern.length; ) {
+    if (pattern[i] === '%' && /^[0-9a-fA-F]{2}$/.test(pattern.slice(i + 1, i + 3))) {
+      n += 1;
+      i += 3;
+      continue;
+    }
+    const ch = String.fromCodePoint(pattern.codePointAt(i)!);
+    n += Buffer.byteLength(ch, 'utf8');
+    i += ch.length;
+  }
+  return n;
+}
+
+function compile(pattern: string): { strict: RegExp; loose: RegExp; length: number } {
+  const anchored = pattern.endsWith('$');
+  const body = canonical(anchored ? pattern.slice(0, -1) : pattern, true);
+  return {
+    strict: toRegex(body, anchored),
+    loose: toRegex(loosen(body), anchored),
+    length: octetLength(pattern),
+  };
 }
 
 /** The product token of a User-Agent: `WhiskyPortalBot/0.1 (+https://x)` becomes `whiskyportalbot`. */
@@ -102,8 +139,14 @@ function parseGroups(text: string): Group[] {
 
 /**
  * Parse robots.txt for one crawler. The group naming our product token wins; otherwise the `*` group
- * applies (groups for the same agent are merged). Longest matching Allow/Disallow wins, Allow on a tie;
- * `*` and a trailing `$` are supported.
+ * applies (groups for the same agent are merged). Longest matching Allow/Disallow wins (length in
+ * decoded octets), Allow on a tie; `*` and a trailing `$` are supported.
+ *
+ * Deliberately stricter than RFC 9309: a path is allowed only if it is allowed under BOTH the strict
+ * canonical percent-encoding match AND a loose match in which `%2F %3F %3D %26` equal `/ ? = &` and
+ * ASCII case is ignored. Each form does its own longest-match. The cost is that a few paths that
+ * RFC 9309 would allow are refused; the benefit is that we never fetch a resource the owner may have
+ * disallowed through an encoding or case variant.
  */
 export function parseRobots(text: string, userAgent: string): Robots {
   const groups = parseGroups(text);
@@ -118,13 +161,17 @@ export function parseRobots(text: string, userAgent: string): Robots {
 
   return {
     isAllowed(path: string): boolean {
-      const p = canonical(path, false);
-      let best: Rule | null = null;
-      for (const rule of rules) {
-        if (!rule.regex.test(p)) continue;
-        if (!best || rule.length > best.length || (rule.length === best.length && rule.allow && !best.allow)) best = rule;
-      }
-      return best ? best.allow : true;
+      const strict = canonical(path, false);
+      const loose = loosen(strict);
+      const allowedBy = (p: string, form: 'strict' | 'loose'): boolean => {
+        let best: Rule | null = null;
+        for (const rule of rules) {
+          if (!rule[form].test(p)) continue;
+          if (!best || rule.length > best.length || (rule.length === best.length && rule.allow && !best.allow)) best = rule;
+        }
+        return best ? best.allow : true;
+      };
+      return allowedBy(strict, 'strict') && allowedBy(loose, 'loose');
     },
     crawlDelayMs: delays.length > 0 ? Math.max(...delays) : null,
   };

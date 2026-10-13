@@ -543,6 +543,32 @@ describe('the path on the wire is the path robots was matched against', () => {
     expect(calls).toHaveLength(1);
   });
 
+  it.each([
+    ['/cart/', '/cart%2F'],
+    ['/a=b', '/a%3Db'],
+    ['/x?q=/b', '/x?q=%2Fb'],
+    ['/cart', '/CART'],
+    ['/cart', '/Cart/1'],
+    ['/a?b=c', '/a%3Fb=c'],
+    ['/a&b', '/a%26b'],
+  ])('rule %s blocks the variant %s with zero page fetches', async (rule, path) => {
+    const { fetcher, calls } = await create(robots(`User-agent: *\nDisallow: ${rule}\n`));
+    expect(await pathRefused(fetcher.get(path))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("Allow /*' (3 octets) does not outrank Disallow /cart (5): /cart' is not fetched", async () => {
+    const { fetcher, calls } = await create(robots("User-agent: *\nDisallow: /cart\nAllow: /*'\n"));
+    expect(await pathRefused(fetcher.get("/cart'"))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('an allowed path is still fetched when other rules exist', async () => {
+    const { fetcher, calls } = await create(robots('User-agent: *\nDisallow: /cart\nAllow: /view/item/\n'));
+    expect(await fetcher.get('/view/item/123')).toBe('<html>ok</html>');
+    expect(calls[1].url).toBe(`${ORIGIN}/view/item/123`);
+  });
+
   it('an escaped * in a rule is literal, not a wildcard', async () => {
     const { fetcher } = await create(robots('User-agent: *\nDisallow: /a%2Ab\n'));
     expect(await fetcher.get('/aXb')).toBe('<html>ok</html>');

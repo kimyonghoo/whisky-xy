@@ -122,6 +122,30 @@ describe('parseRobots', () => {
     expect(raw.isAllowed('/商品B/1')).toBe(true);
   });
 
+  it('counts rule length in decoded octets, not canonical characters', () => {
+    // Allow /*' is 3 octets (the escaped quote counts 1), Disallow /cart is 5: Disallow wins.
+    const r = parseRobots("User-agent: *\nDisallow: /cart\nAllow: /*'\n", UA);
+    expect(r.isAllowed("/cart'")).toBe(false);
+    // Escaped unreserved characters count 1 each: Disallow /%7Eu (3) beats Allow /~ (2).
+    const t = parseRobots('User-agent: *\nDisallow: /%7Eu\nAllow: /~\n', UA);
+    expect(t.isAllowed('/~u')).toBe(false);
+    expect(t.isAllowed('/~x')).toBe(true);
+    // A longer Allow still wins: Allow /cart/a'b (8) beats Disallow /cart (5).
+    const longer = parseRobots("User-agent: *\nDisallow: /cart\nAllow: /cart/a'b\n", UA);
+    expect(longer.isAllowed("/cart/a'b")).toBe(true);
+    // A non-ASCII character counts its UTF-8 length (3), however it is written.
+    const jp = parseRobots('User-agent: *\nDisallow: /商\nAllow: /*%E5\n', UA);
+    expect(jp.isAllowed('/商')).toBe(false);
+  });
+
+  it('fails closed on structural-escape and case variants (stricter than RFC 9309)', () => {
+    expect(parseRobots('User-agent: *\nDisallow: /cart/\n', UA).isAllowed('/cart%2F')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /a=b\n', UA).isAllowed('/a%3Db')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /x?q=/b\n', UA).isAllowed('/x?q=%2Fb')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /cart\n', UA).isAllowed('/CART')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /cart\nAllow: /view/item/\n', UA).isAllowed('/view/item/123')).toBe(true);
+  });
+
   it('compares percent-encoded unreserved characters as equal', () => {
     const r = parseRobots('User-agent: *\nDisallow: /~secret\n', UA);
     expect(r.isAllowed('/%7Esecret')).toBe(false);
