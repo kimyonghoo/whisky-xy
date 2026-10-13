@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "crawl": "tsx scripts/crawl.ts",
-    "rekey": "tsx scripts/rekey.ts"
+    "rekey": "tsx scripts/rekey.ts",
+    "crawl:report": "tsx scripts/crawl-report.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
