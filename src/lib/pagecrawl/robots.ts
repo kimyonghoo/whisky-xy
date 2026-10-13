@@ -7,41 +7,56 @@ export interface Robots {
 interface Rule { allow: boolean; regex: RegExp; length: number }
 interface Group { agents: string[]; rules: { allow: boolean; pattern: string }[]; delays: number[] }
 
+/** Characters kept as-is in the canonical form: unreserved, plus the structural `/ ? = &`. */
+const KEEP_RAW = /[A-Za-z0-9\-._~/?=&]/;
+
+const pct = (byte: number) => `%${byte.toString(16).toUpperCase().padStart(2, '0')}`;
+
 /**
- * Canonical percent-encoded form for comparing robots patterns with the path that goes on the wire:
- * non-ASCII is UTF-8 percent-encoded, the characters WHATWG URL encodes in paths are encoded, escapes
- * of unreserved characters are decoded and the remaining escapes get upper-case hex.
- * `*`, `$`, `?` and `/` are left alone.
+ * The one canonical form shared by robots patterns and the path that goes on the wire (the path
+ * after `new URL`), used only for matching:
+ * - `%XX` of an unreserved character (A-Z a-z 0-9 - . _ ~) is decoded;
+ * - the structural characters `/ ? = &` stay as they are (so `%2F` stays `%2F`);
+ * - everything else, raw or already escaped, becomes an upper-case `%XX` per UTF-8 byte
+ *   (`^`, `%5e` and `%5E` all give `%5E`; a lone `%` gives `%25`);
+ * - `*` stays a wildcard in patterns (`keepStar`) and is encoded as `%2A` in a path.
  */
-function normalize(s: string): string {
+function canonical(s: string, keepStar: boolean): string {
   let out = '';
-  for (const ch of s) {
-    if (ch.codePointAt(0)! > 0x7f) {
+  for (let i = 0; i < s.length; ) {
+    const ch = String.fromCodePoint(s.codePointAt(i)!);
+    const hex = ch === '%' ? /^[0-9a-fA-F]{2}/.exec(s.slice(i + 1, i + 3)) : null;
+    if (hex) {
+      const byte = parseInt(hex[0], 16);
+      const c = String.fromCharCode(byte);
+      out += byte < 0x80 && /[A-Za-z0-9\-._~]/.test(c) ? c : pct(byte);
+      i += 3;
+      continue;
+    }
+    i += ch.length;
+    if (KEEP_RAW.test(ch) || (keepStar && ch === '*')) {
+      out += ch;
+    } else if (ch.codePointAt(0)! < 0x80) {
+      out += pct(ch.charCodeAt(0));
+    } else {
       try {
         out += encodeURIComponent(ch);
       } catch {
         out += '%EF%BF%BD'; // lone surrogate
       }
-    } else if (/[ "<>`{}]/.test(ch)) {
-      out += `%${ch.charCodeAt(0).toString(16).toUpperCase()}`;
-    } else {
-      out += ch;
     }
   }
-  return out.replace(/%([0-9a-fA-F]{2})/g, (_m, hex: string) => {
-    const c = String.fromCharCode(parseInt(hex, 16));
-    return /[A-Za-z0-9\-._~]/.test(c) ? c : `%${hex.toUpperCase()}`;
-  });
+  return out;
 }
 
-function compile(pattern: string): RegExp {
+function compile(pattern: string): { regex: RegExp; length: number } {
   const anchored = pattern.endsWith('$');
-  const body = anchored ? pattern.slice(0, -1) : pattern;
+  const body = canonical(anchored ? pattern.slice(0, -1) : pattern, true);
   const source = body
     .split('*')
     .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
     .join('.*');
-  return new RegExp(`^${source}${anchored ? '$' : ''}`);
+  return { regex: new RegExp(`^${source}${anchored ? '$' : ''}`), length: body.length + (anchored ? 1 : 0) };
 }
 
 /** The product token of a User-Agent: `WhiskyPortalBot/0.1 (+https://x)` becomes `whiskyportalbot`. */
@@ -75,7 +90,7 @@ function parseGroups(text: string): Group[] {
     if (!current) continue;
     if (field === 'allow' || field === 'disallow') {
       // An empty Disallow means "nothing is disallowed"; an empty Allow adds nothing.
-      if (value) current.rules.push({ allow: field === 'allow', pattern: normalize(value) });
+      if (value) current.rules.push({ allow: field === 'allow', pattern: value });
     } else if (field === 'crawl-delay') {
       const n = Number(value);
       // Infinity (e.g. 1e999) is kept so the fetcher refuses it; NaN and negatives are ignored.
@@ -98,12 +113,12 @@ export function parseRobots(text: string, userAgent: string): Robots {
 
   const rules: Rule[] = selected
     .flatMap((g) => g.rules)
-    .map((r) => ({ allow: r.allow, regex: compile(r.pattern), length: r.pattern.length }));
+    .map((r) => ({ allow: r.allow, ...compile(r.pattern) }));
   const delays = selected.flatMap((g) => g.delays);
 
   return {
     isAllowed(path: string): boolean {
-      const p = normalize(path);
+      const p = canonical(path, false);
       let best: Rule | null = null;
       for (const rule of rules) {
         if (!rule.regex.test(p)) continue;

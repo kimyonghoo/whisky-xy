@@ -528,10 +528,70 @@ describe('the path on the wire is the path robots was matched against', () => {
     expect(calls[1].url).toBe(`${ORIGIN}${wire}`);
   });
 
+  it.each([
+    ['/a^b', '/a^b'],
+    ['/*q=\'', "/x?q='1"],
+    ['/p|q', '/p%7Cq'],
+    ['/p%7Cq', '/p|q'],
+    ['/it%27s', "/it's"],
+    ["/it's", '/it%27s'],
+    ['/a%2Ab', '/a*b'],
+    ['/x?q=%24', '/x?q=$'],
+  ])('rule %s blocks %s', async (rule, path) => {
+    const { fetcher, calls } = await create(robots(`User-agent: *\nDisallow: ${rule}\n`));
+    expect(await pathRefused(fetcher.get(path))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('an escaped * in a rule is literal, not a wildcard', async () => {
+    const { fetcher } = await create(robots('User-agent: *\nDisallow: /a%2Ab\n'));
+    expect(await fetcher.get('/aXb')).toBe('<html>ok</html>');
+  });
+
   it('refuses a fragment even on an otherwise allowed path', async () => {
     const { fetcher, calls } = await create({});
     expect(await pathRefused(fetcher.get('/ok#frag'))).toBe(true);
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('every printable ASCII character matches in raw and percent-escaped form', () => {
+  // Structural characters keep their meaning when raw, so their escaped form is a different token:
+  // `/` separates segments, `?` starts the query, `=` and `&` delimit query parameters.
+  const STRUCTURAL = new Set(['/', '?', '=', '&']);
+  const chars: string[] = [];
+  for (let code = 0x21; code <= 0x7e; code++) if (code !== 0x23 /* # is a fragment, rejected */) chars.push(String.fromCharCode(code));
+  const esc = (c: string) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`;
+  const lower = (c: string) => `%${c.charCodeAt(0).toString(16).toLowerCase()}`;
+
+  async function blocked(rule: string, path: string): Promise<boolean> {
+    const { fetcher, calls } = await create(robots(`User-agent: *\nDisallow: ${rule}\n`));
+    const refused = await pathRefused(fetcher.get(path));
+    return refused && calls.length === 1; // robots.txt only: zero page fetches
+  }
+
+  it('in the path', async () => {
+    const failures: string[] = [];
+    for (const c of chars) {
+      if (!(await blocked(`/a${c}b`, `/a${c}b`))) failures.push(`raw ${c}`);
+      if (STRUCTURAL.has(c)) continue;
+      if (!(await blocked(`/a${c}b`, `/a${esc(c)}b`))) failures.push(`escaped ${c}`);
+      if (!(await blocked(`/a${c}b`, `/a${lower(c)}b`))) failures.push(`lower-case escaped ${c}`);
+      if (!(await blocked(`/a${esc(c)}b`, `/a${c}b`))) failures.push(`rule escaped, request raw ${c}`);
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it('in the query', async () => {
+    const failures: string[] = [];
+    for (const c of chars) {
+      // A trailing `$` in a rule is the end anchor, so the raw rule `/x?q=$` means "ends here".
+      if (c !== '$' && !(await blocked(`/x?q=${c}`, `/x?q=${c}`))) failures.push(`raw ${c}`);
+      if (STRUCTURAL.has(c)) continue;
+      if (c !== '$' && !(await blocked(`/x?q=${c}`, `/x?q=${esc(c)}`))) failures.push(`escaped ${c}`);
+      if (!(await blocked(`/x?q=${esc(c)}`, `/x?q=${c}`))) failures.push(`rule escaped, request raw ${c}`);
+    }
+    expect(failures).toEqual([]);
   });
 });
 
@@ -621,6 +681,11 @@ describe('response charset', () => {
   it('decodes EUC-JP from the Content-Type charset', async () => {
     const { fetcher } = await create({ '/e': () => bytesResponse(EUC, { 'content-type': 'text/html; charset="EUC-JP"' }) });
     expect(await fetcher.get('/e')).toBe('山崎');
+  });
+
+  it.each(['cp932', 'MS932', 'windows-31j', 'x-sjis'])('treats the Windows Shift_JIS label %s as shift_jis', async (label) => {
+    const { fetcher } = await create({ '/w': () => bytesResponse(SJIS, { 'content-type': `text/html; charset=${label}` }) });
+    expect(await fetcher.get('/w')).toBe('山崎');
   });
 
   it('sniffs <meta charset> when Content-Type has none', async () => {

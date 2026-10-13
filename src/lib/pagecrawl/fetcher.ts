@@ -67,6 +67,14 @@ async function realSleep(ms: number): Promise<void> {
   }
 }
 
+/** Windows Shift_JIS names that TextDecoder does not know (its shift_jis is the Windows-31J variant). */
+const CHARSET_ALIASES: Record<string, string> = {
+  cp932: 'shift_jis',
+  ms932: 'shift_jis',
+  'windows-31j': 'shift_jis',
+  'x-sjis': 'shift_jis',
+};
+
 /** Decode with the Content-Type charset, else a `<meta charset>` in the first 2 KB, else UTF-8. */
 function decodeBody(bytes: Uint8Array, contentType: string | null): string {
   let label = /charset\s*=\s*["']?([^\s;"']+)/i.exec(contentType ?? '')?.[1];
@@ -74,6 +82,7 @@ function decodeBody(bytes: Uint8Array, contentType: string | null): string {
     const head = new TextDecoder('latin1').decode(bytes.subarray(0, 2048));
     label = /<meta[^>]+charset\s*=\s*["']?\s*([A-Za-z0-9_:.-]+)/i.exec(head)?.[1];
   }
+  if (label && CHARSET_ALIASES[label.toLowerCase()]) label = CHARSET_ALIASES[label.toLowerCase()];
   try {
     return new TextDecoder(label ?? 'utf-8').decode(bytes);
   } catch {
