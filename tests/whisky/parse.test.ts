@@ -203,6 +203,22 @@ describe('Japanese text', () => {
     }
   });
 
+  it('multi-bottle counts must be 2 or more; single-bottle wording, cask finishes and gift tins pass', () => {
+    const flag = { whiskyOnlyCatalog: true };
+    for (const title of [
+      '響 21年 700ml×1本', 'マッカラン 12年 1本入り化粧箱', '山崎 12年 1本セット', '白州 1本組', '梅酒樽フィニッシュ 山崎',
+      'グレンモーレンジィ ギフト缶入り', 'ラフロイグ 10年 化粧缶付き 700ml',
+    ]) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, flag), title).toBe(true);
+    }
+    for (const title of [
+      '白州 ×2本', '知多 12本入', '白州 3本セット', '山崎 2本組', '響 十二本入り', '山崎 二本セット', 'ウイスキー 詰め合わせ', 'ウイスキー 詰合せ',
+      '（単品）三郎丸蒸留所のスモーキーハイボール【三郎丸蒸留所】', '角 缶チューハイ', '山崎 350ml缶', 'ハイボール 缶 350ml', '梅酒', 'チョーヤ 梅酒 720ml',
+    ]) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, flag), title).toBe(false);
+    }
+  });
+
   it('a size labelled 容量 wins over another size in the text, for parseSizeMl and bottleKey alike', () => {
     expect(parseSizeMl('山崎 12年 750ml 容量 700ml')).toBe(700);
     expect(parseSizeMl('山崎 12年 750ml 容量：1L')).toBe(1000);

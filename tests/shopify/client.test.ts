@@ -169,6 +169,7 @@ describe('hardening', () => {
 
 describe('robots-checked catalog crawl (non-USD stores)', () => {
   const JP = 'https://jp.example';
+  const noSleep = async () => {};
   const coll = { ...jpStore, catalogPath: '/collections/whisky/products.json' } as Store;
   const meta = (currency = 'JPY') => json({ currency });
   const catalogFake = () =>
@@ -212,7 +213,7 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
   it('checks the currency through /meta.json (Shopify robots disallow /cart.js) and never requests /cart.js', async () => {
     const robots = parseRobots('User-agent: *\nDisallow: /cart.js\n', 'WhiskyPortalBot');
     const fake = catalogFake();
-    const { products, complete } = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots });
+    const { products, complete } = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots, sleep: noSleep });
     expect(products).toHaveLength(1);
     expect(complete).toBe(true);
     expect(fake.calls.map((c) => c.url)).toEqual([
@@ -225,7 +226,7 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
   it('a /meta.json currency other than the store currency aborts', async () => {
     const robots = parseRobots('', 'WhiskyPortalBot');
     const fake = makeFake((url) => (url.endsWith('/meta.json') ? meta('USD') : json({ products: [] })));
-    await expect(fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots })).rejects.toBeInstanceOf(CurrencyMismatchError);
+    await expect(fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots, sleep: noSleep })).rejects.toBeInstanceOf(CurrencyMismatchError);
     expect(fake.calls).toHaveLength(1);
   });
 
@@ -233,7 +234,7 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
     for (const rules of ['Disallow: /meta.json', 'Disallow: /collections/whisky/', 'Disallow: /*limit=250', 'Disallow: /*page=7$']) {
       const fake = catalogFake();
       const robots = parseRobots(`User-agent: *\n${rules}\n`, 'WhiskyPortalBot');
-      const err = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots, maxPages: 10 }).catch((e) => e);
+      const err = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots, maxPages: 10, sleep: noSleep }).catch((e) => e);
       expect(err, rules).toBeInstanceOf(RobotsRefusal);
       expect(err.message, rules).toMatch(/robots\.txt disallows/);
       expect(fake.calls, rules).toHaveLength(0);
@@ -249,7 +250,38 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
       });
       return slept;
     };
-    expect(await waits('Crawl-delay: 5')).toEqual([5000, 5000]);
-    expect(await waits('Crawl-delay: 0.5')).toEqual([1100, 1100]);
+    // robots-checked (JPY) crawls wait before every request after robots.txt: /meta.json and each page
+    expect(await waits('Crawl-delay: 5')).toEqual([5000, 5000, 5000]);
+  });
+
+  it('robots-checked crawls keep a 3 s floor between requests even when delayMs is lower; US keeps delayMs', async () => {
+    const jpWaits: number[] = [];
+    await fetchCatalog(coll, {
+      fetchFn: catalogFake(), delayMs: 1100, robots: parseRobots('User-agent: *\nCrawl-delay: 0.5\n', 'WhiskyPortalBot'),
+      sleep: async (ms) => { jpWaits.push(ms); },
+    });
+    expect(jpWaits).toEqual([3000, 3000, 3000]);
+    const usWaits: number[] = [];
+    const usFake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({ products: [] })));
+    await fetchCatalog(store, { fetchFn: usFake, delayMs: 1100, sleep: async (ms) => { usWaits.push(ms); } });
+    expect(usWaits).toEqual([1100]);
+  });
+
+  it('robots-checked crawls stop at the deadline and return what they have, incomplete', async () => {
+    let t = 0;
+    const fake = makeFake((url) => {
+      if (url.endsWith('/meta.json')) return meta();
+      const page = Number(new URL(url).searchParams.get('page'));
+      return json({ products: [prod(page)] }); // never-ending catalog
+    });
+    const r = await fetchCatalog(coll, {
+      fetchFn: fake, robots: parseRobots('', 'WhiskyPortalBot'), deadlineMs: 10_000,
+      sleep: async (ms) => { t += ms; }, now: () => t,
+    });
+    // waits of 3 s: meta at 3 s, pages at 6 s and 9 s; the next wait reaches 12 s > 10 s: stop
+    expect(r).toEqual({ products: [prod(1), prod(2)], complete: false });
+    expect(fake.calls.map((c) => new URL(c.url).pathname + new URL(c.url).search)).toEqual([
+      '/meta.json', '/collections/whisky/products.json?limit=250&page=1', '/collections/whisky/products.json?limit=250&page=2',
+    ]);
   });
 });

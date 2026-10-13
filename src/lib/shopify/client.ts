@@ -2,7 +2,7 @@ import type { Currency, Store } from '@/lib/stores';
 import { liveFetch, storeFetch } from '@/lib/shopify/http';
 import { botUserAgent } from '@/lib/bot-ua';
 import { parseRobots, type Robots } from '@/lib/pagecrawl/robots';
-import { MAX_CRAWL_DELAY_MS, PRODUCT_TOKEN } from '@/lib/pagecrawl/fetcher';
+import { DEFAULT_DEADLINE_MS, MAX_CRAWL_DELAY_MS, PRODUCT_TOKEN } from '@/lib/pagecrawl/fetcher';
 
 export type FetchFn = typeof fetch;
 
@@ -123,6 +123,9 @@ async function checkMetaCurrency(store: Store, fetchFn: FetchFn, signal: AbortSi
   if (meta.currency !== store.currency) throw new CurrencyMismatchError(store.currency, String(meta.currency));
 }
 
+/** Minimum gap between requests of a robots-checked (Japanese) catalog crawl, as for page crawls. */
+const ROBOTS_MODE_MIN_DELAY_MS = 3000;
+
 /** Only `/products.json` or `/collections/<handle>/products.json`: never an arbitrary path. */
 const CATALOG_PATH_RE = /^\/(?:collections\/[a-z0-9][a-z0-9-]*\/)?products\.json$/;
 
@@ -135,8 +138,10 @@ export function catalogPathOf(store: Pick<Store, 'domain' | 'catalogPath'>): str
 /**
  * Reads the catalog page by page. With `robots` (the robots-checked crawl used for non-USD stores),
  * every path the crawl could request (`/meta.json` and catalog pages 1..maxPages, with their exact
- * query) is checked before the first request, the currency comes from `/meta.json`, and a
- * Crawl-delay above `delayMs` sets the pacing. Without it, behaviour is unchanged (`/cart.js`).
+ * query) is checked before the first request, and the currency comes from `/meta.json`. Every
+ * request, including the first after robots.txt, waits at least 3 s (or a larger Crawl-delay). The
+ * crawl stops at a 20-minute deadline and returns what it has, marked incomplete (no sold-out sweep).
+ * Without `robots`, behaviour is unchanged (`/cart.js`, `delayMs` pacing, no deadline).
  */
 export async function fetchCatalog(
   store: Store,
@@ -146,16 +151,26 @@ export async function fetchCatalog(
     maxPages?: number;
     timeoutMs?: number;
     robots?: Robots;
+    /** Robots-checked crawls only: wall-clock limit from the start (default 20 min). */
+    deadlineMs?: number;
     /** Tests only. */
     sleep?: (ms: number) => Promise<void>;
+    /** Tests only: the clock for the deadline. */
+    now?: () => number;
   } = {},
 ): Promise<{ products: ShopifyProduct[]; complete: boolean }> {
   const fetchFn = opts.fetchFn ?? storeFetch;
   const maxPages = opts.maxPages ?? 100;
   const timeoutMs = opts.timeoutMs ?? 20000;
   const wait = opts.sleep ?? sleep;
+  const now = opts.now ?? Date.now;
   const { robots } = opts;
-  const delayMs = Math.max(opts.delayMs ?? 1100, robots?.crawlDelayMs ?? 0);
+  // Robots-checked (Japanese) stores get the page-crawl floor of 3 s per request, or a larger
+  // Crawl-delay, and a wall-clock deadline. US stores keep their pacing and have no deadline.
+  const delayMs = robots
+    ? Math.max(opts.delayMs ?? 1100, ROBOTS_MODE_MIN_DELAY_MS, robots.crawlDelayMs ?? 0)
+    : (opts.delayMs ?? 1100);
+  const deadlineAt = robots ? now() + (opts.deadlineMs ?? DEFAULT_DEADLINE_MS) : Number.POSITIVE_INFINITY;
 
   const base = catalogPathOf(store);
   const pagePath = (page: number) => `${base}?limit=250&page=${page}`;
@@ -163,6 +178,8 @@ export async function fetchCatalog(
     const paths = ['/meta.json', ...Array.from({ length: maxPages }, (_, i) => pagePath(i + 1))];
     const refused = paths.find((p) => !robots.isAllowed(p));
     if (refused !== undefined) throw new RobotsRefusal(`robots.txt disallows ${refused}`);
+    await wait(delayMs); // the gap after robots.txt, which the caller fetched just before
+    if (now() >= deadlineAt) return { products: [], complete: false };
     await checkMetaCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
   } else {
     await checkCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
@@ -171,6 +188,7 @@ export async function fetchCatalog(
   const products: ShopifyProduct[] = [];
   for (let page = 1; page <= maxPages; page++) {
     await wait(delayMs);
+    if (now() >= deadlineAt) return { products, complete: false }; // partial: no sold-out sweep
     const path = pagePath(page);
     const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs));
     if (!res.ok) throw new Error(`${store.domain} products page ${page} failed: HTTP ${res.status}`);

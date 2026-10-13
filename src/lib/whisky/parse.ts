@@ -3,12 +3,15 @@
 const WHISKY_RE =
   /whisk(e)?y|bourbon|scotch|\brye\b|single malt|ウイスキー|ウィスキー|ウヰスキー|ウイスキ|シングルモルト|ブレンデッド/i;
 const ALWAYS_REJECT_RE =
-  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒|焼酎|日本酒|グラス(?!ゴー)|ギフト券|ケース販売|ケース売り|\d+\s*本\s*(?:入り?|セット)|[×xX]\s*\d+\s*本|ケース\s*[（(]?\s*\d+\s*本|本セット|飲み比べセット|ギフトセット|セット販売/i;
+  /liqueur|cocktail|\bcans?\b|\d+-pack|tequila|mezcal|gift card|glass(es|ware)?\b|bitters|リキュール|梅酒(?!樽)|焼酎|日本酒|グラス(?!ゴー)|ギフト券|ハイボール|缶チューハイ|\d+\s*ml\s*缶|缶\s*\d+\s*ml|ケース販売|ケース売り|(?<!\d)(?:[2-9]|\d{2,}|[二三四五六七八九十]+)\s*本\s*(?:入り?|セット|組)|[×xX]\s*(?:[2-9]|\d{2,})\s*本|ケース\s*[（(]?\s*\d+\s*本|飲み比べセット|ギフトセット|セット販売|詰め?合わ?せ/i;
 // The Japanese multi-bottle terms are rejected because their price is not one bottle's price:
-// case sales (ケース販売, ケース売り, ケース 6本, ケース（12本）), N本入り / N本セット / ×N本, and sets
-// (本セット, 飲み比べセット, ギフトセット, セット販売). Only sale-shaped wording counts: a bare ケース or
-// セット is a single bottle's box (専用ケース付き, 木製ケース入り, ウッドケース) or part of a name (サマセット).
-// グラス付き (glass bundles) is rejected through グラス.
+// case sales (ケース販売, ケース売り, ケース 6本, ケース（12本）), N本入り / N本セット / N本組 / ×N本 with N >= 2
+// (digits or kanji numerals; `1本入り化粧箱` and `700ml×1本` are single bottles), and sets (飲み比べセット,
+// ギフトセット, セット販売, 詰め合わせ / 詰合せ). Only sale-shaped wording counts: a bare ケース or セット is a
+// single bottle's box (専用ケース付き, 木製ケース入り, ウッドケース) or part of a name (サマセット).
+// グラス付き (glass bundles) is rejected through グラス. Ready-to-drink cans are rejected (ハイボール,
+// 缶チューハイ, `350ml缶`, `缶 350ml`), but not a bare 缶, which is a bottle's gift tin (ギフト缶入り).
+// 梅酒 (plum liqueur) is rejected, 梅酒樽 (a plum-liqueur cask finish) is not.
 // Wine/grape and beer terms only reject when productType is not itself whisky-like
 // (cask-finished whisky legitimately mentions port, cabernet, etc.).
 const NON_WHISKY_TYPE_REJECT_RE =

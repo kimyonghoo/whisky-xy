@@ -763,6 +763,42 @@ describe('Crawl-delay limit', () => {
   });
 });
 
+describe('wall-clock deadline', () => {
+  /** A clock that only moves when the test (or a slow response) moves it. */
+  function movingClock() {
+    let t = 0;
+    return { now: () => t, advance: (ms: number) => { t += ms; }, sleep: async (ms: number) => { t += ms; } };
+  }
+
+  it('stops with a sticky deadline once deadlineMs has passed since creation, with no further fetch', async () => {
+    const clock = movingClock();
+    const f = makeFetch(robots());
+    const fetcher = await createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: clock.sleep, now: clock.now, deadlineMs: 60_000 });
+    await fetcher.get('/a');
+    clock.advance(60_000);
+    const before = f.calls.length;
+    expect(await stopReason(fetcher.get('/b'))).toBe('deadline');
+    expect(await stopReason(fetcher.get('/c'))).toBe('deadline');
+    expect(f.calls.length).toBe(before);
+  });
+
+  it('defaults to 20 minutes', async () => {
+    const clock = movingClock();
+    const f = makeFetch(robots());
+    const fetcher = await createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: clock.sleep, now: clock.now });
+    clock.advance(20 * 60_000 - 10_000);
+    await fetcher.get('/a');
+    clock.advance(10_000);
+    expect(await stopReason(fetcher.get('/b'))).toBe('deadline');
+  });
+
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])('deadlineMs %s throws RangeError before any request', async (deadlineMs) => {
+    const f = makeFetch(robots());
+    await expect(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, deadlineMs })).rejects.toBeInstanceOf(RangeError);
+    expect(f.calls).toHaveLength(0);
+  });
+});
+
 describe('response charset', () => {
   const SJIS = [0x8e, 0x52, 0x8d, 0xe8]; // 山崎
   const EUC = [0xbb, 0xb3, 0xba, 0xea]; // 山崎

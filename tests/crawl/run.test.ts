@@ -4,6 +4,7 @@ import { createTestDb } from '../helpers/db';
 import { listings, priceHistory, watches } from '@/lib/db/schema';
 import { runCrawl } from '@/lib/crawl/run';
 import { dueProductPaths, getNextListPage } from '@/lib/crawl/page-state';
+import { ingestStoreCrawl } from '@/lib/crawl/ingest';
 import { getStore } from '@/lib/stores';
 import type { FetchFn } from '@/lib/shopify/client';
 
@@ -168,7 +169,7 @@ describe('runCrawl: Japanese stores', () => {
   let jp: Parameters<typeof runCrawl>[0];
   beforeEach(() => {
     vi.stubEnv('SITE_URL', SITE);
-    jp = { ...base, pageSleep: async () => {} };
+    jp = { ...base, politeSleep: async () => {} };
     return () => vi.unstubAllEnvs();
   });
 
@@ -237,6 +238,62 @@ describe('runCrawl: Japanese stores', () => {
     expect(r.stores[0]).toMatchObject({ ok: true, observations: 279, note: 'stopped: budget' });
     expect(r.stores[0].page).toMatchObject({ requests: 300, listPages: 20, nextListPage: 21 });
     expect(await rowsOf('shinanoya')).toHaveLength(279);
+  });
+
+  it('a page store that hits the 20-minute deadline keeps its partial work, and the run goes on', async () => {
+    // flask: a sold-out Stagg now, restocked in the deadline run, so the alert step has work to do
+    await runCrawl({ ...base, stores: [flask], fetchFn: fakeFetch({ [flask.domain]: { pages: caveWith(false) } }) });
+    await db.insert(watches).values({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: [], cities: ['la'], createdAt: new Date() });
+    const lists: Record<number, number[]> = {};
+    for (let p = 1; p <= 20; p++) lists[p] = Array.from({ length: 30 }, (_, i) => p * 100 + i);
+    const site = shinanoyaSite(lists);
+    const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
+    let t = 0;
+    const n = net((host, path) => {
+      if (host === shinanoya.domain) {
+        t += 10_000; // every shinanoya response takes 10 s
+        return site(host, path);
+      }
+      return undefined;
+    });
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      const host = new URL(String(input)).hostname;
+      return host === flask.domain ? usOk(input, init) : n.fetchFn(input, init);
+    }) as FetchFn;
+    const sent: string[] = [];
+    const r = await runCrawl({
+      ...jp, stores: [shinanoya, flask], fetchFn, notify: async (m) => { sent.push(m); },
+      politeSleep: async (ms) => { t += ms; }, politeNow: () => t,
+    });
+    // 1,200 s / 10 s per response = 120 requests: robots + 20 list pages + 99 items
+    expect(n.storeCalls(shinanoya.domain)).toHaveLength(120);
+    expect(r.stores[0]).toMatchObject({ storeId: 'shinanoya', ok: true, observations: 99, note: 'stopped: deadline' });
+    expect(await rowsOf('shinanoya')).toHaveLength(99);
+    expect(await getNextListPage(db, 'shinanoya')).toBe(21);
+    // the loop continued to the next store and to the post-loop steps
+    expect(r.stores[1]).toMatchObject({ storeId: 'flask', ok: true });
+    expect(n.calls.some((c) => c.startsWith('open.er-api.com'))).toBe(true);
+    expect(r.krLinks).toEqual({ ok: 0, failed: 0 });
+    expect(r.alertsSent).toBe(1);
+    expect(sent[0]).toContain('재입고');
+  });
+
+  it('caps re-checks at 150 known pages, so new list items are still fetched', async () => {
+    const obs = Array.from({ length: 200 }, (_, i) => {
+      const id = itemId(i + 1);
+      return {
+        storeId: 'shinanoya', productId: id, variantId: id, handle: id, title: `ベンリアック ${i + 1}`, variantTitle: null,
+        vendor: '', productType: '', imageUrl: null, url: `https://shinanoya-tokyo.jp${itemPath(i + 1)}`, priceCents: 5000,
+        currency: 'JPY' as const, available: true, sizeMl: 700, proof: null, batch: null, bottleKey: `k${i}`, searchText: 'x',
+      };
+    });
+    await ingestStoreCrawl(db, 'shinanoya', obs, new Date(Date.UTC(2025, 0, 1)));
+    const n = net(shinanoyaSite({ 1: [9001, 9002, 9003] }));
+    await runCrawl({ ...jp, stores: [shinanoya], fetchFn: n.fetchFn });
+    const items = n.storeCalls(shinanoya.domain).filter((c) => c.startsWith('/view/item/'));
+    expect(items).toHaveLength(153);
+    expect(items.slice(150)).toEqual([itemPath(9001), itemPath(9002), itemPath(9003)]);
+    expect(await rowsOf('shinanoya')).toHaveLength(203);
   });
 
   it('persists nextListPage between runs and starts the next run there', async () => {

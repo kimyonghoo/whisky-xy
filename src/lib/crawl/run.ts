@@ -55,7 +55,8 @@ const PAGE_DUE_PER_RUN = 150;
 interface StoreRunOpts {
   fetchFn?: FetchFn;
   delayMs?: number;
-  pageSleep?: (ms: number) => Promise<void>;
+  politeSleep?: (ms: number) => Promise<void>;
+  politeNow?: () => number;
 }
 
 /** Shopify catalog crawl. Non-USD stores are robots-checked (robots.txt read and obeyed first). */
@@ -65,7 +66,12 @@ async function runShopifyStore(db: Db, store: Store, t: Date, opts: StoreRunOpts
   let complete;
   try {
     if (store.currency !== 'USD') robots = await loadShopifyRobots(store, { fetchFn: opts.fetchFn });
-    ({ products, complete } = await fetchCatalog(store, { fetchFn: opts.fetchFn, delayMs: opts.delayMs, robots }));
+    ({ products, complete } = await fetchCatalog(store, {
+      fetchFn: opts.fetchFn,
+      delayMs: opts.delayMs,
+      robots,
+      ...(robots ? { sleep: opts.politeSleep, now: opts.politeNow } : {}),
+    }));
   } catch (err) {
     if (err instanceof RobotsRefusal) {
       return { entry: { storeId: store.id, ok: true, note: `skipped: ${err.message}`, observations: 0, events: 0 }, events: [] };
@@ -94,7 +100,12 @@ async function runPageStore(db: Db, store: Store, t: Date, opts: StoreRunOpts): 
   if (!cfg) throw new Error(`no page-crawl config for ${store.id}`);
   let fetcher;
   try {
-    fetcher = await createPoliteFetcher({ origin: `https://${store.domain}`, fetchFn: opts.fetchFn, sleep: opts.pageSleep });
+    fetcher = await createPoliteFetcher({
+      origin: `https://${store.domain}`,
+      fetchFn: opts.fetchFn,
+      sleep: opts.politeSleep,
+      now: opts.politeNow,
+    });
   } catch (err) {
     if (err instanceof CrawlStopped) {
       return { entry: { storeId: store.id, ok: true, note: `stopped: ${err.reason}`, observations: 0, events: 0 }, events: [] };
@@ -142,8 +153,12 @@ export async function runCrawl(opts: {
   now?: () => Date;
   notify: (text: string) => Promise<void>;
   siteUrl: string;
-  /** Tests only: the page-crawl fetcher's sleep (production always waits for real). */
-  pageSleep?: (ms: number) => Promise<void>;
+  /**
+   * Tests only: sleep and clock of the polite crawls (page stores and robots-checked Shopify), which
+   * production always takes from the real clock (pacing and the 20-minute deadline).
+   */
+  politeSleep?: (ms: number) => Promise<void>;
+  politeNow?: () => number;
 }): Promise<CrawlReport> {
   const { db, stores, notify, siteUrl } = opts;
   const now = opts.now ?? (() => new Date());

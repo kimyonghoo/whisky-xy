@@ -129,14 +129,25 @@ export const STORES: Store[] = [
     // /view/guide and /view/contract (特定商取引法) have no clause on automated access; robots.txt is 404
     // (no rules). Only restriction (/view/guide): "当店画像・コメント等を無断で転載する行為は弊社知的財産権への
     // 権利侵害に抵触する場合がございます" -> facts only, imageUrl null, no descriptions. Verdict: crawlEnabled true.
-    // Corporate ご利用規約 https://shinanoya.co.jp/support/terms.html, read 2026-10-13 (robots.txt 404). Verdict:
-    // allowed under facts only. It governs "当社がこのウェブサイト上で提供するサービス" (shinanoya.co.jp), and
-    // 第6条 sends linked sites, the 「ウイスキー」通販サイト among them, to their own terms. Even if read as
-    // group-wide, it has no clause on automated access, crawlers, scraping, bots or programs. 第2条
-    // 禁止事項 lists "当社のサーバーまたはネットワークの機能を破壊したり、妨害したりする行為" and
-    // "当社のサービスの運営を妨害するおそれのある行為", which the polite fetcher's 1 request per 3 s, 300 per run,
-    // stop-on-403/429/503 rules respect. 第4条 restricts content use "（複製、改ざん、頒布などを含む。）" beyond
-    // legal limits; we store facts only (price, stock, size, title, url), no images or descriptions.
+    // Corporate ご利用規約 https://shinanoya.co.jp/support/terms.html, read 2026-10-13 (robots.txt 404).
+    // Verdict: allowed under facts only. Verbatim:
+    // - 第2条 禁止事項 (selected items): "当社のサーバーまたはネットワークの機能を破壊したり、妨害したりする行為",
+    //   "当社のサービスの運営を妨害するおそれのある行為", "その他、当社が不適切と判断する行為"
+    // - 第4条: "このウェブサイト上の全てのコンテンツ（記事、写真、システム、文字、グラフィックデータ、ロゴ、
+    //   ボタン、画像、音声データ、ソフトフェア、その他データ）に関する著作権およびその他の権利は、当社に帰属して
+    //   おり、これらは、著作権法、商標法、および著作権に関する国際法で保護されています。コンテンツの一部または
+    //   全部を、私的利用など法律によって認められる範囲を超えて使用（複製、改ざん、頒布などを含む。）することは
+    //   できません。"
+    // - 第6条: "このウェブサイトから、またはこのウェブサイトにリンクを張っているウェブサイト（以下「リンクサイト」
+    //   といいます。）は、それぞれのリンクサイトの運営者の責任において管理されており、ユーザーがこれらのリンク
+    //   サイトをご利用される際は、それぞれのリンクサイトのご利用規約等に従ってください。なお、当社は、リンク
+    //   サイトの内容について、またこれらの利用により生じた一切の損害について責任を負いません。"
+    // Reasoning: the NET SHOP is run by the same company (株式会社信濃屋食品), so we do not rely on 第6条 to
+    // exclude it. The verdict rests on the page having no clause on automated access (no 機械的, 自動, クローラ,
+    // スクレイピング, ロボット, プログラム wording), and on our load staying far below anything that could 妨害
+    // their servers (第2条): 1 request per >= 3 s, at most 300 per run, a 20-minute deadline, a stop on
+    // 403/429/503. 第4条 restricts reproducing content; we store facts only (price, stock, size, title, url),
+    // with no images and no descriptions.
     // lat/lng: the 銀座八丁目 block (OSM relation 4859106) from Nominatim on 2026-10-13. The house-number
     // lookup ("東京都中央区銀座8丁目6-22") returned no result.
     id: 'shinanoya', name: '信濃屋', domain: 'shinanoya-tokyo.jp', city: 'tokyo',

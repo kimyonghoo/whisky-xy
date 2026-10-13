@@ -11,7 +11,8 @@ export type CrawlStopReason =
   | 'errors'
   | 'challenge'
   | 'budget'
-  | 'crawl-delay';
+  | 'crawl-delay'
+  | 'deadline';
 
 /** Stop this store for this run: every later `get` rethrows the same instance without a request. */
 export class CrawlStopped extends Error {
@@ -56,6 +57,11 @@ const MAX_ALLOWED_REQUESTS = 300;
 export const MAX_CRAWL_DELAY_MS = 60_000;
 /** setTimeout clamps anything above this to 1 ms. */
 const MAX_TIMER_MS = 2 ** 31 - 1;
+/**
+ * Wall-clock budget per store per run. A crawl must end well inside the 45-minute workflow timeout
+ * even if every response is slow, so the run's ingest, fx, kr_links and alerts still happen.
+ */
+export const DEFAULT_DEADLINE_MS = 20 * 60_000;
 /** Our robots.txt product token (the User-Agent without its version). */
 export const PRODUCT_TOKEN = 'WhiskyPortalBot';
 
@@ -106,6 +112,8 @@ export interface PoliteFetcherOptions {
   maxRequests?: number;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
+  /** Wall-clock limit in ms from creation (finite, > 0; default 20 min). After it, `get` throws CrawlStopped('deadline'). */
+  deadlineMs?: number;
 }
 
 interface Fetched { res: Response; status: number; body: string | null }
@@ -139,6 +147,10 @@ export async function createPoliteFetcher(opts: PoliteFetcherOptions): Promise<P
   if (!Number.isInteger(maxRequests) || maxRequests < 1 || maxRequests > MAX_ALLOWED_REQUESTS) {
     throw new RangeError(`maxRequests must be an integer from 1 to ${MAX_ALLOWED_REQUESTS}, got ${maxRequests}`);
   }
+  const deadlineMs = opts.deadlineMs ?? DEFAULT_DEADLINE_MS;
+  if (!Number.isFinite(deadlineMs) || deadlineMs <= 0) {
+    throw new RangeError(`deadlineMs must be a finite number > 0, got ${deadlineMs}`);
+  }
   const parsedOrigin = new URL(opts.origin);
   if (parsedOrigin.protocol !== 'https:') throw new Error(`Unsupported origin (https only): ${opts.origin}`);
   const origin = parsedOrigin.origin;
@@ -147,6 +159,7 @@ export async function createPoliteFetcher(opts: PoliteFetcherOptions): Promise<P
   const now = opts.now ?? (() => performance.now());
   const maxBytes = LIVE_MAX_BYTES;
   const userAgent = botUserAgent();
+  const deadlineAt = now() + deadlineMs;
 
   let used = 0;
   let lastStart: number | null = null;
@@ -222,6 +235,7 @@ export async function createPoliteFetcher(opts: PoliteFetcherOptions): Promise<P
 
   async function doGet(path: string): Promise<string> {
     if (stopped) throw stopped;
+    if (now() >= deadlineAt) throw stop('deadline');
     // Same-origin absolute paths only. Robots is matched on, and the request sent to, the exact
     // WHATWG-normalised path (dot segments resolved, non-ASCII encoded), so the two cannot differ.
     if (!path.startsWith('/') || path.includes('#') || /[\\\s\x00-\x1f\x7f]/.test(path)) {
