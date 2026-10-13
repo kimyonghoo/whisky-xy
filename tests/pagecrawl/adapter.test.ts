@@ -5,6 +5,7 @@ import type { Store } from '@/lib/stores';
 import { createPoliteFetcher } from '@/lib/pagecrawl/fetcher';
 import { crawlPageStore } from '@/lib/pagecrawl/adapter';
 import { PAGE_STORE_CONFIGS, type PageStoreConfig } from '@/lib/pagecrawl/configs';
+import { bottleKey } from '@/lib/whisky/parse';
 
 const fixture = (name: string) => readFileSync(join(__dirname, '..', 'fixtures', name), 'utf8');
 const LIST = fixture('shinanoya-list.html');
@@ -188,6 +189,17 @@ describe('crawlPageStore', () => {
     expect(o.bottleKey).toMatch(/\|s700$/);
     expect(o.title).toBe('山崎 12年 750ml');
     expect(o.variantTitle).toBe('容量 700ml');
+  });
+
+  it('strips a 容量 label inside the title, so the 容量 row alone sets the size and the key has no 容量 token', async () => {
+    const { fetcher } = await setup({ [P1]: EMPTY_LIST, [A]: itemPage({ name: '山崎 12年 容量750ml', size: '700ml' }) });
+    const r = await crawlPageStore(STORE, CFG, { fetcher, dueProductPaths: [A] });
+    const o = r.observations[0];
+    expect(o.sizeMl).toBe(700);
+    expect(o.bottleKey).toMatch(/\|s700$/);
+    expect(o.bottleKey).not.toContain('容量');
+    expect(o.title).toBe('山崎 12年 750ml');
+    expect(o.bottleKey).toBe(bottleKey({ title: '山崎 12年 700ml', variantTitle: null }));
   });
 
   it('keeps variantTitle null when the title already states the 容量 size', async () => {

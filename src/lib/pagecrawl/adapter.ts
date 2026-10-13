@@ -75,13 +75,22 @@ function listProductPaths(html: string, cfg: PageStoreConfig): string[] {
   return [...out];
 }
 
-function titleOf(html: string, jsonLdName: string | null, cfg: PageStoreConfig): string {
+function rawTitleOf(html: string, jsonLdName: string | null, cfg: PageStoreConfig): string {
   const fromLd = jsonLdName === null ? '' : decodeHtmlEntities(jsonLdName).trim();
   if (fromLd) return fromLd;
   const fromCfg = cfg.titleFrom?.(html)?.trim();
   if (fromCfg) return fromCfg;
   const t = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(html);
   return t ? decodeHtmlEntities(t[1].replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim() : '';
+}
+
+/**
+ * The title with any `容量` (volume) label before a number removed: `山崎 12年 容量750ml` becomes
+ * `山崎 12年 750ml`. The label belongs to the spec row; left in the title it would compete with the
+ * row's `容量 700ml` in the bottle key (the first labelled size wins there) and leave a 容量 token.
+ */
+function titleOf(html: string, jsonLdName: string | null, cfg: PageStoreConfig): string {
+  return rawTitleOf(html, jsonLdName, cfg).replace(/容量\s*[:：]?\s*(?=[0-9０-９])/g, '').trim();
 }
 
 type PageOutcome = { obs: Observation } | { skip: keyof PageCrawlSkips };
@@ -209,13 +218,14 @@ export async function crawlPageStore(store: Store, cfg: PageStoreConfig, opts: P
       const id = cfg.productId(p);
       return id === null ? null : cfg.productPath(id);
     };
-    const due: string[] = [];
+    // A Set keeps first-seen order, so `due` stays in the given (oldest-checked-first) order.
+    const dueSet = new Set<string>();
     for (const p of opts.dueProductPaths) {
       const c = canonical(p);
       if (c === null) skipped.error++;
-      else if (!due.includes(c)) due.push(c);
+      else dueSet.add(c);
     }
-    const dueSet = new Set(due);
+    const due = [...dueSet];
     const known = new Set<string>();
     for (const p of opts.knownProductPaths ?? []) {
       const c = canonical(p);

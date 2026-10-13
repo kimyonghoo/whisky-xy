@@ -190,6 +190,19 @@ describe('Japanese text', () => {
     expect(isWhiskyProduct({ title: 'サントリー 山崎 12年 700ml', productType: '', tags: [] }, { whiskyOnlyCatalog: true })).toBe(true);
   });
 
+  it('rejects only sale-shaped case/set wording: premium single bottles in a case and サマセット are kept', () => {
+    for (const title of ['響 30年 専用ケース付き 700ml', 'マッカラン 25年 木製ケース入り', 'グレンフィディック 18年 ウッドケース', 'サマセット 12年']) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, { whiskyOnlyCatalog: true }), title).toBe(true);
+      expect(isWhiskyProduct({ title: `${title} ウイスキー`, productType: '', tags: [] }), `worded: ${title}`).toBe(true);
+    }
+    for (const title of [
+      '【ケース販売】ラガヴーリン 8年', 'ラガヴーリン 8年 ケース 6本', 'ラガヴーリン 8年 ケース（12本）', '山崎 飲み比べセット',
+      '白州 ×6本', '白州 x 6本', '知多 12本入り', '知多 6本入', '白州 3本セット', '響 ギフトセット', 'ラフロイグ ケース売り', '山崎 セット販売',
+    ]) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, { whiskyOnlyCatalog: true }), title).toBe(false);
+    }
+  });
+
   it('a size labelled 容量 wins over another size in the text, for parseSizeMl and bottleKey alike', () => {
     expect(parseSizeMl('山崎 12年 750ml 容量 700ml')).toBe(700);
     expect(parseSizeMl('山崎 12年 750ml 容量：1L')).toBe(1000);
