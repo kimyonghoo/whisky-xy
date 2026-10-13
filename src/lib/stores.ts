@@ -111,8 +111,9 @@ export const STORES: Store[] = [
     //   ("販売価格は、表示された金額（表示価格/消費税込）と致します。"), payment, returns; no such clause either.
     // - robots.txt (200): allows the whisky collection's products.json pages and /meta.json; disallows
     //   /cart.js ("AJAX surfaces"), so the robots-checked crawl reads the currency from /meta.json instead.
-    // lat/lng PROVISIONAL: the Nominatim lookup of 2026-10-13 ("北海道札幌市南区真駒内本町3丁目5-16") returned
-    // no result; these are an approximate 真駒内本町 position to be replaced by a geocoded one before launch.
+    // lat/lng PROVISIONAL: Nominatim returned no result on 2026-10-13, both for the address
+    // ("北海道札幌市南区真駒内本町3丁目5-16") and at block level ("真駒内本町三丁目, 南区, 札幌市"). These are an
+    // approximate 真駒内本町 position (not geocoded), to be replaced before launch; the pin is private.
     id: 'nemoto', name: '北海道根本商店', domain: 'nemoto-shouten.com', city: 'sapporo',
     address: '北海道札幌市南区真駒内本町3丁目5-16', lat: 42.9935, lng: 141.356,
     phone: '011-582-2994', taxRate: 0, stockReliability: 'high', onlineOnly: false, publicAllowed: false,
@@ -128,12 +129,18 @@ export const STORES: Store[] = [
     // /view/guide and /view/contract (特定商取引法) have no clause on automated access; robots.txt is 404
     // (no rules). Only restriction (/view/guide): "当店画像・コメント等を無断で転載する行為は弊社知的財産権への
     // 権利侵害に抵触する場合がございます" -> facts only, imageUrl null, no descriptions. Verdict: crawlEnabled true.
-    // Open item: the corporate site's footer links a 利用規約 (https://shinanoya.co.jp/support/terms.html),
-    // not yet read (see the Task 6 report).
-    // lat/lng PROVISIONAL: the Nominatim lookup of 2026-10-13 ("東京都中央区銀座8丁目6-22") returned no result;
-    // these are an approximate 銀座8丁目 position to be replaced by a geocoded one before launch.
+    // Corporate ご利用規約 https://shinanoya.co.jp/support/terms.html, read 2026-10-13 (robots.txt 404). Verdict:
+    // allowed under facts only. It governs "当社がこのウェブサイト上で提供するサービス" (shinanoya.co.jp), and
+    // 第6条 sends linked sites, the 「ウイスキー」通販サイト among them, to their own terms. Even if read as
+    // group-wide, it has no clause on automated access, crawlers, scraping, bots or programs. 第2条
+    // 禁止事項 lists "当社のサーバーまたはネットワークの機能を破壊したり、妨害したりする行為" and
+    // "当社のサービスの運営を妨害するおそれのある行為", which the polite fetcher's 1 request per 3 s, 300 per run,
+    // stop-on-403/429/503 rules respect. 第4条 restricts content use "（複製、改ざん、頒布などを含む。）" beyond
+    // legal limits; we store facts only (price, stock, size, title, url), no images or descriptions.
+    // lat/lng: the 銀座八丁目 block (OSM relation 4859106) from Nominatim on 2026-10-13. The house-number
+    // lookup ("東京都中央区銀座8丁目6-22") returned no result.
     id: 'shinanoya', name: '信濃屋', domain: 'shinanoya-tokyo.jp', city: 'tokyo',
-    address: '東京都中央区銀座8-6-22 銀座ピアースビル1F', lat: 35.6685, lng: 139.7608,
+    address: '東京都中央区銀座8-6-22 銀座ピアースビル1F', lat: 35.666698, lng: 139.763463,
     phone: '03-3571-3315', taxRate: 0, stockReliability: 'low', onlineOnly: false, publicAllowed: false,
     currency: 'JPY', pricesIncludeTax: true, adapter: 'page', crawlEnabled: true, whiskyOnlyCatalog: true,
   },
