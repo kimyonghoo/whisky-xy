@@ -4,7 +4,7 @@ export interface Robots {
   crawlDelayMs: number | null;
 }
 
-interface Rule { allow: boolean; strict: RegExp; loose: RegExp; length: number }
+interface Rule { allow: boolean; strict: RegExp; loose: RegExp; server: RegExp; length: number }
 interface Group { agents: string[]; rules: { allow: boolean; pattern: string }[]; delays: number[] }
 
 /** Characters kept as-is in the canonical form: unreserved, plus the structural `/ ? = &`. */
@@ -62,12 +62,63 @@ function loosen(canon: string): string {
     .toLowerCase();
 }
 
-function toRegex(body: string, anchored: boolean): RegExp {
+/** RFC 3986 dot-segment removal on a path that starts with `/`. */
+function removeDotSegments(path: string): string {
+  const segs = path.split('/');
+  const out: string[] = [];
+  segs.forEach((s, i) => {
+    if (s !== '.' && s !== '..') {
+      out.push(s);
+      return;
+    }
+    if (s === '..' && out.length > 1) out.pop();
+    if (i === segs.length - 1) out.push('');
+  });
+  return out.join('/');
+}
+
+/**
+ * The server-normalised form, applied to a canonical pattern body or path: the loose form plus what
+ * common servers do to the path part (before the first `?`):
+ * - `;params` are stripped from each segment (Tomcat): `/cart;jsessionid=1` gives `/cart`;
+ * - repeated slashes are merged (nginx), then, for paths, dot segments are resolved (`/x/..;a/cart`);
+ * - in patterns, a segment containing `*` keeps its `;params`, so `/*;jsessionid=` still means
+ *   "session-id URLs", not "every page".
+ * `+` and `%20` in the query are made equal by the regex (see `serverRegex`), not here.
+ * `trailingParam` is set when a pattern's last path segment lost a parameter: the stripped rule must
+ * then end at a segment boundary (`/cart;x` covers `/cart` and `/cart/1`, not `/cartoon`).
+ */
+function serverForm(canon: string, isPattern: boolean): { text: string; trailingParam: boolean } {
+  const q = canon.indexOf('?');
+  const query = q < 0 ? '' : loosen(canon.slice(q));
+  const segs = loosen(q < 0 ? canon : canon.slice(0, q)).split('/');
+  let trailingParam = false;
+  const stripped = segs.map((seg, i) => {
+    const semi = seg.indexOf('%3b');
+    if (semi < 0 || (isPattern && seg.includes('*'))) return seg;
+    if (i === segs.length - 1) trailingParam = true;
+    return seg.slice(0, semi);
+  });
+  let pathPart = stripped.join('/').replace(/\/{2,}/g, '/');
+  if (!isPattern) pathPart = removeDotSegments(pathPart);
+  return { text: pathPart + query, trailingParam: trailingParam && !query };
+}
+
+function toRegex(body: string, anchored: boolean, literal: (part: string) => string = (p) => p, end = ''): RegExp {
   const source = body
     .split('*')
-    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+    .map((part) => literal(part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')))
     .join('.*');
-  return new RegExp(`^${source}${anchored ? '$' : ''}`);
+  return new RegExp(`^${source}${anchored ? '$' : end}`);
+}
+
+/** `+` (canonical `%2b`) and `%20` match each other where the path text before them has a `?`. */
+const foldPlusInQuery = (part: string) =>
+  part.replace(/%2b|%20/g, (m) => (m === '%2b' ? '(?:%2b|(?<=\\?.*)%20)' : '(?:%20|(?<=\\?.*)%2b)'));
+
+function serverRegex(body: string, anchored: boolean): RegExp {
+  const { text, trailingParam } = serverForm(body, true);
+  return toRegex(text, anchored, foldPlusInQuery, trailingParam ? '(?=[/?]|$)' : '');
 }
 
 /** RFC 9309 rule length in octets of the pattern as written: `%XX` is 1, a raw character is its UTF-8 length, `*` and `$` are 1. */
@@ -86,12 +137,13 @@ function octetLength(pattern: string): number {
   return n;
 }
 
-function compile(pattern: string): { strict: RegExp; loose: RegExp; length: number } {
+function compile(pattern: string): Omit<Rule, 'allow'> {
   const anchored = pattern.endsWith('$');
   const body = canonical(anchored ? pattern.slice(0, -1) : pattern, true);
   return {
     strict: toRegex(body, anchored),
     loose: toRegex(loosen(body), anchored),
+    server: serverRegex(body, anchored),
     length: octetLength(pattern),
   };
 }
@@ -144,7 +196,9 @@ function parseGroups(text: string): Group[] {
  *
  * Deliberately stricter than RFC 9309: a path is allowed only if it is allowed under BOTH the strict
  * canonical percent-encoding match AND a loose match in which `%2F %3F %3D %26` equal `/ ? = &` and
- * ASCII case is ignored. Each form does its own longest-match. The cost is that a few paths that
+ * ASCII case is ignored, AND a server-normalised match (the loose form with `;params` stripped, slashes
+ * merged and dot segments resolved in the path, and `+` equal to `%20` in the query; see `serverForm`).
+ * Each form does its own longest-match, so each can only add refusals. The cost is that a few paths that
  * RFC 9309 would allow are refused; the benefit is that we never fetch a resource the owner may have
  * disallowed through an encoding or case variant.
  */
@@ -163,7 +217,8 @@ export function parseRobots(text: string, userAgent: string): Robots {
     isAllowed(path: string): boolean {
       const strict = canonical(path, false);
       const loose = loosen(strict);
-      const allowedBy = (p: string, form: 'strict' | 'loose'): boolean => {
+      const server = serverForm(strict, false).text;
+      const allowedBy = (p: string, form: 'strict' | 'loose' | 'server'): boolean => {
         let best: Rule | null = null;
         for (const rule of rules) {
           if (!rule[form].test(p)) continue;
@@ -171,7 +226,7 @@ export function parseRobots(text: string, userAgent: string): Robots {
         }
         return best ? best.allow : true;
       };
-      return allowedBy(strict, 'strict') && allowedBy(loose, 'loose');
+      return allowedBy(strict, 'strict') && allowedBy(loose, 'loose') && allowedBy(server, 'server');
     },
     crawlDelayMs: delays.length > 0 ? Math.max(...delays) : null,
   };

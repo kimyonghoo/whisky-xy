@@ -581,6 +581,77 @@ describe('the path on the wire is the path robots was matched against', () => {
   });
 });
 
+describe('server-equivalent path variants are refused with zero page fetches', () => {
+  it.each([
+    ['/shop/cart', '/shop//cart'],
+    ['/cart', '/.//cart'],
+    ['/cart', '/x/..//cart'],
+    ['/cart/', '/cart%5C'],
+    ['/cart/', '/cart%5c'],
+    ['/cart$', '/cart;jsessionid=1'],
+    ['/admin/', '/admin;x/'],
+    ['/*?q=a+b', '/x?q=a%20b'],
+    ['/*?q=a%20b', '/x?q=a+b'],
+  ])('rule %s blocks %s', async (rule, path) => {
+    const { fetcher, calls } = await create(robots(`User-agent: *\nDisallow: ${rule}\n`));
+    expect(await pathRefused(fetcher.get(path))).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(fetcher.used()).toBe(1);
+  });
+
+  it.each(['/a//b', '/a//', '/x/%5Cy', '/x%5cy?q=1'])('refuses the merged-slash or backslash path %s even with no rules', async (path) => {
+    const { fetcher, calls } = await create(robots(''));
+    expect(await pathRefused(fetcher.get(path))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('still fetches a // or %5C in the query string', async () => {
+    const { fetcher, calls } = await create({});
+    await fetcher.get('/r?u=//a%5Cb');
+    expect(calls[1].url).toBe(`${ORIGIN}/r?u=//a%5Cb`);
+  });
+
+  const SHOPIFY = [
+    'User-agent: *',
+    'Disallow: /admin',
+    'Disallow: /cart',
+    'Disallow: /checkout',
+    'Disallow: /collections/*sort_by*',
+    'Disallow: /collections/*+*',
+    'Disallow: /collections/*%2B*',
+    'Disallow: /*?*oseid=*',
+    'Disallow: /*preview_theme_id*',
+    'Disallow: /*/*?*ls=*&ls=*',
+    'Disallow: /*/*?*ls%3D*%3Fls%3D*',
+    'Disallow: /search',
+    'Disallow: /products/*-remote',
+    'Disallow: /*;jsessionid=',
+    '',
+  ].join('\n');
+
+  it.each([
+    ['User-agent: *\nDisallow: /cart\nAllow: /view/item/\n', '/view/item/123'],
+    [SHOPIFY, '/products/abc?variant=123'],
+    [SHOPIFY, '/products/yamazaki-12-year'],
+    [SHOPIFY, '/collections/whisky?page=2'],
+    ['User-agent: *\nDisallow: /cart\nDisallow: /*?q=a%20c\n', '/search?q=a+b'],
+    ['User-agent: *\nDisallow: /tags/a%20b\n', '/tags/a+b'],
+    ['User-agent: *\nDisallow: /cart;x\n', '/cartoon'],
+  ])('still fetches an allowed path (case %#: %s)', async (text, path) => {
+    const { fetcher, calls } = await create(robots(text));
+    expect(await fetcher.get(path)).toBe('<html>ok</html>');
+    expect(calls[1].url).toBe(`${ORIGIN}${path}`);
+  });
+
+  it('a Shopify-style rule set still refuses session-id and sorted variants', async () => {
+    const { fetcher, calls } = await create(robots(SHOPIFY));
+    expect(await pathRefused(fetcher.get('/products/abc;jsessionid=1'))).toBe(true);
+    expect(await pathRefused(fetcher.get('/collections/whisky?sort_by=price'))).toBe(true);
+    expect(await pathRefused(fetcher.get('/cart;x'))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+});
+
 describe('every printable ASCII character matches in raw and percent-escaped form', () => {
   // Structural characters keep their meaning when raw, so their escaped form is a different token:
   // `/` separates segments, `?` starts the query, `=` and `&` delimit query parameters.

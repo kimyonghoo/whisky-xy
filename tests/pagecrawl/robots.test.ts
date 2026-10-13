@@ -146,6 +146,45 @@ describe('parseRobots', () => {
     expect(parseRobots('User-agent: *\nDisallow: /cart\nAllow: /view/item/\n', UA).isAllowed('/view/item/123')).toBe(true);
   });
 
+  it('loose form strips ;params from path segments (stricter than RFC 9309)', () => {
+    expect(parseRobots('User-agent: *\nDisallow: /cart$\n', UA).isAllowed('/cart;jsessionid=1')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /cart$\n', UA).isAllowed('/cart%3Bjsessionid=1')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /admin/\n', UA).isAllowed('/admin;x/')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /a/b/c\n', UA).isAllowed('/a;1/b;2/c;3')).toBe(false);
+    // Tomcat strips the parameter, then merges slashes and resolves dot segments.
+    expect(parseRobots('User-agent: *\nDisallow: /cart\n', UA).isAllowed('/x/..;a/cart')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /cart\n', UA).isAllowed('/;x/cart')).toBe(false);
+    // The loose case-fold view still applies on its own: /x/..;a/cart is under /X/ on a case-insensitive server.
+    expect(parseRobots('User-agent: *\nDisallow: /X/\n', UA).isAllowed('/x/..;a/cart')).toBe(false);
+    // Only before the query: a ; in the query is not a path parameter.
+    expect(parseRobots('User-agent: *\nDisallow: /x?a=1$\n', UA).isAllowed('/x?a=1;b')).toBe(true);
+  });
+
+  it('loose form strips ;params from patterns too, without widening them', () => {
+    const p = parseRobots('User-agent: *\nDisallow: /cart;x\n', UA);
+    expect(p.isAllowed('/cart')).toBe(false);
+    expect(p.isAllowed('/cart;y')).toBe(false);
+    expect(p.isAllowed('/cart/1')).toBe(false);
+    expect(p.isAllowed('/cart?id=1')).toBe(false);
+    expect(p.isAllowed('/cartoon')).toBe(true);
+    const root = parseRobots('User-agent: *\nDisallow: /;jsessionid=\n', UA);
+    expect(root.isAllowed('/')).toBe(false);
+    expect(root.isAllowed('/products/abc')).toBe(true);
+    // A parameter after a wildcard is kept: /*;jsessionid= blocks session-id URLs, not every page.
+    const sid = parseRobots('User-agent: *\nDisallow: /*;jsessionid=\n', UA);
+    expect(sid.isAllowed('/products/abc')).toBe(true);
+    expect(sid.isAllowed('/products/abc;jsessionid=1')).toBe(false);
+  });
+
+  it('loose form treats + and %20 as the same in the query only', () => {
+    expect(parseRobots('User-agent: *\nDisallow: /*?q=a+b\n', UA).isAllowed('/x?q=a%20b')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /*?q=a%20b\n', UA).isAllowed('/x?q=a+b')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /search*q=a+b\n', UA).isAllowed('/search?q=a%20b')).toBe(false);
+    expect(parseRobots('User-agent: *\nDisallow: /tags/a%20b\n', UA).isAllowed('/tags/a+b')).toBe(true);
+    expect(parseRobots('User-agent: *\nDisallow: /tags/a+b\n', UA).isAllowed('/tags/a%20b')).toBe(true);
+    expect(parseRobots('User-agent: *\nDisallow: /cart\n', UA).isAllowed('/search?q=a+b')).toBe(true);
+  });
+
   it('compares percent-encoded unreserved characters as equal', () => {
     const r = parseRobots('User-agent: *\nDisallow: /~secret\n', UA);
     expect(r.isAllowed('/%7Esecret')).toBe(false);

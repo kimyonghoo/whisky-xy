@@ -229,6 +229,11 @@ export async function createPoliteFetcher(opts: PoliteFetcherOptions): Promise<P
     const u = new URL(path, origin);
     if (u.origin !== origin) throw new PathDisallowed(path, `not on ${origin}`);
     const wire = u.pathname + u.search;
+    // Servers may merge `//` (nginx by default) or read `%5C` as `/` (IIS), so such a path can be a
+    // disallowed page under another name. Refuse it outright.
+    if (u.pathname.includes('//') || /%5c/i.test(u.pathname)) {
+      throw new PathDisallowed(path, 'repeated slash or escaped backslash in the path');
+    }
     if (!robots.isAllowed(wire)) throw new PathDisallowed(path, 'disallowed by robots.txt');
     if (used >= maxRequests) throw stop('budget');
 
