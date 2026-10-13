@@ -2,7 +2,14 @@ import type { Currency, Store } from '@/lib/stores';
 import { liveFetch, storeFetch } from '@/lib/shopify/http';
 import { botUserAgent } from '@/lib/bot-ua';
 import { parseRobots, type Robots } from '@/lib/pagecrawl/robots';
-import { DEFAULT_DEADLINE_MS, MAX_CRAWL_DELAY_MS, PRODUCT_TOKEN } from '@/lib/pagecrawl/fetcher';
+import {
+  CrawlStopped,
+  DEFAULT_DEADLINE_MS,
+  MAX_CRAWL_DELAY_MS,
+  PRODUCT_TOKEN,
+  isCfChallengeHeader,
+  type CrawlStopReason,
+} from '@/lib/pagecrawl/fetcher';
 
 export type FetchFn = typeof fetch;
 
@@ -43,9 +50,22 @@ export function storeHeaders(store: Pick<Store, 'currency'>): Record<string, str
 
 const sleep = (ms: number) => (ms > 0 ? new Promise<void>((r) => setTimeout(r, ms)) : Promise.resolve());
 
-async function storeRequest(store: Store, path: string, fetchFn: FetchFn, signal: AbortSignal): Promise<Response> {
+async function storeRequest(
+  store: Store,
+  path: string,
+  fetchFn: FetchFn,
+  signal: AbortSignal,
+  opts: { stopOnBlock?: boolean } = {},
+): Promise<Response> {
   // redirect: 'manual' so we never send our cookie to, or read data from, another host.
   const res = await fetchFn(`https://${store.domain}${path}`, { headers: storeHeaders(store), signal, redirect: 'manual' });
+  // Robots-checked (Japanese) crawls treat these as the page crawl does: stop the store, never retry.
+  if (opts.stopOnBlock) {
+    if (isCfChallengeHeader(res)) throw new CrawlStopped('challenge', path);
+    if (res.status === 403 || res.status === 429 || res.status === 503) {
+      throw new CrawlStopped(`http-${res.status}` as CrawlStopReason, path);
+    }
+  }
   if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
     throw new Error(`${store.domain} ${path}: unexpected redirect (HTTP ${res.status || 'opaqueredirect'})`);
   }
@@ -73,15 +93,18 @@ async function checkCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal
  * a 2xx or a 404), it disallows a path the crawl would request, or its Crawl-delay is too long.
  */
 export class RobotsRefusal extends Error {
-  constructor(message: string) {
+  reason: 'robots-unavailable' | 'crawl-delay' | 'disallowed';
+  constructor(reason: RobotsRefusal['reason'], message: string) {
     super(message);
     this.name = 'RobotsRefusal';
+    this.reason = reason;
   }
 }
 
 /**
  * Reads the store's robots.txt with the bot User-Agent (no cookie, no redirects, no retry).
  * 404 means no rules; any other non-2xx, a redirect or a network error refuses the store.
+ * A `cf-mitigated: challenge` header (any status) is a block: CrawlStopped('challenge').
  */
 export async function loadShopifyRobots(
   store: Pick<Store, 'domain'>,
@@ -96,18 +119,19 @@ export async function loadShopifyRobots(
       redirect: 'manual',
     });
   } catch (e) {
-    throw new RobotsRefusal(`robots.txt unavailable: ${e instanceof Error ? e.message : String(e)}`);
+    throw new RobotsRefusal('robots-unavailable', `robots.txt unavailable: ${e instanceof Error ? e.message : String(e)}`);
   }
+  if (isCfChallengeHeader(res)) throw new CrawlStopped('challenge', 'robots.txt');
   let robots: Robots;
   if (res.status === 404) {
     robots = parseRobots('', PRODUCT_TOKEN);
   } else if (res.status >= 200 && res.status < 300 && res.type !== 'opaqueredirect') {
     robots = parseRobots(await res.text(), PRODUCT_TOKEN);
   } else {
-    throw new RobotsRefusal(`robots.txt unavailable: HTTP ${res.status || res.type}`);
+    throw new RobotsRefusal('robots-unavailable', `robots.txt unavailable: HTTP ${res.status || res.type}`);
   }
   if ((robots.crawlDelayMs ?? 0) > MAX_CRAWL_DELAY_MS) {
-    throw new RobotsRefusal(`robots.txt crawl-delay ${robots.crawlDelayMs} ms exceeds ${MAX_CRAWL_DELAY_MS} ms`);
+    throw new RobotsRefusal('crawl-delay', `robots.txt crawl-delay ${robots.crawlDelayMs} ms exceeds ${MAX_CRAWL_DELAY_MS} ms`);
   }
   return robots;
 }
@@ -117,7 +141,7 @@ export async function loadShopifyRobots(
  * surface"), so these read the shop's currency from `/meta.json` instead.
  */
 async function checkMetaCurrency(store: Store, fetchFn: FetchFn, signal: AbortSignal): Promise<void> {
-  const res = await storeRequest(store, '/meta.json', fetchFn, signal);
+  const res = await storeRequest(store, '/meta.json', fetchFn, signal, { stopOnBlock: true });
   if (!res.ok) throw new Error(`${store.domain} /meta.json failed: HTTP ${res.status}`);
   const meta = await readJson<{ currency?: string }>(store, '/meta.json', res);
   if (meta.currency !== store.currency) throw new CurrencyMismatchError(store.currency, String(meta.currency));
@@ -140,8 +164,9 @@ export function catalogPathOf(store: Pick<Store, 'domain' | 'catalogPath'>): str
  * every path the crawl could request (`/meta.json` and catalog pages 1..maxPages, with their exact
  * query) is checked before the first request, and the currency comes from `/meta.json`. Every
  * request, including the first after robots.txt, waits at least 3 s (or a larger Crawl-delay). The
- * crawl stops at a 20-minute deadline and returns what it has, marked incomplete (no sold-out sweep, `stoppedBy: 'deadline'`; running out of pages is `'page-limit'`).
- * Without `robots`, behaviour is unchanged (`/cart.js`, `delayMs` pacing, no deadline).
+ * crawl stops at a 20-minute deadline (or the shorter `deadlineMs`) and returns what it has, marked incomplete (no sold-out sweep, `stoppedBy: 'deadline'`; running out of pages is `'page-limit'`).
+ * A 403, 429, 503 or a `cf-mitigated: challenge` response throws CrawlStopped (never retried).
+ * Without `robots`, behaviour is unchanged (`/cart.js`, `delayMs` pacing, no deadline, plain errors).
  */
 export async function fetchCatalog(
   store: Store,
@@ -177,7 +202,7 @@ export async function fetchCatalog(
   if (robots) {
     const paths = ['/meta.json', ...Array.from({ length: maxPages }, (_, i) => pagePath(i + 1))];
     const refused = paths.find((p) => !robots.isAllowed(p));
-    if (refused !== undefined) throw new RobotsRefusal(`robots.txt disallows ${refused}`);
+    if (refused !== undefined) throw new RobotsRefusal('disallowed', `robots.txt disallows ${refused}`);
     await wait(delayMs); // the gap after robots.txt, which the caller fetched just before
     if (now() >= deadlineAt) return { products: [], complete: false, stoppedBy: 'deadline' };
     await checkMetaCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
@@ -190,7 +215,7 @@ export async function fetchCatalog(
     await wait(delayMs);
     if (now() >= deadlineAt) return { products, complete: false, stoppedBy: 'deadline' }; // partial: no sold-out sweep
     const path = pagePath(page);
-    const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs));
+    const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs), { stopOnBlock: robots !== undefined });
     if (!res.ok) throw new Error(`${store.domain} products page ${page} failed: HTTP ${res.status}`);
     const body = await readJson<{ products?: ShopifyProduct[] }>(store, path, res);
     const batch = body.products ?? [];

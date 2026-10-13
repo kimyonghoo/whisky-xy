@@ -8,7 +8,8 @@ import { toObservations, catalogVariantIds } from '@/lib/crawl/map';
 import { applyPageChecks, ingestStoreCrawl, type ChangeEvent } from '@/lib/crawl/ingest';
 import { dueProductPaths, getNextListPage, saveNextListPage, storeListingPaths } from '@/lib/crawl/page-state';
 import { botContactOrigin } from '@/lib/bot-ua';
-import { createPoliteFetcher, CrawlStopped, DEFAULT_DEADLINE_MS } from '@/lib/pagecrawl/fetcher';
+import { createPoliteFetcher, CrawlStopped, DEFAULT_DEADLINE_MS, type CrawlStopReason } from '@/lib/pagecrawl/fetcher';
+import { getBlock, isBlockReason, markBlocked } from '@/lib/crawl/block-state';
 import { crawlPageStore, type PageCrawlSkips } from '@/lib/pagecrawl/adapter';
 import { PAGE_STORE_CONFIGS } from '@/lib/pagecrawl/configs';
 import { refreshFx } from '@/lib/fx';
@@ -37,6 +38,13 @@ export interface CrawlReport {
     observations: number;
     events: number;
     page?: PageRunSummary;
+    /** Non-USD stores: why a guard stopped the crawl (or kept it from starting) this run. */
+    stopReason?: CrawlStopReason;
+    /**
+     * Non-USD stores: a block (403, 429 or a challenge). `detected` is true on the run that hit it
+     * (and persisted it); later runs skip the store and report the stored block.
+     */
+    block?: { reason: string; since: string; detected: boolean };
   }[];
   alertsSent: number;
   fx: 'ok' | string;
@@ -92,7 +100,13 @@ async function runShopifyStore(db: Db, store: Store, t: Date, opts: StoreRunOpts
     }));
   } catch (err) {
     if (err instanceof RobotsRefusal) {
-      return { entry: { storeId: store.id, ok: true, note: `skipped: ${err.message}`, observations: 0, events: 0 }, events: [] };
+      const entry: StoreEntry = { storeId: store.id, ok: true, note: `skipped: ${err.message}`, observations: 0, events: 0 };
+      if (err.reason !== 'disallowed') entry.stopReason = err.reason;
+      return { entry, events: [] };
+    }
+    // Robots-checked crawls stop at a 403, 429, 503 or a challenge. Nothing from the run is ingested.
+    if (err instanceof CrawlStopped) {
+      return { entry: { storeId: store.id, ok: true, note: `stopped: ${err.reason}`, stopReason: err.reason, observations: 0, events: 0 }, events: [] };
     }
     throw err;
   }
@@ -108,6 +122,7 @@ async function runShopifyStore(db: Db, store: Store, t: Date, opts: StoreRunOpts
     entry.note = stoppedBy === 'deadline'
       ? 'stopped: deadline; missing listings not marked sold out'
       : 'incomplete: page limit reached; missing listings not marked sold out';
+    if (stoppedBy === 'deadline') entry.stopReason = 'deadline';
   }
   return { entry, events: evs };
 }
@@ -131,7 +146,7 @@ async function runPageStore(db: Db, store: Store, t: Date, opts: StoreRunOpts): 
     });
   } catch (err) {
     if (err instanceof CrawlStopped) {
-      return { entry: { storeId: store.id, ok: true, note: `stopped: ${err.reason}`, observations: 0, events: 0 }, events: [] };
+      return { entry: { storeId: store.id, ok: true, note: `stopped: ${err.reason}`, stopReason: err.reason, observations: 0, events: 0 }, events: [] };
     }
     throw err;
   }
@@ -164,7 +179,10 @@ async function runPageStore(db: Db, store: Store, t: Date, opts: StoreRunOpts): 
       nextListPage: r.nextListPage,
     },
   };
-  if (r.stopped) entry.note = `stopped: ${r.stopped}`;
+  if (r.stopped) {
+    entry.note = `stopped: ${r.stopped}`;
+    entry.stopReason = r.stopped;
+  }
   return { entry, events: [...evs, ...checkEvents] };
 }
 
@@ -198,6 +216,21 @@ export async function runCrawl(opts: {
     if (!store.crawlEnabled) return skip(true, 'skipped: crawl disabled (terms)');
     let deadlineMs: number | undefined;
     if (store.currency !== 'USD') {
+      // A block is a block (spec 3.5): no request until the owner clears it. Unreadable state fails closed.
+      let block;
+      try {
+        block = await getBlock(db, store.id);
+      } catch (err) {
+        const error = `block state unreadable: ${err instanceof Error ? err.message : String(err)}`;
+        console.error(`[crawl] ${store.id} skipped: ${error}`);
+        return { entry: { storeId: store.id, ok: false, error, observations: 0, events: 0 }, events: [] };
+      }
+      if (block) {
+        const since = block.at.toISOString();
+        console.error(`[crawl] ${store.id} skipped: blocked since ${since} (${block.reason})`);
+        const note = `skipped: blocked since ${since} (${block.reason})`;
+        return { entry: { storeId: store.id, ok: true, note, observations: 0, events: 0, block: { reason: block.reason, since, detected: false } }, events: [] };
+      }
       // Japanese stores must be able to identify and reach us: no crawl with the localhost fallback UA.
       if (botContactOrigin() === null) {
         console.error(`[crawl] ${store.id} skipped: SITE_URL unset or not a reachable origin`);
@@ -212,7 +245,19 @@ export async function runCrawl(opts: {
     }
     try {
       const run = store.adapter === 'page' ? runPageStore : runShopifyStore;
-      return await run(db, store, now(), { ...opts, clock, deadlineMs });
+      const t = now();
+      const r = await run(db, store, t, { ...opts, clock, deadlineMs });
+      const reason = r.entry.stopReason;
+      if (store.currency !== 'USD' && isBlockReason(reason)) {
+        r.entry.block = { reason, since: t.toISOString(), detected: true };
+        console.error(`[crawl] ${store.id} blocked (${reason}): later runs skip it until npm run crawl:unblock`);
+        try {
+          await markBlocked(db, store.id, reason, t);
+        } catch (err) {
+          console.error(`[crawl] ${store.id} block not saved: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+      return r;
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       console.error(`[crawl] ${store.id} failed: ${error}`);

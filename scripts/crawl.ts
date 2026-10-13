@@ -1,6 +1,7 @@
 import { getDb, runScript } from '@/lib/db/client';
 import { STORES } from '@/lib/stores';
 import { runCrawl } from '@/lib/crawl/run';
+import { crawlOutcome } from '@/lib/crawl/annotations';
 import { sendTelegram } from '@/lib/alerts/telegram';
 
 async function main(): Promise<number> {
@@ -18,7 +19,10 @@ async function main(): Promise<number> {
   const db = await getDb();
   const report = await runCrawl({ db, stores, notify, siteUrl: process.env.SITE_URL || 'http://localhost:3000' });
   console.log(JSON.stringify(report, null, 2));
-  return report.stores.every((s) => !s.ok) ? 1 : 0;
+  // Every store has been crawled and saved by now: a newly blocked store fails the run only here.
+  const { annotations, exitCode } = crawlOutcome(report);
+  for (const a of annotations) console.log(a);
+  return exitCode;
 }
 
 // runScript closes PGlite cleanly (shutdown checkpoint) on exit, error and Ctrl+C.

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fetchCatalog, fetchLiveProduct, CurrencyMismatchError, storeHeaders, loadShopifyRobots, RobotsRefusal } from '@/lib/shopify/client';
+import { CrawlStopped } from '@/lib/pagecrawl/fetcher';
 import { parseRobots } from '@/lib/pagecrawl/robots';
 import type { Store } from '@/lib/stores';
 
@@ -209,6 +210,48 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
     await expect(loadShopifyRobots(coll, { fetchFn: throwing })).rejects.toBeInstanceOf(RobotsRefusal);
     const slow = makeFake(() => new Response('User-agent: *\nCrawl-delay: 120\n', { status: 200 }));
     await expect(loadShopifyRobots(coll, { fetchFn: slow })).rejects.toThrow(/crawl-delay/i);
+  });
+
+  it('loadShopifyRobots: a cf-mitigated challenge on robots.txt is a challenge stop (any status)', async () => {
+    for (const status of [200, 403, 503]) {
+      const fake = makeFake(() => new Response('User-agent: *\nDisallow:\n', { status, headers: { 'cf-mitigated': 'challenge' } }));
+      const err = await loadShopifyRobots(coll, { fetchFn: fake }).catch((e) => e);
+      expect(err, String(status)).toBeInstanceOf(CrawlStopped);
+      expect(err.reason, String(status)).toBe('challenge');
+      expect(fake.calls).toHaveLength(1);
+    }
+  });
+
+  it('loadShopifyRobots: a refusal says why (robots-unavailable or crawl-delay)', async () => {
+    const unavailable = await loadShopifyRobots(coll, { fetchFn: makeFake(() => new Response('x', { status: 500 })) }).catch((e) => e);
+    expect(unavailable.reason).toBe('robots-unavailable');
+    const slow = makeFake(() => new Response('User-agent: *\nCrawl-delay: 120\n', { status: 200 }));
+    expect((await loadShopifyRobots(coll, { fetchFn: slow }).catch((e) => e)).reason).toBe('crawl-delay');
+  });
+
+  it('robots-checked crawls stop on 403, 429, 503 or a challenge header, on /meta.json or a catalog page, without another request', async () => {
+    const robots = parseRobots('', 'WhiskyPortalBot');
+    const cases: [string, () => Response, string][] = [
+      ['/meta.json', () => new Response('x', { status: 403 }), 'http-403'],
+      ['page=1', () => new Response('x', { status: 429 }), 'http-429'],
+      ['page=1', () => new Response('x', { status: 503 }), 'http-503'],
+      ['page=1', () => new Response('{"products":[]}', { status: 200, headers: { 'cf-mitigated': 'challenge' } }), 'challenge'],
+      ['/meta.json', () => new Response('x', { status: 403, headers: { 'cf-mitigated': 'challenge' } }), 'challenge'],
+    ];
+    for (const [at, reply, reason] of cases) {
+      const fake = makeFake((url) => (url.endsWith(at) ? reply() : url.endsWith('/meta.json') ? meta() : json({ products: [prod(1)] })));
+      const err = await fetchCatalog(coll, { fetchFn: fake, delayMs: 0, robots, sleep: noSleep }).catch((e) => e);
+      expect(err, `${at} ${reason}`).toBeInstanceOf(CrawlStopped);
+      expect(err.reason, `${at} ${reason}`).toBe(reason);
+      expect(fake.calls.at(-1)!.url.endsWith(at), `${at} ${reason}`).toBe(true);
+    }
+  });
+
+  it('US catalog crawls keep failing a 403 or 429 as a plain error (unchanged)', async () => {
+    const fake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({}, 429)));
+    const err = await fetchCatalog(store, { fetchFn: fake, delayMs: 0 }).catch((e) => e);
+    expect(err).not.toBeInstanceOf(CrawlStopped);
+    expect(err.message).toMatch(/HTTP 429/);
   });
 
   it('checks the currency through /meta.json (Shopify robots disallow /cart.js) and never requests /cart.js', async () => {

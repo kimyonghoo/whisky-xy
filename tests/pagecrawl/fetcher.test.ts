@@ -133,9 +133,15 @@ describe('robots.txt loading', () => {
     expect(await fetcher.get('/ok')).toBe('<html>ok</html>');
   });
 
-  it('a non-2xx robots.txt is robots-unavailable even when it looks like a challenge', async () => {
-    const f = makeFetch({ '/robots.txt': () => new Response('cf-chl', { status: 403, headers: { 'cf-mitigated': 'challenge' } }) });
+  it('a non-2xx robots.txt is robots-unavailable even when its body looks like a challenge', async () => {
+    const f = makeFetch({ '/robots.txt': () => new Response('cf-chl challenge-platform', { status: 403 }) });
     expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('robots-unavailable');
+    expect(f.calls).toHaveLength(1);
+  });
+
+  it.each([403, 503])('a robots.txt HTTP %i with the cf-mitigated: challenge header is a challenge (a block, not a glitch)', async (status) => {
+    const f = makeFetch({ '/robots.txt': () => new Response('cf-chl', { status, headers: { 'cf-mitigated': 'challenge' } }) });
+    expect(await stopReason(createPoliteFetcher({ origin: ORIGIN, fetchFn: f.fetchFn, sleep: async () => {}, now: () => 0 }))).toBe('challenge');
     expect(f.calls).toHaveLength(1);
   });
 

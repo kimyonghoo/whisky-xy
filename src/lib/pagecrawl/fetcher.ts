@@ -118,7 +118,8 @@ export interface PoliteFetcherOptions {
 
 interface Fetched { res: Response; status: number; body: string | null }
 
-const isCfChallengeHeader = (res: Response): boolean =>
+/** Cloudflare's own "this response is a bot challenge" header, on any status. */
+export const isCfChallengeHeader = (res: Response): boolean =>
   (res.headers.get('cf-mitigated') ?? '').trim().toLowerCase() === 'challenge';
 
 /** A bot-challenge page. A `/cdn-cgi/challenge-platform/` script alone is normal on Cloudflare sites. */
@@ -213,11 +214,12 @@ export async function createPoliteFetcher(opts: PoliteFetcherOptions): Promise<P
   } catch (e) {
     throw stop('robots-unavailable', e instanceof Error ? e.message : String(e));
   }
+  // Header only, on any status (a Cloudflare challenge usually comes as a 403): robots.txt text
+  // (e.g. a Disallow for /cdn-cgi/challenge-platform/) must never read as a challenge.
+  if (isCfChallengeHeader(fetched.res)) throw stop('challenge', 'robots.txt');
   if (fetched.status === 404) {
     robots = parseRobots('', PRODUCT_TOKEN);
   } else if (fetched.status >= 200 && fetched.status < 300 && fetched.body !== null) {
-    // Header only: robots.txt text (e.g. a Disallow for /cdn-cgi/challenge-platform/) must never read as a challenge.
-    if (isCfChallengeHeader(fetched.res)) throw stop('challenge', 'robots.txt');
     robots = parseRobots(fetched.body, PRODUCT_TOKEN);
   } else {
     throw stop('robots-unavailable', `robots.txt HTTP ${fetched.status || fetched.res.type}`);

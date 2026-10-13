@@ -43,6 +43,13 @@
       "when": 1791890896902,
       "tag": "0005_crawl_state",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791896036016,
+      "tag": "0006_crawl_block",
+      "breakpoints": true
     }
   ]
 }

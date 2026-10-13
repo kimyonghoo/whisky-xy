@@ -4,6 +4,7 @@ import { createTestDb } from '../helpers/db';
 import { listings, priceHistory, watches } from '@/lib/db/schema';
 import { runCrawl } from '@/lib/crawl/run';
 import { dueProductPaths, getNextListPage } from '@/lib/crawl/page-state';
+import { clearBlock, getBlock } from '@/lib/crawl/block-state';
 import { ingestStoreCrawl } from '@/lib/crawl/ingest';
 import { getStore } from '@/lib/stores';
 import type { FetchFn } from '@/lib/shopify/client';
@@ -474,6 +475,79 @@ describe('runCrawl: Japanese stores', () => {
     expect(r.stores[1]).toMatchObject({ storeId: 'shinanoya', ok: true, note: 'stopped: deadline' });
     expect(r.alertsSent).toBe(1);
     expect(sent).toHaveLength(1);
+  });
+
+  // ---- blocks (spec 3.5): a 403, 429 or challenge on a non-USD store is persisted and respected ----
+
+  it('a 403 stop persists the block; the next run skips the store with 0 requests; unblock lets it run again', async () => {
+    await runCrawl({ ...jp, stores: [shinanoya], fetchFn: net(shinanoyaSite({ 1: [1, 2] })).fetchFn });
+    const r1 = await runCrawl({ ...jp, stores: [shinanoya], fetchFn: net(shinanoyaSite({}, (k) => (k === 1 ? 403 : itemHtml()))).fetchFn });
+    expect(r1.stores[0]).toMatchObject({ ok: true, note: 'stopped: http-403', stopReason: 'http-403', block: { reason: 'http-403', detected: true } });
+    const block = await getBlock(db, 'shinanoya');
+    expect(block?.reason).toBe('http-403');
+    expect(r1.stores[0].block?.since).toBe(block!.at.toISOString());
+
+    const n2 = net(shinanoyaSite({ 1: [1, 2] }));
+    const r2 = await runCrawl({ ...jp, stores: [shinanoya], fetchFn: n2.fetchFn });
+    expect(n2.storeCalls(shinanoya.domain)).toEqual([]);
+    expect(r2.stores[0]).toMatchObject({
+      storeId: 'shinanoya', ok: true, observations: 0,
+      note: `skipped: blocked since ${block!.at.toISOString()} (http-403)`,
+      block: { reason: 'http-403', since: block!.at.toISOString(), detected: false },
+    });
+
+    expect(await clearBlock(db, 'shinanoya')).toEqual(block);
+    const n3 = net(shinanoyaSite({ 1: [1, 2] }));
+    await runCrawl({ ...jp, stores: [shinanoya], fetchFn: n3.fetchFn });
+    expect(n3.storeCalls(shinanoya.domain)[0]).toBe('/robots.txt');
+  });
+
+  it('a JPY Shopify store is blocked by a robots.txt challenge or a 429, and later skipped with 0 requests', async () => {
+    const challenge = net((host, path) => (host === nemoto.domain && path === '/robots.txt' ? 'x' : nemotoSite(undefined, [yamazaki])(host, path)));
+    const challenged = (async (input: string | URL | Request, init?: RequestInit) => {
+      const res = await challenge.fetchFn(input, init);
+      return new URL(String(input)).pathname === '/robots.txt'
+        ? new Response('x', { status: 403, headers: { 'cf-mitigated': 'challenge' } })
+        : res;
+    }) as FetchFn;
+    const r1 = await runCrawl({ ...jp, stores: [nemoto], fetchFn: challenged });
+    expect(challenge.storeCalls(nemoto.domain)).toEqual(['/robots.txt']);
+    expect(r1.stores[0]).toMatchObject({ storeId: 'nemoto', note: 'stopped: challenge', block: { reason: 'challenge', detected: true } });
+    expect((await getBlock(db, 'nemoto'))?.reason).toBe('challenge');
+    const n2 = net(nemotoSite(undefined, [yamazaki]));
+    const r2 = await runCrawl({ ...jp, stores: [nemoto], fetchFn: n2.fetchFn });
+    expect(n2.storeCalls(nemoto.domain)).toEqual([]);
+    expect(r2.stores[0].note).toMatch(/^skipped: blocked since \S+ \(challenge\)$/);
+
+    await clearBlock(db, 'nemoto');
+    const n3 = net((host, path) => (path.startsWith('/collections/') ? 429 : nemotoSite(undefined, [yamazaki])(host, path)));
+    const r3 = await runCrawl({ ...jp, stores: [nemoto], fetchFn: n3.fetchFn });
+    expect(n3.storeCalls(nemoto.domain)).toEqual(['/robots.txt', '/meta.json', '/collections/whisky/products.json?limit=250&page=1']);
+    expect(r3.stores[0]).toMatchObject({ ok: true, observations: 0, note: 'stopped: http-429', block: { reason: 'http-429', detected: true } });
+    expect((await getBlock(db, 'nemoto'))?.reason).toBe('http-429');
+  });
+
+  it('a 503, robots-unavailable or errors stop is reported but not persisted: the next run crawls', async () => {
+    const r1 = await runCrawl({ ...jp, stores: [shinanoya], fetchFn: net(shinanoyaSite({ 1: [1] }, () => 503)).fetchFn });
+    expect(r1.stores[0]).toMatchObject({ note: 'stopped: http-503', stopReason: 'http-503' });
+    expect(r1.stores[0].block).toBeUndefined();
+    const r2 = await runCrawl({ ...jp, stores: [shinanoya], fetchFn: net((h, p) => (p === '/robots.txt' ? 500 : shinanoyaSite({ 1: [1] })(h, p))).fetchFn });
+    expect(r2.stores[0]).toMatchObject({ note: 'stopped: robots-unavailable', stopReason: 'robots-unavailable' });
+    const r3 = await runCrawl({ ...jp, stores: [nemoto], fetchFn: net(nemotoSite(500, [yamazaki])).fetchFn });
+    expect(r3.stores[0]).toMatchObject({ note: 'skipped: robots.txt unavailable: HTTP 500', stopReason: 'robots-unavailable' });
+    expect(await getBlock(db, 'shinanoya')).toBeNull();
+    expect(await getBlock(db, 'nemoto')).toBeNull();
+    const n = net(shinanoyaSite({ 1: [1] }));
+    await runCrawl({ ...jp, stores: [shinanoya], fetchFn: n.fetchFn });
+    expect(n.storeCalls(shinanoya.domain).length).toBeGreaterThan(1);
+  });
+
+  it('US stores keep their behaviour: a 403 fails the store and is never persisted as a block', async () => {
+    const f = fakeFetch({ [flask.domain]: { pages: flaskPages, failPage: 1, failStatus: 403 } });
+    const r = await runCrawl({ ...base, stores: [flask], fetchFn: f });
+    expect(r.stores[0]).toMatchObject({ storeId: 'flask', ok: false });
+    expect(r.stores[0].block).toBeUndefined();
+    expect(await getBlock(db, 'flask')).toBeNull();
   });
 
   // ---- run-level time budget: 40 minutes from the start of runCrawl ----

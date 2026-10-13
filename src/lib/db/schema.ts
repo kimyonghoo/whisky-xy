@@ -88,13 +88,18 @@ export const storeLiveBudget = pgTable('store_live_budget', {
 });
 
 /**
- * Per-store page-crawl bookmark kept between runs: the list page the next run starts reading at
- * (page crawls read a slice of the store's list pages per run and wrap to page 1).
+ * Per-store crawl state kept between runs: the list page the next page-crawl run starts reading at
+ * (page crawls read a slice of the store's list pages per run and wrap to page 1), and a block.
+ * A non-USD store that answered 403, 429 or a bot challenge is blocked: later runs skip it without
+ * a request until `npm run crawl:unblock -- --store <id>` clears `blockedAt`.
  */
 export const crawlState = pgTable('crawl_state', {
   storeId: text('store_id').primaryKey(),
   nextListPage: integer('next_list_page').notNull(),
   updatedAt: ts('updated_at').notNull(),
+  blockedAt: ts('blocked_at'),
+  /** The stop reason that blocked the store (`http-403`, `http-429` or `challenge`). */
+  blockReason: text('block_reason'),
 });
 
 export type KrLink = typeof krLinks.$inferSelect;
