@@ -54,9 +54,10 @@ describe('fetchCatalog', () => {
   });
   it('stops at maxPages and reports incomplete', async () => {
     const fake = makeFake((url) => (url.endsWith('/cart.js') ? usd() : json({ products: [prod(1)] })));
-    const { products, complete } = await fetchCatalog(store, { fetchFn: fake, delayMs: 0, maxPages: 2 });
+    const { products, complete, stoppedBy } = await fetchCatalog(store, { fetchFn: fake, delayMs: 0, maxPages: 2 });
     expect(products).toHaveLength(2);
     expect(complete).toBe(false);
+    expect(stoppedBy).toBe('page-limit');
   });
   it('crawls the store collection path when catalogPath is set', async () => {
     const fake = makeFake((url) => {
@@ -279,7 +280,7 @@ describe('robots-checked catalog crawl (non-USD stores)', () => {
       sleep: async (ms) => { t += ms; }, now: () => t,
     });
     // waits of 3 s: meta at 3 s, pages at 6 s and 9 s; the next wait reaches 12 s > 10 s: stop
-    expect(r).toEqual({ products: [prod(1), prod(2)], complete: false });
+    expect(r).toEqual({ products: [prod(1), prod(2)], complete: false, stoppedBy: 'deadline' });
     expect(fake.calls.map((c) => new URL(c.url).pathname + new URL(c.url).search)).toEqual([
       '/meta.json', '/collections/whisky/products.json?limit=250&page=1', '/collections/whisky/products.json?limit=250&page=2',
     ]);

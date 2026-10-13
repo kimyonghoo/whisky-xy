@@ -391,6 +391,24 @@ describe('runCrawl: Japanese stores', () => {
     expect(r.stores[0]).toMatchObject({ ok: true, observations: 1 });
   });
 
+  it('JPY Shopify store: a deadline stop is reported as such, not as the page limit, and nothing is swept', async () => {
+    let t = 0;
+    const route = (host: string, path: string): Reply => {
+      if (host !== nemoto.domain) return undefined;
+      t += 60_000; // every nemoto response takes 60 s
+      const m = /^\/collections\/whisky\/products\.json\?limit=250&page=(\d+)$/.exec(path);
+      if (m) {
+        const id = Number(m[1]);
+        return JSON.stringify({ products: [{ ...yamazaki, id, handle: `y-${id}`, variants: [{ id: 1000 + id, title: 'Default Title', price: '27500', available: true }] }] });
+      }
+      return nemotoSite('', [])(host, path);
+    };
+    const n = net(route);
+    const r = await runCrawl({ ...jp, stores: [nemoto], fetchFn: n.fetchFn, politeSleep: async (ms) => { t += ms; }, politeNow: () => t });
+    expect(r.stores[0]).toMatchObject({ storeId: 'nemoto', ok: true, note: 'stopped: deadline; missing listings not marked sold out' });
+    expect(r.stores[0].observations).toBeGreaterThan(0);
+  });
+
   it('US Shopify stores do not fetch robots.txt (unchanged)', async () => {
     const n = net((host, path) => (host === flask.domain ? (path === '/cart.js' ? '{"currency":"USD"}' : '{"products":[]}') : undefined));
     await runCrawl({ ...jp, stores: [flask], fetchFn: n.fetchFn });

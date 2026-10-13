@@ -140,7 +140,7 @@ export function catalogPathOf(store: Pick<Store, 'domain' | 'catalogPath'>): str
  * every path the crawl could request (`/meta.json` and catalog pages 1..maxPages, with their exact
  * query) is checked before the first request, and the currency comes from `/meta.json`. Every
  * request, including the first after robots.txt, waits at least 3 s (or a larger Crawl-delay). The
- * crawl stops at a 20-minute deadline and returns what it has, marked incomplete (no sold-out sweep).
+ * crawl stops at a 20-minute deadline and returns what it has, marked incomplete (no sold-out sweep, `stoppedBy: 'deadline'`; running out of pages is `'page-limit'`).
  * Without `robots`, behaviour is unchanged (`/cart.js`, `delayMs` pacing, no deadline).
  */
 export async function fetchCatalog(
@@ -158,7 +158,7 @@ export async function fetchCatalog(
     /** Tests only: the clock for the deadline. */
     now?: () => number;
   } = {},
-): Promise<{ products: ShopifyProduct[]; complete: boolean }> {
+): Promise<{ products: ShopifyProduct[]; complete: boolean; stoppedBy?: 'deadline' | 'page-limit' }> {
   const fetchFn = opts.fetchFn ?? storeFetch;
   const maxPages = opts.maxPages ?? 100;
   const timeoutMs = opts.timeoutMs ?? 20000;
@@ -179,7 +179,7 @@ export async function fetchCatalog(
     const refused = paths.find((p) => !robots.isAllowed(p));
     if (refused !== undefined) throw new RobotsRefusal(`robots.txt disallows ${refused}`);
     await wait(delayMs); // the gap after robots.txt, which the caller fetched just before
-    if (now() >= deadlineAt) return { products: [], complete: false };
+    if (now() >= deadlineAt) return { products: [], complete: false, stoppedBy: 'deadline' };
     await checkMetaCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
   } else {
     await checkCurrency(store, fetchFn, AbortSignal.timeout(timeoutMs));
@@ -188,7 +188,7 @@ export async function fetchCatalog(
   const products: ShopifyProduct[] = [];
   for (let page = 1; page <= maxPages; page++) {
     await wait(delayMs);
-    if (now() >= deadlineAt) return { products, complete: false }; // partial: no sold-out sweep
+    if (now() >= deadlineAt) return { products, complete: false, stoppedBy: 'deadline' }; // partial: no sold-out sweep
     const path = pagePath(page);
     const res = await storeRequest(store, path, fetchFn, AbortSignal.timeout(timeoutMs));
     if (!res.ok) throw new Error(`${store.domain} products page ${page} failed: HTTP ${res.status}`);
@@ -197,7 +197,7 @@ export async function fetchCatalog(
     if (batch.length === 0) return { products, complete: true };
     products.push(...batch);
   }
-  return { products, complete: false };
+  return { products, complete: false, stoppedBy: 'page-limit' };
 }
 
 export async function fetchLiveProduct(

@@ -64,9 +64,10 @@ async function runShopifyStore(db: Db, store: Store, t: Date, opts: StoreRunOpts
   let robots;
   let products;
   let complete;
+  let stoppedBy;
   try {
     if (store.currency !== 'USD') robots = await loadShopifyRobots(store, { fetchFn: opts.fetchFn });
-    ({ products, complete } = await fetchCatalog(store, {
+    ({ products, complete, stoppedBy } = await fetchCatalog(store, {
       fetchFn: opts.fetchFn,
       delayMs: opts.delayMs,
       robots,
@@ -86,7 +87,11 @@ async function runShopifyStore(db: Db, store: Store, t: Date, opts: StoreRunOpts
   });
   const entry: StoreEntry = { storeId: store.id, ok: true, observations: obs.length, events: evs.length };
   if (obs.length === 0) entry.note = 'anomaly: no whisky observations; missing listings not marked sold out';
-  else if (!complete) entry.note = 'incomplete: page limit reached; missing listings not marked sold out';
+  else if (!complete) {
+    entry.note = stoppedBy === 'deadline'
+      ? 'stopped: deadline; missing listings not marked sold out'
+      : 'incomplete: page limit reached; missing listings not marked sold out';
+  }
   return { entry, events: evs };
 }
 

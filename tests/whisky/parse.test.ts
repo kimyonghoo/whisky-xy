@@ -219,6 +219,18 @@ describe('Japanese text', () => {
     }
   });
 
+  it('single bottles in gift tins and highball-pairing titles pass; RTD cans and highballs are rejected', () => {
+    const flag = { whiskyOnlyCatalog: true };
+    for (const title of [
+      'グレンリベット 12年 700ml 缶入り', '700ml缶入り', '山崎 12年 ギフト缶 700ml', 'ラフロイグ 10年 化粧缶 700ml', '知多 ハイボールにおすすめ 700ml',
+    ]) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, flag), title).toBe(true);
+    }
+    for (const title of ['（単品）スモーキーハイボール 350ml缶', '缶 350ml', 'スモーキーハイボール', '山崎 350ml缶', '角 500ml缶']) {
+      expect(isWhiskyProduct({ title, productType: '', tags: [] }, flag), title).toBe(false);
+    }
+  });
+
   it('a size labelled 容量 wins over another size in the text, for parseSizeMl and bottleKey alike', () => {
     expect(parseSizeMl('山崎 12年 750ml 容量 700ml')).toBe(700);
     expect(parseSizeMl('山崎 12年 750ml 容量：1L')).toBe(1000);
