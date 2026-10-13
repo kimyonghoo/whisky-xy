@@ -347,6 +347,17 @@ describe('crawlPageStore', () => {
     expect(r.observations[0].bottleKey).toMatch(/\|s700$/);
   });
 
+  it('strips control characters that entity decoding produces from the title', async () => {
+    const { fetcher } = await setup({
+      [P1]: EMPTY_LIST,
+      [A]: itemPage({ name: '山崎&#27;[2J 12年&#10;700ml&#x85;&#x9b;31m', size: '700ml' }),
+      [B]: itemPage({ h2: ' 白州&#0007; 12年&#13;700ml ' }),
+    });
+    const r = await crawlPageStore(STORE, CFG, { fetcher, dueProductPaths: [A, B] });
+    expect(r.observations.map((o) => o.title)).toEqual(['山崎[2J 12年 700ml31m', '白州 12年 700ml']);
+    for (const o of r.observations) expect(o.title).not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+  });
+
   it('skips gone pages and other per-path errors, but a stop ends the run with what it has', async () => {
     const { fetcher, calls } = await setup({
       [P1]: EMPTY_LIST,

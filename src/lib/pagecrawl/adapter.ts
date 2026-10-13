@@ -6,6 +6,7 @@ import { parsePriceMinor } from '@/lib/money';
 import { bottleKey, isWhiskyProduct, normalizeText, parseBatch, parseProof, parseSizeMl } from '@/lib/whisky/parse';
 import { CrawlStopped, PageGone, PathDisallowed, type CrawlStopReason, type PoliteFetcher } from '@/lib/pagecrawl/fetcher';
 import { decodeHtmlEntities, parseJsonLdOffer } from '@/lib/pagecrawl/jsonld';
+import { stripControls } from '@/lib/text-controls';
 import type { PageStoreConfig } from '@/lib/pagecrawl/configs';
 
 export interface PageCrawlSkips {
@@ -90,7 +91,8 @@ function rawTitleOf(html: string, jsonLdName: string | null, cfg: PageStoreConfi
  * row's `容量 700ml` in the bottle key (the first labelled size wins there) and leave a 容量 token.
  */
 function titleOf(html: string, jsonLdName: string | null, cfg: PageStoreConfig): string {
-  return rawTitleOf(html, jsonLdName, cfg).replace(/容量\s*[:：]?\s*(?=[0-9０-９])/g, '').trim();
+  // Entity decoding can yield control characters (`&#27;`): never store them.
+  return stripControls(rawTitleOf(html, jsonLdName, cfg)).replace(/容量\s*[:：]?\s*(?=[0-9０-９])/g, '').trim();
 }
 
 type PageOutcome = { obs: Observation } | { skip: keyof PageCrawlSkips };

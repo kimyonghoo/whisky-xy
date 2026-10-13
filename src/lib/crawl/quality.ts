@@ -4,6 +4,7 @@ import { listings } from '@/lib/db/schema';
 import { getStore } from '@/lib/stores';
 import { isWhiskyProduct } from '@/lib/whisky/parse';
 import { formatUsd } from '@/lib/money';
+import { stripControls } from '@/lib/text-controls';
 
 // Read-only: this module only SELECTs from `listings`. No writes, no network.
 
@@ -15,7 +16,8 @@ export const JPY_MAX_PRICE = 5_000_000;
 export const WARNING_CAP = 20;
 /** `noWhiskyWord` examples kept. */
 export const NO_WHISKY_WORD_EXAMPLES = 15;
-const DEFAULT_SAMPLES = 10;
+/** Random samples shown per store (spec section 6). */
+const DEFAULT_SAMPLES = 15;
 
 export interface QualitySample {
   title: string;
@@ -154,9 +156,13 @@ export async function qualityReport(
   };
 }
 
-/** Readable text for one store's report (what `npm run crawl:report` prints). */
+/**
+ * Readable text for one store's report (what `npm run crawl:report` prints). Store-sourced fields
+ * pass through `stripControls`, so a stored title can never send escape sequences to the terminal.
+ */
 export function formatReport(r: QualityReport): string {
   const store = getStore(r.storeId);
+  const c = stripControls;
   const lines: string[] = [];
   lines.push(`== ${r.storeId}${store && !store.publicAllowed ? ' (private)' : ''} ==`);
   lines.push(`total ${r.total}, in stock ${r.inStock}`);
@@ -165,14 +171,14 @@ export function formatReport(r: QualityReport): string {
   lines.push(`checked: ${r.oldestCheckedAt?.toISOString() ?? '-'} .. ${r.newestCheckedAt?.toISOString() ?? '-'}`);
   lines.push(`samples (${r.samples.length}):`);
   for (const s of r.samples) {
-    lines.push(`  ${formatMoney(s.price, s.currency)}  ${s.sizeMl === null ? '? ml' : `${s.sizeMl}ml`}  ${s.available ? 'in stock' : 'sold out'}  ${s.title}  ${s.url}`);
+    lines.push(`  ${formatMoney(s.price, s.currency)}  ${s.sizeMl === null ? '? ml' : `${s.sizeMl}ml`}  ${s.available ? 'in stock' : 'sold out'}  ${c(s.title)}  ${c(s.url)}`);
   }
   lines.push(`warnings (${r.warningCount}):`);
-  for (const w of r.warnings) lines.push(`  ${w}`);
+  for (const w of r.warnings) lines.push(`  ${c(w)}`);
   if (r.warnings.length === 0) lines.push('  none');
   const note = r.noWhiskyWord.count === 0 ? '' : store?.whiskyOnlyCatalog ? ' (not a warning in a whisky-only catalog; examples:)' : ' (examples:)';
   lines.push(`no whisky word in title: ${r.noWhiskyWord.count}${note}`);
-  for (const t of r.noWhiskyWord.examples) lines.push(`  ${t}`);
+  for (const t of r.noWhiskyWord.examples) lines.push(`  ${c(t)}`);
   if (r.noWhiskyWord.count > r.noWhiskyWord.examples.length) lines.push(`  +${r.noWhiskyWord.count - r.noWhiskyWord.examples.length} more`);
   return lines.join('\n');
 }

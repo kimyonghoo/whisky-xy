@@ -132,4 +132,26 @@ describe('formatReport', () => {
     expect(us).not.toContain('(private)');
     expect(us).toContain('$29.99');
   });
+
+  it('never prints control characters from stored fields (defensive: rows written before ingest stripped them)', async () => {
+    const r = await qualityReport(db, 'nemoto');
+    const evil = 'Bad\u001b[2J\u001b]0;pwned\u0007 ウイスキー\nline\u009b31m';
+    r.samples = [{ title: evil, price: 5000, currency: 'JPY', sizeMl: null, available: true, url: 'https://x.test/\u001b[1m' }];
+    r.warnings = [`no size: ${evil}`];
+    r.warningCount = 1;
+    r.noWhiskyWord = { count: 1, examples: [evil] };
+    const out = formatReport(r);
+    // only the line breaks formatReport itself puts between lines
+    expect(out).not.toMatch(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/);
+    expect(out.split('\n').filter((l) => l.includes('Bad'))).toHaveLength(3);
+    expect(out).toContain('Bad[2J]0;pwned ウイスキー line31m');
+    expect(out).toContain('https://x.test/[1m');
+  });
+});
+
+describe('qualityReport default samples', () => {
+  it('shows 15 random samples by default (spec section 6)', async () => {
+    for (let i = 0; i < 20; i++) await add({ storeId: 'nemoto', title: `山崎 ${i}年 700ml`, price: 5000 + i });
+    expect((await qualityReport(db, 'nemoto', { random: () => 0 })).samples).toHaveLength(15);
+  });
 });
