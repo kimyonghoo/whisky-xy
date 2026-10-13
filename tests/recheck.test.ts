@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { createTestDb } from './helpers/db';
 import { seed } from './helpers/seed';
 import { listings, priceHistory } from '@/lib/db/schema';
-import { recheckListing, resetRecheckCooldowns } from '@/lib/recheck';
+import { recheckListing, resetRecheckCooldowns, setLiveRecheckPaused } from '@/lib/recheck';
 import { claimLiveCheck, LIVE_BURST, LIVE_REFILL_MS } from '@/lib/live-budget';
 
 const NOW = new Date('2026-10-10T12:00:00Z');
@@ -28,7 +28,19 @@ async function setup(checkedAt = OLD) {
 describe('recheckListing', () => {
   beforeEach(() => {
     resetRecheckCooldowns();
+    setLiveRecheckPaused(false);
     vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('paused: returns stored data and never contacts the store', async () => {
+    setLiveRecheckPaused(true);
+    const { db, row } = await setup();
+    const fetchFn = fakeFetch({ variants: [{ id: 555, price: 9000, available: true }] });
+    const r = await recheckListing(db, row.id, { fetchFn, now: NOW });
+    expect(r?.status).toBe('paused');
+    expect(r?.listing.priceCents).toBe(10000);
+    expect(r?.listing.checkedAt.getTime()).toBe(OLD.getTime());
+    expect(fetchFn).not.toHaveBeenCalled();
   });
 
   it('updated: price change adds history and sets checkedAt', async () => {

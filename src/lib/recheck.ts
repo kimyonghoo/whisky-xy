@@ -12,13 +12,31 @@ export const FAILURE_COOLDOWN_MS = 60_000;
 
 const failedAt = new Map<number, number>();
 
+/**
+ * All crawling is stopped (owner, 2026-10-14), live checks included: no request reaches a store
+ * and stored data is returned unchanged. Set to false to resume live checks.
+ */
+let livePaused = true;
+
 /** Test-only helper. */
 export function resetRecheckCooldowns(): void {
   failedAt.clear();
 }
 
-/** 'throttled' = the store's live-check budget is used up; stored data is returned unchanged. */
-export type RecheckStatus = 'updated' | 'cached' | 'failed' | 'gone' | 'throttled';
+/** Test-only helper. */
+export function setLiveRecheckPaused(paused: boolean): void {
+  livePaused = paused;
+}
+
+export function isLiveRecheckPaused(): boolean {
+  return livePaused;
+}
+
+/**
+ * 'throttled' = the store's live-check budget is used up; 'paused' = live checks are switched
+ * off. Both return stored data unchanged.
+ */
+export type RecheckStatus = 'updated' | 'cached' | 'failed' | 'gone' | 'throttled' | 'paused';
 
 export async function recheckListing(
   db: Db,
@@ -27,6 +45,7 @@ export async function recheckListing(
 ): Promise<{ listing: Listing; status: RecheckStatus } | null> {
   const listing = await getListing(db, id);
   if (!listing) return null;
+  if (livePaused) return { listing, status: 'paused' };
   const now = opts.now ?? new Date();
 
   if (now.getTime() - listing.checkedAt.getTime() < MIN_RECHECK_INTERVAL_MS) {

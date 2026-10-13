@@ -1,7 +1,7 @@
 name: crawl
+# All crawling is stopped (owner, 2026-10-14): no schedule. A manual run still works, so only
+# start one when crawling is meant to resume (and restore the schedule then).
 on:
-  schedule:
-    - cron: '17 */6 * * *'
   workflow_dispatch:
 concurrency:
   group: crawl

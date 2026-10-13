@@ -18,7 +18,8 @@ vi.mock('@/lib/shopify/client', async (orig) => ({
 }));
 
 const { POST } = await import('@/app/api/recheck/[id]/route');
-const { resetRecheckCooldowns } = await import('@/lib/recheck');
+const { resetRecheckCooldowns, setLiveRecheckPaused } = await import('@/lib/recheck');
+const { fetchLiveProduct } = await import('@/lib/shopify/client');
 
 const SITE = 'https://whisky.example';
 function post(id: string, headers: Record<string, string> = {}) {
@@ -37,7 +38,19 @@ describe('POST /api/recheck/[id]', () => {
       .returning();
     id = row.id;
   });
-  beforeEach(() => resetRecheckCooldowns());
+  beforeEach(() => {
+    resetRecheckCooldowns();
+    setLiveRecheckPaused(false);
+  });
+
+  it('paused: 200 with stored data and no store request', async () => {
+    setLiveRecheckPaused(true);
+    vi.mocked(fetchLiveProduct).mockClear();
+    const res = await post(String(id), { origin: SITE, 'sec-fetch-site': 'same-origin' });
+    expect(res.status).toBe(200);
+    expect((await res.json()).status).toBe('paused');
+    expect(fetchLiveProduct).not.toHaveBeenCalled();
+  });
 
   it('400 for non-numeric and out-of-int4 ids (no DB error)', async () => {
     for (const bad of ['abc', '0', '-1', '999999999999', String(MAX_DB_ID + 1)]) {

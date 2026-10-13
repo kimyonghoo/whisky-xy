@@ -5,7 +5,7 @@ import { connection } from 'next/server';
 import { ArrowLeft, ExternalLink, History, MapPin, Navigation, Phone } from 'lucide-react';
 import { getDb } from '@/lib/db/client';
 import { getListing, getPriceHistory } from '@/lib/listings';
-import { recheckListing } from '@/lib/recheck';
+import { isLiveRecheckPaused, recheckListing } from '@/lib/recheck';
 import { getStore } from '@/lib/stores';
 import { cardMeta, mapsUrl, nyDate, parseCardId, safeHttpsUrl, telHref } from '@/lib/card';
 import { freshness, stockState } from '@/lib/freshness';
@@ -135,7 +135,7 @@ async function CardView({ params, d }: Props & { d: Dict }) {
             <FreshnessIndicator checkedAt={listing.checkedAt} now={now} showDate size="md" />
             {live && <StatusBadge kind="live" size="sm" label={d.card.liveChecked} />}
           </div>
-          <RecheckButton id={listing.id} />
+          {!isLiveRecheckPaused() && <RecheckButton id={listing.id} />}
         </div>
       </section>
 
