@@ -8,7 +8,7 @@ import { toObservations, catalogVariantIds } from '@/lib/crawl/map';
 import { applyPageChecks, ingestStoreCrawl, type ChangeEvent } from '@/lib/crawl/ingest';
 import { dueProductPaths, getNextListPage, saveNextListPage, storeListingPaths } from '@/lib/crawl/page-state';
 import { botContactOrigin } from '@/lib/bot-ua';
-import { createPoliteFetcher, CrawlStopped } from '@/lib/pagecrawl/fetcher';
+import { createPoliteFetcher, CrawlStopped, DEFAULT_DEADLINE_MS } from '@/lib/pagecrawl/fetcher';
 import { crawlPageStore, type PageCrawlSkips } from '@/lib/pagecrawl/adapter';
 import { PAGE_STORE_CONFIGS } from '@/lib/pagecrawl/configs';
 import { refreshFx } from '@/lib/fx';
@@ -52,11 +52,23 @@ type StoreEntry = CrawlReport['stores'][number];
  */
 const PAGE_DUE_PER_RUN = 150;
 
+/**
+ * Wall-clock budget of a whole run, from the start of `runCrawl`: well inside the workflow's
+ * 45-minute timeout, so the run always ends with its ingest written.
+ */
+export const RUN_BUDGET_MS = 40 * 60_000;
+/** A JP store is not started with less than this left of the run budget. */
+export const MIN_STORE_BUDGET_MS = 60_000;
+
 interface StoreRunOpts {
   fetchFn?: FetchFn;
   delayMs?: number;
   politeSleep?: (ms: number) => Promise<void>;
   politeNow?: () => number;
+  /** Non-USD stores: this store's wall-clock limit from its start, min(20 min, run budget left). */
+  deadlineMs?: number;
+  /** The run clock (ms), the same one the run budget is measured on. */
+  clock: () => number;
 }
 
 /** Shopify catalog crawl. Non-USD stores are robots-checked (robots.txt read and obeyed first). */
@@ -65,13 +77,18 @@ async function runShopifyStore(db: Db, store: Store, t: Date, opts: StoreRunOpts
   let products;
   let complete;
   let stoppedBy;
+  const startedAt = opts.clock();
   try {
     if (store.currency !== 'USD') robots = await loadShopifyRobots(store, { fetchFn: opts.fetchFn });
+    // The store's deadline counts from its start, so the robots.txt request comes out of it.
+    const deadlineMs = robots && opts.deadlineMs !== undefined
+      ? Math.max(1, opts.deadlineMs - (opts.clock() - startedAt))
+      : undefined;
     ({ products, complete, stoppedBy } = await fetchCatalog(store, {
       fetchFn: opts.fetchFn,
       delayMs: opts.delayMs,
       robots,
-      ...(robots ? { sleep: opts.politeSleep, now: opts.politeNow } : {}),
+      ...(robots ? { sleep: opts.politeSleep, now: opts.politeNow, deadlineMs } : {}),
     }));
   } catch (err) {
     if (err instanceof RobotsRefusal) {
@@ -110,6 +127,7 @@ async function runPageStore(db: Db, store: Store, t: Date, opts: StoreRunOpts): 
       fetchFn: opts.fetchFn,
       sleep: opts.politeSleep,
       now: opts.politeNow,
+      deadlineMs: opts.deadlineMs,
     });
   } catch (err) {
     if (err instanceof CrawlStopped) {
@@ -160,39 +178,80 @@ export async function runCrawl(opts: {
   siteUrl: string;
   /**
    * Tests only: sleep and clock of the polite crawls (page stores and robots-checked Shopify), which
-   * production always takes from the real clock (pacing and the 20-minute deadline).
+   * production always takes from the real clock (pacing, the 20-minute store deadline and the
+   * 40-minute run budget).
    */
   politeSleep?: (ms: number) => Promise<void>;
   politeNow?: () => number;
 }): Promise<CrawlReport> {
   const { db, stores, notify, siteUrl } = opts;
   const now = opts.now ?? (() => new Date());
-  const report: CrawlReport = { stores: [], alertsSent: 0, fx: 'ok', krLinks: { ok: 0, failed: 0 } };
-  const events: ChangeEvent[] = [];
+  // The run budget is measured on the polite crawls' clock (injectable in tests), from here.
+  const clock = opts.politeNow ?? (() => performance.now());
+  const runStartedAt = clock();
+  const budgetLeftMs = () => RUN_BUDGET_MS - (clock() - runStartedAt);
+  const entries: (StoreEntry | undefined)[] = new Array(stores.length);
 
-  for (const store of stores) {
-    if (!store.crawlEnabled) {
-      report.stores.push({ storeId: store.id, ok: true, note: 'skipped: crawl disabled (terms)', observations: 0, events: 0 });
-      continue;
-    }
-    // Japanese stores must be able to identify and reach us: no crawl with the localhost fallback UA.
-    if (store.currency !== 'USD' && botContactOrigin() === null) {
-      console.error(`[crawl] ${store.id} skipped: SITE_URL unset or not a reachable origin`);
-      report.stores.push({ storeId: store.id, ok: false, note: 'skipped: SITE_URL unset', observations: 0, events: 0 });
-      continue;
+  /** One store, start to finish. Never throws: a failure becomes the store's report entry. */
+  async function crawlOne(store: Store): Promise<{ entry: StoreEntry; events: ChangeEvent[] }> {
+    const skip = (ok: boolean, note: string) => ({ entry: { storeId: store.id, ok, note, observations: 0, events: 0 }, events: [] });
+    if (!store.crawlEnabled) return skip(true, 'skipped: crawl disabled (terms)');
+    let deadlineMs: number | undefined;
+    if (store.currency !== 'USD') {
+      // Japanese stores must be able to identify and reach us: no crawl with the localhost fallback UA.
+      if (botContactOrigin() === null) {
+        console.error(`[crawl] ${store.id} skipped: SITE_URL unset or not a reachable origin`);
+        return skip(false, 'skipped: SITE_URL unset');
+      }
+      const left = budgetLeftMs();
+      if (left < MIN_STORE_BUDGET_MS) {
+        console.error(`[crawl] ${store.id} skipped: run budget exhausted`);
+        return skip(true, 'skipped: run budget exhausted');
+      }
+      deadlineMs = Math.min(DEFAULT_DEADLINE_MS, left);
     }
     try {
       const run = store.adapter === 'page' ? runPageStore : runShopifyStore;
-      const { entry, events: evs } = await run(db, store, now(), opts);
-      events.push(...evs);
-      report.stores.push(entry);
+      return await run(db, store, now(), { ...opts, clock, deadlineMs });
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       console.error(`[crawl] ${store.id} failed: ${error}`);
-      report.stores.push({ storeId: store.id, ok: false, error, observations: 0, events: 0 });
+      return { entry: { storeId: store.id, ok: false, error, observations: 0, events: 0 }, events: [] };
     }
   }
 
+  // 1. Public stores. Only their events can alert, so the alerts need not wait for the private crawls.
+  const events: ChangeEvent[] = [];
+  for (const [i, store] of stores.entries()) {
+    if (!store.publicAllowed) continue;
+    const r = await crawlOne(store);
+    entries[i] = r.entry;
+    events.push(...r.events);
+  }
+
+  // 2. fx, kr_links and the alerts.
+  const report: CrawlReport = { stores: [], alertsSent: 0, fx: 'ok', krLinks: { ok: 0, failed: 0 } };
+  await refreshAndAlert(db, report, events, { fetchFn: opts.fetchFn, delayMs: opts.delayMs, now, notify, siteUrl });
+
+  // 3. Private stores (Japan): slow, polite page crawls that never alert. Run last, so a slow or
+  // failing private store cannot delay or lose the public alerts.
+  for (const [i, store] of stores.entries()) {
+    if (store.publicAllowed) continue;
+    entries[i] = (await crawlOne(store)).entry;
+  }
+
+  report.stores = entries.filter((e): e is StoreEntry => e !== undefined);
+  return report;
+}
+
+/** Step 2 of a run: fx, kr_links, and the alerts for the public stores' events. */
+async function refreshAndAlert(
+  db: Db,
+  report: CrawlReport,
+  events: ChangeEvent[],
+  opts: { fetchFn?: FetchFn; delayMs?: number; now: () => Date; notify: (text: string) => Promise<void>; siteUrl: string },
+): Promise<void> {
+  const { now, notify, siteUrl } = opts;
   // Korea comparison data is best-effort: never fails the run.
   try {
     await refreshFx(db, now(), opts.fetchFn);
@@ -226,5 +285,4 @@ export async function runCrawl(opts: {
       }
     }
   }
-  return report;
 }

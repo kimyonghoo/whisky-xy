@@ -409,6 +409,157 @@ describe('runCrawl: Japanese stores', () => {
     expect(r.stores[0].observations).toBeGreaterThan(0);
   });
 
+  // ---- run order: public stores, then fx / kr_links / alerts, then private stores ----
+
+  /** flask: a sold-out Stagg now, and a watch for it, so the next run (restocked) has one alert to send. */
+  async function seedRestockAlert() {
+    await runCrawl({ ...base, stores: [flask], fetchFn: fakeFetch({ [flask.domain]: { pages: caveWith(false) } }) });
+    await db.insert(watches).values({ label: 'Stagg', includeTerms: ['stagg'], excludeTerms: [], cities: ['la'], createdAt: new Date() });
+  }
+
+  it('sends alerts (after fx and kr_links) before any private-store request; the report keeps the input order', async () => {
+    await seedRestockAlert();
+    const log: string[] = [];
+    const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
+    const n = net((host, path) => (host === nemoto.domain ? nemotoSite(undefined, [yamazaki])(host, path) : shinanoyaSite({ 1: [1] })(host, path)));
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      const host = new URL(String(input)).hostname;
+      log.push(host);
+      return host === flask.domain ? usOk(input, init) : n.fetchFn(input, init);
+    }) as FetchFn;
+    const r = await runCrawl({
+      ...jp, stores: [shinanoya, nemoto, flask], fetchFn,
+      notify: async () => { log.push('notify'); },
+    });
+    const firstPrivate = log.findIndex((h) => h === shinanoya.domain || h === nemoto.domain);
+    expect(firstPrivate).toBeGreaterThan(-1);
+    expect(log.indexOf('notify')).toBeGreaterThan(-1);
+    expect(log.indexOf('notify')).toBeLessThan(firstPrivate);
+    expect(log.indexOf('open.er-api.com')).toBeLessThan(firstPrivate);
+    expect(log.lastIndexOf(flask.domain)).toBeLessThan(firstPrivate);
+    expect(r.alertsSent).toBe(1);
+    expect(r.stores.map((s) => [s.storeId, s.ok])).toEqual([['shinanoya', true], ['nemoto', true], ['flask', true]]);
+    expect(r.stores[0].observations).toBe(1);
+    expect(r.stores[1].observations).toBe(1);
+  });
+
+  it('a private store that throws or hits its deadline does not stop the alerts', async () => {
+    await seedRestockAlert();
+    const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
+    const lists: Record<number, number[]> = {};
+    for (let p = 1; p <= 20; p++) lists[p] = Array.from({ length: 30 }, (_, i) => p * 100 + i);
+    const site = shinanoyaSite(lists);
+    let t = 0;
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      const u = new URL(String(input));
+      if (u.hostname === flask.domain) return usOk(input, init);
+      if (u.hostname === nemoto.domain) {
+        if (u.pathname === '/robots.txt') return new Response('', { status: 404 });
+        throw new Error('nemoto exploded');
+      }
+      if (u.hostname === shinanoya.domain) {
+        t += 10_000;
+        const reply = site(u.hostname, u.pathname + u.search);
+        if (reply === undefined) return new Response('not found', { status: 404 });
+        return new Response(String(reply), { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
+      }
+      return new Response('nope', { status: 404 });
+    }) as FetchFn;
+    const sent: string[] = [];
+    const r = await runCrawl({
+      ...jp, stores: [nemoto, shinanoya, flask], fetchFn, notify: async (m) => { sent.push(m); },
+      politeSleep: async (ms) => { t += ms; }, politeNow: () => t,
+    });
+    expect(r.stores[0]).toMatchObject({ storeId: 'nemoto', ok: false, error: 'nemoto exploded' });
+    expect(r.stores[1]).toMatchObject({ storeId: 'shinanoya', ok: true, note: 'stopped: deadline' });
+    expect(r.alertsSent).toBe(1);
+    expect(sent).toHaveLength(1);
+  });
+
+  // ---- run-level time budget: 40 minutes from the start of runCrawl ----
+
+  it('a slow US phase shrinks the deadline of the JP stores that follow (min of 20 min and the run budget left)', async () => {
+    const lists: Record<number, number[]> = {};
+    for (let p = 1; p <= 20; p++) lists[p] = Array.from({ length: 30 }, (_, i) => p * 100 + i);
+    const site = shinanoyaSite(lists);
+    let t = 0;
+    const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
+    const n = net((host, path) => {
+      if (host === shinanoya.domain) {
+        t += 10_000; // every shinanoya response takes 10 s
+        return site(host, path);
+      }
+      return undefined;
+    });
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (new URL(String(input)).hostname === flask.domain) {
+        t += 10 * 60_000; // the US phase takes 30 minutes (cart.js and two catalog pages)
+        return usOk(input, init);
+      }
+      return n.fetchFn(input, init);
+    }) as FetchFn;
+    const r = await runCrawl({
+      ...jp, stores: [shinanoya, flask], fetchFn, politeSleep: async (ms) => { t += ms; }, politeNow: () => t,
+    });
+    // 10 minutes left of the 40: 600 s / 10 s per response = 60 requests (not the 120 of a 20-minute deadline)
+    expect(n.storeCalls(shinanoya.domain)).toHaveLength(60);
+    expect(r.stores[0]).toMatchObject({ storeId: 'shinanoya', ok: true, note: 'stopped: deadline' });
+  });
+
+  it('the JPY Shopify path gets the shrunk deadline too', async () => {
+    let t = 0;
+    const route = (host: string, path: string): Reply => {
+      if (host !== nemoto.domain) return undefined;
+      t += 60_000; // every nemoto response takes 60 s
+      const m = /^\/collections\/whisky\/products\.json\?limit=250&page=(\d+)$/.exec(path);
+      if (m) {
+        const id = Number(m[1]);
+        return JSON.stringify({ products: [{ ...yamazaki, id, handle: `y-${id}`, variants: [{ id: 1000 + id, title: 'Default Title', price: '27500', available: true }] }] });
+      }
+      return nemotoSite('', [])(host, path);
+    };
+    const n = net(route);
+    const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (new URL(String(input)).hostname === flask.domain) {
+        t += 700_000; // US phase: 35 minutes over 3 requests
+        return usOk(input, init);
+      }
+      return n.fetchFn(input, init);
+    }) as FetchFn;
+    const r = await runCrawl({
+      ...jp, stores: [nemoto, flask], fetchFn, politeSleep: async (ms) => { t += ms; }, politeNow: () => t,
+    });
+    // 5 minutes left: robots (60 s), then 4 minutes for meta.json and 3 catalog pages (3 s gap + 60 s each)
+    expect(n.storeCalls(nemoto.domain)).toHaveLength(5);
+    expect(r.stores[0]).toMatchObject({ storeId: 'nemoto', ok: true, observations: 3, note: 'stopped: deadline; missing listings not marked sold out' });
+  });
+
+  it('a JP store is skipped without a request when under 60 s of the run budget is left', async () => {
+    let t = 0;
+    const usOk = fakeFetch({ [flask.domain]: { pages: caveWith(true) } });
+    const n = net((host, path) => (host === nemoto.domain ? nemotoSite(undefined, [yamazaki])(host, path) : shinanoyaSite({ 1: [1] })(host, path)));
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (new URL(String(input)).hostname === flask.domain) {
+        t += 790_000; // US phase: 39.5 minutes over 3 requests
+        return usOk(input, init);
+      }
+      return n.fetchFn(input, init);
+    }) as FetchFn;
+    const sent: string[] = [];
+    const r = await runCrawl({
+      ...jp, stores: [shinanoya, nemoto, flask], fetchFn, notify: async (m) => { sent.push(m); },
+      politeSleep: async (ms) => { t += ms; }, politeNow: () => t,
+    });
+    expect(n.storeCalls(shinanoya.domain)).toEqual([]);
+    expect(n.storeCalls(nemoto.domain)).toEqual([]);
+    expect(r.stores.map((s) => [s.storeId, s.ok, s.note])).toEqual([
+      ['shinanoya', true, 'skipped: run budget exhausted'],
+      ['nemoto', true, 'skipped: run budget exhausted'],
+      ['flask', true, undefined],
+    ]);
+  });
+
   it('US Shopify stores do not fetch robots.txt (unchanged)', async () => {
     const n = net((host, path) => (host === flask.domain ? (path === '/cart.js' ? '{"currency":"USD"}' : '{"products":[]}') : undefined));
     await runCrawl({ ...jp, stores: [flask], fetchFn: n.fetchFn });
